@@ -25,6 +25,8 @@ type Service struct {
 	answerUnauthorized atomic.Uint64
 	answerInternal     atomic.Uint64
 	answerNanos        atomic.Uint64
+	joinNew            atomic.Uint64
+	joinRestored       atomic.Uint64
 }
 
 func NewService(store Store, scoring ScoringPolicy) *Service {
@@ -53,7 +55,13 @@ func (s *Service) Join(c context.Context, session, request, name, avatar string)
 	if !validUUID(session) || !validUUID(request) || name == "" || len([]rune(name)) > 100 || len([]rune(avatar)) > 100 {
 		return Participant{}, false, ErrInvalid
 	}
-	return s.store.Join(c, session, request, name, avatar, tokenHash(request))
+	participant, restored, err := s.store.Join(c, session, request, name, avatar, tokenHash(request))
+	if restored {
+		s.joinRestored.Add(1)
+	} else if err == nil {
+		s.joinNew.Add(1)
+	}
+	return participant, restored, err
 }
 func (s *Service) Action(c context.Context, session, host, request string, version int64, action, slide string, duration int) (Session, bool, error) {
 	if !validUUID(session) || !validUUID(host) || !validUUID(request) || version < 1 || (slide != "" && !validUUID(slide)) {
@@ -138,6 +146,16 @@ func (s *Service) AuthorizeViewer(c context.Context, session, manager, participa
 	}
 	return s.store.AuthorizeViewer(c, session, manager, hash)
 }
+func (s *Service) SetParticipantPresence(c context.Context, session, participantToken string, disconnected bool) error {
+	if !validUUID(session) || (participantToken != "" && !validUUID(participantToken)) {
+		return ErrUnauthorized
+	}
+	var hash []byte
+	if participantToken != "" {
+		hash = tokenHash(participantToken)
+	}
+	return s.store.SetParticipantPresence(c, session, hash, disconnected)
+}
 func tokenHash(v string) []byte { x := sha256.Sum256([]byte(v)); return x[:] }
 func joinCode() (string, error) {
 	b := make([]byte, 4)
@@ -163,6 +181,12 @@ func (s *Service) WritePrometheus(w io.Writer) {
 	fmt.Fprintf(w, "proslides_live_answer_duration_seconds_sum %.9f\n", float64(s.answerNanos.Load())/float64(time.Second))
 	fmt.Fprintln(w, "# TYPE proslides_live_answer_duration_seconds_count counter")
 	fmt.Fprintf(w, "proslides_live_answer_duration_seconds_count %d\n", total)
+	joined := s.joinNew.Load()
+	restored := s.joinRestored.Load()
+	fmt.Fprintln(w, "# TYPE proslides_live_joins_total counter")
+	for outcome, value := range map[string]uint64{"joined": joined, "restored": restored} {
+		fmt.Fprintf(w, "proslides_live_joins_total{outcome=%q} %d\n", outcome, value)
+	}
 }
 
 func validUUID(value string) bool {

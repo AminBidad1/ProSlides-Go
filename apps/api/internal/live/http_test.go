@@ -46,8 +46,18 @@ func (s *snapshotStore) SubmitAnswer(context.Context, string, []byte, string, st
 	return AnswerResult{}, errors.New("unexpected SubmitAnswer")
 }
 func (s *snapshotStore) ParticipantSnapshot(_ context.Context, session string, hash []byte) (ParticipantSnapshot, error) {
-	if session != testSessionID || string(hash) != string(tokenHash(testParticipantToken)) {
+	if (session != testSessionID && session != testPresentationID) || string(hash) != string(tokenHash(testParticipantToken)) {
 		return ParticipantSnapshot{}, ErrUnauthorized
+	}
+	remaining := 42
+	if session == testPresentationID {
+		return ParticipantSnapshot{
+			Role:             "participant",
+			Session:          PublicSession{ID: session, PresentationID: testPresentationID, State: QuestionOpen, StateVersion: 5, RemainingSeconds: &remaining},
+			Participant:      ParticipantWithScore{Participant: Participant{ID: "participant-1", DisplayName: "Current Player", Avatar: "P"}, Score: 70},
+			ParticipantCount: 10_000,
+			LastEventID:      42,
+		}, nil
 	}
 	return ParticipantSnapshot{
 		Role:             "participant",
@@ -58,8 +68,17 @@ func (s *snapshotStore) ParticipantSnapshot(_ context.Context, session string, h
 	}, nil
 }
 func (s *snapshotStore) ManagerSnapshot(_ context.Context, session, manager string) (ManagerSnapshot, error) {
-	if session != testSessionID || manager != testManagerID {
+	if (session != testSessionID && session != testPresentationID) || manager != testManagerID {
 		return ManagerSnapshot{}, ErrNotFound
+	}
+	remaining := 42
+	if session == testPresentationID {
+		return ManagerSnapshot{
+			Role:             "manager",
+			Session:          Session{ID: session, PresentationID: testPresentationID, HostID: manager, JoinCode: "JOIN1", State: QuestionOpen, StateVersion: 5, RemainingSeconds: &remaining},
+			ParticipantCount: 10_000,
+			LastEventID:      42,
+		}, nil
 	}
 	return ManagerSnapshot{
 		Role:             "manager",
@@ -87,6 +106,9 @@ func (s *snapshotStore) Events(context.Context, string, int64, int) ([]Event, er
 func (s *snapshotStore) LatestEventID(context.Context, string) (int64, error) { return 0, nil }
 func (s *snapshotStore) ReconcileDeadline(context.Context, string) (bool, error) {
 	return false, nil
+}
+func (s *snapshotStore) SetParticipantPresence(context.Context, string, []byte, bool) error {
+	return nil
 }
 func (s *snapshotStore) AuthorizeViewer(context.Context, string, string, []byte) error {
 	return nil
@@ -144,6 +166,40 @@ func TestParticipantSnapshotDoesNotDiscloseRosterScoresOrManagerFields(t *testin
 	participant := payload["participant"].(map[string]any)
 	if participant["id"] != "participant-1" || participant["score"] != float64(70) || payload["participant_count"] != float64(10_000) || payload["last_event_id"] != float64(42) {
 		t.Fatalf("unexpected participant snapshot: %#v", payload)
+	}
+}
+
+func TestOpenQuestionSnapshotsExposeServerComputedRemainingSeconds(t *testing.T) {
+	store := &snapshotStore{}
+	for _, tc := range []struct {
+		name string
+		role string
+	}{
+		{name: "participant", role: "participant"},
+		{name: "manager", role: "manager"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodGet, "/api/v1/live/sessions/"+testPresentationID+"/snapshot", nil)
+			if tc.role == "manager" {
+				request.AddCookie(&http.Cookie{Name: "proslides_session", Value: "manager-token"})
+			} else {
+				request.AddCookie(&http.Cookie{Name: "proslides_participant", Value: testParticipantToken})
+			}
+			response := httptest.NewRecorder()
+			snapshotHandler(store).ServeHTTP(response, request)
+			if response.Code != http.StatusOK {
+				t.Fatalf("status = %d, body = %s", response.Code, response.Body.String())
+			}
+			var payload struct {
+				Session PublicSession `json:"session"`
+			}
+			if err := json.Unmarshal(response.Body.Bytes(), &payload); err != nil {
+				t.Fatal(err)
+			}
+			if payload.Session.RemainingSeconds == nil || *payload.Session.RemainingSeconds != 42 {
+				t.Fatalf("expected remaining_seconds=42 in %s snapshot, got %#v", tc.role, payload.Session)
+			}
+		})
 	}
 }
 

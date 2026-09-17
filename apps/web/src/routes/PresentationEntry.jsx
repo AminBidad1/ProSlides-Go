@@ -722,7 +722,14 @@ function AppPresentation({ roomId, role, initialQuizData }) {
       snapshot?.session?.state === "question_open"
     ) {
       if (playerLastActive.kind === "question") {
-        const fallbackQuestion = playerLastActive.payload;
+        const freshRemaining = snapshot?.session?.remaining_seconds;
+        const fallbackQuestion =
+          freshRemaining == null
+            ? playerLastActive.payload
+            : {
+                ...playerLastActive.payload,
+                remaining_seconds: freshRemaining,
+              };
         const fallbackTimer = resolveQuestionTimer({
           question: fallbackQuestion,
           roomId,

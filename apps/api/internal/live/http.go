@@ -238,12 +238,15 @@ func (h *HTTP) events(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	viewerCredential := "manager"
+	participantToken := ""
 	if cookie, err := r.Cookie("proslides_participant"); err == nil {
 		viewerCredential = cookie.Value
+		participantToken = cookie.Value
 	} else if cookie, err = r.Cookie("proslides_session"); err == nil {
 		viewerCredential = cookie.Value
 	}
-	if !h.allow(w, r, "live_sse_reconnect", r.PathValue("sessionId")+":"+viewerCredential, 60, time.Minute) {
+	sessionID := r.PathValue("sessionId")
+	if !h.allow(w, r, "live_sse_reconnect", sessionID+":"+viewerCredential, 60, time.Minute) {
 		return
 	}
 	f, ok := w.(http.Flusher)
@@ -251,19 +254,32 @@ func (h *HTTP) events(w http.ResponseWriter, r *http.Request) {
 		returnError(w, errors.New("stream unsupported"))
 		return
 	}
-	subscription, unsubscribe, e := h.broker.Subscribe(r.Context(), r.PathValue("sessionId"))
+	// A live participant stream announces connection and disconnection so a
+	// rejoin within the same session reclaims the existing record and score.
+	if participantToken != "" {
+		_ = h.service.SetParticipantPresence(r.Context(), sessionID, participantToken, false)
+	}
+	subscription, unsubscribe, e := h.broker.Subscribe(r.Context(), sessionID)
 	if e != nil {
 		returnError(w, e)
 		return
 	}
 	defer unsubscribe()
+	defer func() {
+		if participantToken == "" {
+			return
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		_ = h.service.SetParticipantPresence(ctx, sessionID, participantToken, true)
+	}()
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache, no-store")
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("X-Accel-Buffering", "no")
 	after, _ := strconv.ParseInt(r.Header.Get("Last-Event-ID"), 10, 64)
 	for {
-		events, eventErr := h.service.Events(r.Context(), r.PathValue("sessionId"), after)
+		events, eventErr := h.service.Events(r.Context(), sessionID, after)
 		if eventErr != nil {
 			return
 		}

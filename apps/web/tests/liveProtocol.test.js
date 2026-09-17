@@ -156,6 +156,55 @@ test("participant question projection does not retain correctness flags", () => 
   assert.equal("is_correct" in question.options[0], false);
 });
 
+test("server-computed remaining_seconds wins over a skewed ends_at deadline", () => {
+  const endsAt = new Date(Date.now() + 30_000).toISOString();
+  const question = normalizeLiveSlide(
+    {
+      id: "q-reconnect",
+      kind: "question",
+      content: { text: "Rejoin", question_time: 30, options: [{ text: "A" }] },
+    },
+    { state_version: 12, ends_at: endsAt, remaining_seconds: 8 },
+  );
+  assert.equal(question.remaining_seconds, 8);
+  assert.equal(question.question_time, 30);
+});
+
+test("server-computed remaining_seconds is clamped to the question window", () => {
+  const over = normalizeLiveSlide(
+    {
+      id: "q-over",
+      kind: "question",
+      content: { text: "Over", question_time: 10, options: [{ text: "A" }] },
+    },
+    { state_version: 1, ends_at: null, remaining_seconds: 999 },
+  );
+  assert.equal(over.remaining_seconds, 10);
+
+  const under = normalizeLiveSlide(
+    {
+      id: "q-under",
+      kind: "question",
+      content: { text: "Under", question_time: 10, options: [{ text: "A" }] },
+    },
+    { state_version: 1, ends_at: null, remaining_seconds: -4 },
+  );
+  assert.equal(under.remaining_seconds, 0);
+});
+
+test("missing server remaining_seconds falls back to the ends_at derivation", () => {
+  const question = normalizeLiveSlide(
+    {
+      id: "q-legacy",
+      kind: "question",
+      content: { text: "Legacy", question_time: 20, options: [{ text: "A" }] },
+    },
+    { state_version: 1, ends_at: new Date(Date.now() + 5_000).toISOString() },
+  );
+  assert.ok(question.remaining_seconds > 0);
+  assert.ok(question.remaining_seconds <= 7);
+});
+
 test("SSE starts after the snapshot cursor and parses event envelopes", async () => {
   const originalFetch = globalThis.fetch;
   const received = [];

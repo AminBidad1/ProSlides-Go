@@ -144,15 +144,26 @@ The current single/multi-instance-safe delivery path is:
    bound for a slow client.
 
 Presence bursts are compacted so only the newest consecutive
-`presence.updated` event in a fetched batch is fanned out, with its
-`participant_delta` equal to the number of committed joins in that compacted
-burst. The exact count always comes from the snapshot. Answers never produce
-one SSE event per participant; `answer.stats` is emitted after closure and
-`leaderboard.updated` carries only an aggregate participant count when the
-leaderboard is shown. Complete rows are never broadcast. Newly written
-leaderboard notifications use event schema version 2; retained version-1 array
-payloads are reduced to their count by the PostgreSQL adapter before replay,
-without rewriting the durable ledger.
+ `presence.updated` event in a fetched batch is fanned out, with its
+ `participant_delta` equal to the number of committed joins in that compacted
+ burst. The exact count always comes from the snapshot. Answers never produce
+ one SSE event per participant; `answer.stats` is emitted after closure and
+ `leaderboard.updated` carries only an aggregate participant count when the
+ leaderboard is shown. Complete rows are never broadcast. Newly written
+ leaderboard notifications use event schema version 2; retained version-1 array
+ payloads are reduced to their count by the PostgreSQL adapter before replay,
+ without rewriting the durable ledger.
+
+Participant SSE streams announce connection and disconnection in PostgreSQL
+(a nullable `participants.disconnected_at`), so a participant who loses the
+stream can restore their existing record by rejoining the same session: the
+server rotates the credential to the new `request_id`, clears the disconnect
+marker, and keeps the row, answers, and score untouched, so
+`participant_count` never increases for a restore. An actively connected
+display name continues to be rejected with `409 display_name_taken`; a new run
+is a new session, so the name joins fresh there. A host reconnection recreates
+or resolves the same non-ended session idempotently (`request_id` or
+host+presentation lookup), so the run resumes at the exact live point.
 
 Snapshots are role-scoped and read from a single PostgreSQL `REPEATABLE READ`
 view. Participants receive public session state, active slide, their own
