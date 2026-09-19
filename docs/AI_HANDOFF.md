@@ -27,7 +27,8 @@ not complete. Never describe a design target as benchmark evidence.
   machine, join, idempotent answers,
   replaceable scoring, aggregate scores, role-scoped snapshots, manager-only
   keyset-paginated roster/leaderboard, durable events, typed React HTTP/SSE,
-  snapshot-first recovery, public live-session join-code resolution, and
+  snapshot-first recovery, public live-session join-code resolution,
+  same-session participant rejoin with away-name restoration, and
   owner-only keyset-paginated per-question results derived from Go answers.
 - High-load improvements in this stage: one event-ledger poller per active
   session/API process, bounded subscriber buffers, slow-client disconnect and
@@ -214,6 +215,49 @@ but missed the 500 ms p95 SLO at 581.88 ms and remains recorded. A concurrent
 question close now returns 409 rather than 500 when `ends_at` is cleared. Nginx
 uses dynamic Docker DNS; with Web unchanged, a forced API IP move recovered on
 the eighth one-second probe. This is local, non-TLS evidence only.
+
+Participant rejoin and presence verification (2026-09-17): migration `0016`
+adds nullable `participants.disconnected_at`. Participant SSE streams clear it
+on open and set it on close (manager streams are untouched). `Join` is
+unchanged for a repeated `request_id`; a same-session join with a new credential
+restores an away participant row (same id, answers, and score; credential and
+avatar rotate; `disconnected_at` cleared; no `presence.updated`, count
+unchanged), rejects an actively connected duplicate name with
+`409 display_name_taken`, and still inserts fresh rows only for unclaimed
+names. Host reconnection already resolves the active non-ended session by idempotent
+credential or host+presentation lookup, so the run resumes at the exact live
+point. OpenAPI documents the 200 restore and 409 semantics, the service exposes
+`proslides_live_joins_total{outcome="joined|restored"}`, and the Compose
+integration script now asserts host resume, same-name restore with preserved
+score and unchanged count, and active-name takeover rejection. Go
+fmt/vet/tests including `-race` on the live module, web lint/typecheck/49 unit
+tests/bundle-checked build/OpenAPI drift check, and both Compose config
+validations passed; the real stack applied migration `0016`, join 201,
+idempotent 200, SSE-close presence, restore 200 with the same participant id,
+preserved score 100, unchanged count, and 409 active-name rejection all
+verified end to end. This change ran in a Linux sandbox using a user-local Go
+1.26.0 toolchain (the go.mod toolchain; none was preinstalled there). The
+user-prioritized frontend work is complete and the production-like TLS 1k gate
+remains the unwaived exact next task.
+
+Timer-anchor verification (2026-09-17): participant and manager snapshots now
+expose server-computed `remaining_seconds` (PostgreSQL clock,
+`GREATEST(0,ROUND(EXTRACT(EPOCH FROM ends_at-clock_timestamp())))::int`, non-null
+only while `question_open`) — the same clock domain and window `SubmitAnswer`
+admits. The client no longer derives a question countdown from
+`ends_at - Date.now()` whenever the server value is present, so client clock
+skew no longer inflates or shortens a reconnected player's mid-question timer,
+and the stale `playerLastActive` localStorage fallback in `PresentationEntry.jsx`
+re-anchors from `snapshot.session.remaining_seconds` instead of the value
+captured at question open. `normalizeLiveSlide` still falls back to the
+`ends_at` derivation for older answers, and `resolveQuestionTimer` continues to
+prefer the explicit remaining field. OpenAPI `LiveSession`/`PublicLiveSession`
+document the new nullable field, Go snapshot queries/tests and the OpenAPI
+generated type were updated, and protocol/timer unit tests (53 total) cover the
+skewed-clock reconnect path. Go fmt/vet/tests including `-race` on the live
+module, web lint/typecheck/53 unit tests/budgeted build (80.51 KiB gzip
+initial JS)/OpenAPI drift check, and both Compose config validations passed.
+No migration, environment, or SSE event change was needed.
 
 ## Installed Codex workflow prerequisites
 

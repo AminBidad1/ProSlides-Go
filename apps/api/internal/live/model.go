@@ -17,14 +17,15 @@ var (
 )
 
 type Session struct {
-	ID             string     `json:"id"`
-	PresentationID string     `json:"presentation_id"`
-	HostID         string     `json:"host_id"`
-	JoinCode       string     `json:"join_code"`
-	State          State      `json:"state"`
-	StateVersion   int64      `json:"state_version"`
-	ActiveSlideID  *string    `json:"active_slide_id"`
-	EndsAt         *time.Time `json:"ends_at"`
+	ID               string     `json:"id"`
+	PresentationID   string     `json:"presentation_id"`
+	HostID           string     `json:"host_id"`
+	JoinCode         string     `json:"join_code"`
+	State            State      `json:"state"`
+	StateVersion     int64      `json:"state_version"`
+	ActiveSlideID    *string    `json:"active_slide_id"`
+	EndsAt           *time.Time `json:"ends_at"`
+	RemainingSeconds *int       `json:"remaining_seconds,omitempty"`
 }
 type Participant struct {
 	ID          string `json:"id"`
@@ -32,12 +33,13 @@ type Participant struct {
 	Avatar      string `json:"avatar,omitempty"`
 }
 type PublicSession struct {
-	ID             string     `json:"id"`
-	PresentationID string     `json:"presentation_id"`
-	State          State      `json:"state"`
-	StateVersion   int64      `json:"state_version"`
-	ActiveSlideID  *string    `json:"active_slide_id"`
-	EndsAt         *time.Time `json:"ends_at"`
+	ID               string     `json:"id"`
+	PresentationID   string     `json:"presentation_id"`
+	State            State      `json:"state"`
+	StateVersion     int64      `json:"state_version"`
+	ActiveSlideID    *string    `json:"active_slide_id"`
+	EndsAt           *time.Time `json:"ends_at"`
+	RemainingSeconds *int       `json:"remaining_seconds,omitempty"`
 }
 type ParticipantWithScore struct {
 	Participant
@@ -130,6 +132,7 @@ type Store interface {
 	LatestEventID(context.Context, string) (int64, error)
 	AuthorizeViewer(context.Context, string, string, []byte) error
 	ReconcileDeadline(context.Context, string) (bool, error)
+	SetParticipantPresence(context.Context, string, []byte, bool) error
 }
 
 type EventStore interface {

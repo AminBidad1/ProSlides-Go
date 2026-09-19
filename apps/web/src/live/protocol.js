@@ -56,12 +56,21 @@ export const normalizeLiveSlide = (activeSlide, session = {}) => {
   const id = String(activeSlide.id || session.active_slide_id || "");
   if (activeSlide.kind === "question") {
     const options = Array.isArray(content.options) ? content.options : [];
+    const questionTime = Number(content.question_time || 0);
     const endsAt = session.ends_at ? Date.parse(session.ends_at) : NaN;
+    const serverRemaining =
+      session.remaining_seconds == null ? null : Number(session.remaining_seconds);
+    const serverRemainingSeconds =
+      serverRemaining != null && Number.isFinite(serverRemaining)
+        ? Math.max(0, Math.min(questionTime > 0 ? questionTime : serverRemaining, serverRemaining))
+        : undefined;
+    const derivedSeconds =
+      Number.isFinite(endsAt) ? Math.max(0, (endsAt - Date.now()) / 1000) : undefined;
     return {
       slide_type: 1, slide_id: id, question_id: id, run_id: session.state_version,
       question_text: content.text || "", question_title: content.title || "",
-      question_time: Number(content.question_time || 0),
-      remaining_seconds: Number.isFinite(endsAt) ? Math.max(0, (endsAt - Date.now()) / 1000) : undefined,
+      question_time: questionTime,
+      remaining_seconds: serverRemainingSeconds ?? derivedSeconds,
       max_point: Number(content.max_point || 0), min_point: Number(content.min_point || 0),
       question_type: content.question_type || "single", has_multiple: content.question_type === "multiple",
       image_url: content.image_url || "",

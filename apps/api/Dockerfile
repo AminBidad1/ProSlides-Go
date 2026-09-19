@@ -1,4 +1,4 @@
-FROM golang:1.26-alpine AS build
+FROM docker.arvancloud.ir/golang:1.26-alpine AS build
 WORKDIR /src
 
 COPY go.mod ./
@@ -7,7 +7,7 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/proslides-api ./cmd/api
 
-FROM alpine:3.21
+FROM docker.arvancloud.ir/alpine:3.21
 RUN apk add --no-cache ca-certificates \
     && addgroup -S proslides \
     && adduser -S -G proslides proslides

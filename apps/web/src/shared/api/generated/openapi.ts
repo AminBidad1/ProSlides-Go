@@ -508,7 +508,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Join a started live session and establish an HttpOnly participant cookie. */
+        /**
+         * Join a started live session and establish an HttpOnly participant cookie. Rejoining the same session restores the existing participant record (id, answers, and score) instead of creating a duplicate.
+         * @description The request_id is the opaque participant credential. A retry with the original request_id returns the original participant (200). Otherwise, when the same session already has a participant with this display_name whose last SSE stream closed (disconnected_at is set), that record is restored: the credential is rotated to this request_id, its score and answers are preserved, and participant_count is unchanged. A display name that still belongs to an actively-connected participant returns 409 display_name_taken. A new run creates a new session, so the same name joins as a fresh participant (201).
+         */
         post: operations["joinLiveSession"];
         delete?: never;
         options?: never;
@@ -803,6 +806,8 @@ export interface components {
             active_slide_id?: string | null;
             /** Format: date-time */
             ends_at?: string | null;
+            /** @description Authoritative whole seconds the open question has left, computed in the PostgreSQL clock domain (end_deadline minus clock_timestamp()). Present only while state is question_open; null otherwise. */
+            remaining_seconds?: number | null;
         };
         Participant: {
             /** Format: uuid */
@@ -829,6 +834,8 @@ export interface components {
             active_slide_id?: string | null;
             /** Format: date-time */
             ends_at?: string | null;
+            /** @description Authoritative whole seconds the open question has left, computed in the PostgreSQL clock domain (end_deadline minus clock_timestamp()). Present only while state is question_open; null otherwise. */
+            remaining_seconds?: number | null;
         };
         ParticipantWithScore: {
             /** Format: uuid */
@@ -2047,7 +2054,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Duplicate request; returns the original participant. */
+            /** @description Duplicate request or a restored participant; returns the existing participant record with its preserved score. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2064,7 +2071,7 @@ export interface operations {
                 };
             };
             400: components["responses"]["ValidationError"];
-            /** @description Session is not joinable or the display name is already in use. Error code display_name_taken distinguishes the latter. */
+            /** @description Session is not joinable or the display name belongs to a currently active participant. Error code display_name_taken distinguishes the latter. */
             409: {
                 headers: {
                     [name: string]: unknown;

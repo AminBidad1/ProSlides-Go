@@ -168,6 +168,11 @@ try {
   $startRequest = [guid]::NewGuid().ToString()
   Invoke-API -Method POST -Path "/api/v1/live/sessions/$($liveSession.id)/actions" -Client $loginClient -Headers @{ "X-CSRF-Token" = $loginCSRF } -Body (@{ request_id = $startRequest; expected_state_version = 1; action = "start" } | ConvertTo-Json -Compress) -ExpectedStatus 201 | Out-Null
   Invoke-API -Method POST -Path "/api/v1/live/sessions/$($liveSession.id)/actions" -Client $loginClient -Headers @{ "X-CSRF-Token" = $loginCSRF } -Body (@{ request_id = $startRequest; expected_state_version = 1; action = "start" } | ConvertTo-Json -Compress) -ExpectedStatus 200 | Out-Null
+  # A fresh credential from the same host resumes the active run instead of
+  # creating a second live session.
+  $resumedSessionRequest = [guid]::NewGuid().ToString()
+  $resumedLiveCreated = Invoke-API -Method POST -Path "/api/v1/live/sessions" -Client $loginClient -Headers @{ "X-CSRF-Token" = $loginCSRF } -Body (@{ request_id = $resumedSessionRequest; presentation_id = $createdID } | ConvertTo-Json -Compress) -ExpectedStatus 200
+  if (($resumedLiveCreated.Content | ConvertFrom-Json).id -ne $liveSession.id) { throw "Host resume did not return the active session" }
   Invoke-API -Method DELETE -Path "/api/v1/presentations/$createdID/results" -Client $loginClient -Headers @{ "X-CSRF-Token" = $loginCSRF } -ExpectedStatus 409 | Out-Null
   Invoke-API -Method DELETE -Path "/api/v1/presentations/$createdID" -Client $loginClient -Headers @{ "X-CSRF-Token" = $loginCSRF } -ExpectedStatus 409 | Out-Null
 
@@ -321,6 +326,29 @@ try {
   $resumeReader.Dispose()
   $resumeResponse.Dispose()
   $resumeRequest.Dispose()
+
+  # A participant whose last SSE stream closed can restore their existing
+  # record and score in the same session by rejoining with the same name and a
+  # new credential. An actively connected name is never taken over.
+  $disconnectSQL = "UPDATE participants SET disconnected_at=clock_timestamp() WHERE session_id='$($liveSession.id)' AND display_name='Live Player';"
+  & docker @composeArgs exec -T postgres psql -U proslides -d proslides -v ON_ERROR_STOP=1 -c $disconnectSQL | Out-Null
+  if ($LASTEXITCODE -ne 0) { throw "Could not disconnect the original participant integration fixture" }
+  $rejoinHandler = [System.Net.Http.HttpClientHandler]::new()
+  $rejoinHandler.UseProxy = $false
+  $rejoinCookies = [System.Net.CookieContainer]::new()
+  $rejoinHandler.CookieContainer = $rejoinCookies
+  $rejoinClient = [System.Net.Http.HttpClient]::new($rejoinHandler)
+  $rejoinClient.Timeout = [TimeSpan]::FromSeconds(10)
+  $rejoinRequestID = [guid]::NewGuid().ToString()
+  $restoredJoin = Invoke-API -Method POST -Path "/api/v1/live/sessions/$($liveSession.id)/join" -Client $rejoinClient -Body (@{ request_id = $rejoinRequestID; display_name = "Live Player"; avatar = "P" } | ConvertTo-Json -Compress) -ExpectedStatus 200
+  if (($restoredJoin.Content | ConvertFrom-Json).id -ne $snapshotPayload.participant.id) { throw "Rejoin did not restore the original participant record" }
+  $restoredManagerSnapshot = (Invoke-API -Method GET -Path "/api/v1/live/sessions/$($liveSession.id)/snapshot" -Client $loginClient -ExpectedStatus 200).Content | ConvertFrom-Json
+  if ($restoredManagerSnapshot.participant_count -ne 17) { throw "Rejoin changed the participant count instead of restoring the existing record" }
+  $activeNameTakeover = Invoke-API -Method POST -Path "/api/v1/live/sessions/$($liveSession.id)/join" -Client $rejoinClient -Body (@{ request_id = [guid]::NewGuid().ToString(); display_name = "Burst Player 0"; avatar = "T" } | ConvertTo-Json -Compress) -ExpectedStatus 409
+  if ((($activeNameTakeover.Content.ReadAsStringAsync().GetAwaiter().GetResult()) | ConvertFrom-Json).error -ne "display_name_taken") { throw "Active name takeover was not rejected" }
+  $rejoinClient.Dispose()
+  $rejoinHandler.Dispose()
+  $participantCookies.SetCookies($apiBaseUrl, "proslides_participant=$rejoinRequestID; Path=/")
 
   Invoke-API -Method POST -Path "/api/v1/live/sessions/$($liveSession.id)/actions" -Client $loginClient -Headers @{ "X-CSRF-Token" = $loginCSRF } -Body (@{ request_id = [guid]::NewGuid().ToString(); expected_state_version = 5; action = "open_content"; slide_id = $contentID } | ConvertTo-Json -Compress) -ExpectedStatus 201 | Out-Null
   $frozenContentSnapshot = (Invoke-API -Method GET -Path "/api/v1/live/sessions/$($liveSession.id)/snapshot" -Client $loginClient -ExpectedStatus 200).Content | ConvertFrom-Json

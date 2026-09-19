@@ -95,6 +95,25 @@ func (s *PostgresStore) Join(c context.Context, session, request, name, avatar s
 	if e != nil {
 		return p, false, e
 	}
+	// Rejoin restore: within the same session, a participant whose last SSE
+	// stream closed (disconnected_at is set) can reclaim their existing record
+	// and score by rejoining with the same display name, even with a new
+	// credential. The credential is rotated so the rejoined device remains
+	// authorized, and participant_count is unchanged because no new row commits.
+	// A display name still held by an actively connected participant is never
+	// taken over; that join falls through to the INSERT and conflicts on name.
+	e = tx.QueryRow(c, `UPDATE participants
+		SET request_id=$3, token_hash=$4, avatar=$5, disconnected_at=NULL
+		WHERE session_id=$1 AND display_name=$2 AND disconnected_at IS NOT NULL
+		RETURNING id::text, display_name, COALESCE(avatar,'')`, session, name, request, hash, avatar).Scan(&p.ID, &p.DisplayName, &p.Avatar)
+	if e == nil {
+		if err := tx.Commit(c); err != nil {
+			return p, false, err
+		}
+		return p, true, nil
+	} else if !errors.Is(e, pgx.ErrNoRows) {
+		return p, false, mapPG(e)
+	}
 	e = tx.QueryRow(c, `INSERT INTO participants(session_id,display_name,avatar,request_id,token_hash) VALUES($1,$2,$3,$4,$5) RETURNING id::text,display_name,COALESCE(avatar,'')`, session, name, avatar, request, hash).Scan(&p.ID, &p.DisplayName, &p.Avatar)
 	if e != nil {
 		if isUniqueViolation(e) {
@@ -112,6 +131,10 @@ func (s *PostgresStore) Join(c context.Context, session, request, name, avatar s
 		return p, false, e
 	}
 	return p, false, nil
+}
+func (s *PostgresStore) SetParticipantPresence(c context.Context, session string, hash []byte, disconnected bool) error {
+	_, e := s.pool.Exec(c, `UPDATE participants SET disconnected_at=CASE WHEN $3 THEN clock_timestamp() ELSE NULL END WHERE session_id=$1 AND token_hash=$2`, session, hash, disconnected)
+	return e
 }
 func (s *PostgresStore) ApplyAction(c context.Context, session, host, request string, expected int64, action, slide string, duration int) (Session, bool, error) {
 	var out Session
@@ -401,14 +424,16 @@ func (s *PostgresStore) ParticipantSnapshot(c context.Context, session string, h
 		return x, e
 	}
 	var full Session
-	e = tx.QueryRow(c, `SELECT l.id::text,l.presentation_id::text,l.host_id::text,l.join_code,l.state,l.state_version,l.active_slide_id::text,l.ends_at,p.id::text,p.display_name,COALESCE(p.avatar,''),p.score,
+	e = tx.QueryRow(c, `SELECT l.id::text,l.presentation_id::text,l.host_id::text,l.join_code,l.state,l.state_version,l.active_slide_id::text,l.ends_at,
+		CASE WHEN l.state='question_open' AND l.ends_at IS NOT NULL THEN GREATEST(0,ROUND(EXTRACT(EPOCH FROM l.ends_at-clock_timestamp())))::int ELSE NULL END,
+		p.id::text,p.display_name,COALESCE(p.avatar,''),p.score,
 		CASE WHEN l.state IN ('leaderboard','ended') THEN (SELECT count(*)::int+1 FROM participants ranked WHERE ranked.session_id=p.session_id AND (ranked.score>p.score OR (ranked.score=p.score AND (ranked.joined_at,ranked.id)<(p.joined_at,p.id)))) END,
 		(SELECT count(*)::int FROM participants counted WHERE counted.session_id=l.id),
 		COALESCE((SELECT max(event_id) FROM live_events WHERE session_id=l.id),0),
 		(SELECT jsonb_build_object('id',slide_id,'position',position,'kind',kind,'content',content) FROM live_session_slides WHERE session_id=l.id AND slide_id=l.active_slide_id)
 		FROM live_sessions l JOIN participants p ON p.session_id=l.id
 		WHERE l.id=$1 AND p.token_hash=$2`, session, hash).Scan(
-		&full.ID, &full.PresentationID, &full.HostID, &full.JoinCode, &full.State, &full.StateVersion, &full.ActiveSlideID, &full.EndsAt,
+		&full.ID, &full.PresentationID, &full.HostID, &full.JoinCode, &full.State, &full.StateVersion, &full.ActiveSlideID, &full.EndsAt, &full.RemainingSeconds,
 		&x.Participant.ID, &x.Participant.DisplayName, &x.Participant.Avatar, &x.Participant.Score, &x.Participant.Rank,
 		&x.ParticipantCount, &x.LastEventID, &x.ActiveSlide,
 	)
@@ -442,11 +467,12 @@ func (s *PostgresStore) ManagerSnapshot(c context.Context, session, manager stri
 		return x, e
 	}
 	e = tx.QueryRow(c, `SELECT id::text,presentation_id::text,host_id::text,join_code,state,state_version,active_slide_id::text,ends_at,
+		CASE WHEN state='question_open' AND ends_at IS NOT NULL THEN GREATEST(0,ROUND(EXTRACT(EPOCH FROM ends_at-clock_timestamp())))::int ELSE NULL END,
 		(SELECT count(*)::int FROM participants WHERE session_id=live_sessions.id),
 		COALESCE((SELECT max(event_id) FROM live_events WHERE session_id=live_sessions.id),0),
 		(SELECT jsonb_build_object('id',slide_id,'position',position,'kind',kind,'content',content) FROM live_session_slides WHERE session_id=live_sessions.id AND slide_id=live_sessions.active_slide_id)
 		FROM live_sessions WHERE id=$1 AND host_id=$2`, session, manager).Scan(
-		&x.Session.ID, &x.Session.PresentationID, &x.Session.HostID, &x.Session.JoinCode, &x.Session.State, &x.Session.StateVersion, &x.Session.ActiveSlideID, &x.Session.EndsAt,
+		&x.Session.ID, &x.Session.PresentationID, &x.Session.HostID, &x.Session.JoinCode, &x.Session.State, &x.Session.StateVersion, &x.Session.ActiveSlideID, &x.Session.EndsAt, &x.Session.RemainingSeconds,
 		&x.ParticipantCount, &x.LastEventID, &x.ActiveSlide,
 	)
 	if errors.Is(e, pgx.ErrNoRows) {
@@ -548,7 +574,7 @@ func stripCorrectnessMetadata(value any) {
 }
 
 func publicSession(session Session) PublicSession {
-	return PublicSession{ID: session.ID, PresentationID: session.PresentationID, State: session.State, StateVersion: session.StateVersion, ActiveSlideID: session.ActiveSlideID, EndsAt: session.EndsAt}
+	return PublicSession{ID: session.ID, PresentationID: session.PresentationID, State: session.State, StateVersion: session.StateVersion, ActiveSlideID: session.ActiveSlideID, EndsAt: session.EndsAt, RemainingSeconds: session.RemainingSeconds}
 }
 func (s *PostgresStore) Events(c context.Context, session string, after int64, limit int) ([]Event, error) {
 	rows, e := s.pool.Query(c, `SELECT event_id,schema_version,session_id::text,state_version,name,payload,occurred_at FROM live_events WHERE session_id=$1 AND event_id>$2 ORDER BY event_id LIMIT $3`, session, after, limit)

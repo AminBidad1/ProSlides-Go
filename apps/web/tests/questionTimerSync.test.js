@@ -100,3 +100,35 @@ test("timer without run_id reuses latest question timer anchor", () => {
   assert.equal(resumedWithoutRunId.remainingSeconds < 30, true);
   assert.equal(resumedWithoutRunId.remainingSeconds > 0, true);
 });
+
+test("a reconnected player anchors on the server-computed remaining_seconds even on a skewed client clock", () => {
+  globalThis.localStorage = createStorage();
+
+  const roomId = "44";
+  const role = "player";
+  const questionTime = 30;
+  const nowMs = 7_000_000_000;
+
+  // Reconnect mid-question: the server deadline is minutes away and the client
+  // clock is far behind, so a pure ends_at - Date.now() derivation would wrongly
+  // suggest a near-full timer. The server remaining_seconds must win instead.
+  const resolved = resolveQuestionTimer({
+    question: {
+      question_id: 55,
+      run_id: 321,
+      question_time: questionTime,
+      remaining_seconds: 11,
+      started_at: new Date(nowMs - 5_000_000).toISOString(),
+    },
+    roomId,
+    role,
+    nowMs,
+  });
+
+  assert.equal(resolved.totalSeconds, questionTime);
+  assert.equal(resolved.remainingSeconds, 11);
+  assert.equal(
+    resolved.anchorStartMs,
+    nowMs - (questionTime - 11) * 1000,
+  );
+});
