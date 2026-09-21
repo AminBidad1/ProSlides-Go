@@ -251,7 +251,7 @@ export default function Sidebar({
 
   // ??? slide ???? ?????? ???????? ?? ???? ???
   if (!slide || !localSlide) {
-    return <div className="h-full overflow-y-auto p-4">No Slide Selected</div>;
+    return <div className="h-full overflow-y-auto p-4">اسلایدی انتخاب نشده است</div>;
   }
 
   // ????? ??? ????
@@ -268,14 +268,14 @@ export default function Sidebar({
   // ????? ???? ????? ????
   const handleAddOption = () => {
     if (options.length >= 100) {
-      notify("A question can have at most 100 options.", "warning");
+      notify("هر سؤال حداکثر ۱۰۰ گزینه می‌تواند داشته باشد.", "warning");
       return;
     }
     const newId = globalThis.crypto.randomUUID();
 
     const newOption = {
       option_id: newId,
-      text: `Option ${options.length + 1}`,
+      text: `گزینه ${options.length + 1}`,
       is_correct: options.length === 0 && questionType === "multiple",
       image_url: "",
       order: options.length + 1,
@@ -512,12 +512,12 @@ export default function Sidebar({
       console.error("Error saving changes:", error);
       if (error.response?.status === 409 && error.response?.data?.error === "edit_conflict") {
         if (onConflict) await onConflict();
-        notify("This question was changed elsewhere. The latest version has been loaded.", "warning");
+        notify("این سؤال جای دیگری تغییر کرده بود؛ آخرین نسخه بارگذاری شد.", "warning");
         onClose(true);
       } else if (error.response?.status === 409 && error.response?.data?.error === "slide_has_results") {
-        notify("This question already has results. Reset the presentation results before editing it.", "warning");
+        notify("این سؤال نتیجه زنده دارد. پیش از ویرایش، نتایج ارائه را بازنشانی کنید.", "warning");
       } else {
-        notify("Failed to save changes. Please try again.", "error");
+        notify("ذخیره تغییرات انجام نشد. دوباره تلاش کنید.", "error");
       }
     } finally {
       setIsSaving(false);
@@ -529,13 +529,13 @@ export default function Sidebar({
     if (hasChanges) {
       setConfirmDialog({
         isOpen: true,
-        title: "Unsaved Changes",
-        description: "You have unsaved changes. Are you sure you want to cancel?",
+        title: "تغییرات ذخیره‌نشده",
+        description: "تغییرات ذخیره‌نشده‌ای دارید. آن‌ها را کنار بگذارید؟",
         onConfirm: () => {
           resetToOriginal();
         },
-        confirmText: "Discard Changes",
-        cancelText: "Keep Editing",
+        confirmText: "رد تغییرات",
+        cancelText: "ادامه ویرایش",
       });
       return;
     }
@@ -640,7 +640,7 @@ export default function Sidebar({
             <button
               onClick={onClose}
               className="text-gray-500 hover:text-gray-700"
-            >Cancel</button>
+            >انصراف</button>
           </div>
 
           <div className="space-y-4">
@@ -688,12 +688,12 @@ export default function Sidebar({
               <button
                 onClick={onClose}
                 className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
-              >Cancel</button>
+              >انصراف</button>
               <button
                 onClick={handleSubmit}
                 disabled={!preview}
                 className="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-              >Save</button>
+              >ذخیره</button>
             </div>
           </div>
         </div>
@@ -709,10 +709,10 @@ export default function Sidebar({
       <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <div>
-            <h3 className="font-semibold text-gray-900">Slide Settings</h3>
+            <h3 className="font-semibold text-gray-900">تنظیمات اسلاید</h3>
             {hasChanges && (
               <p className="text-xs text-amber-600 mt-1">
-                You have unsaved changes
+                تغییرات ذخیره‌نشده دارید
               </p>
             )}
           </div>
@@ -733,7 +733,7 @@ export default function Sidebar({
         <div className="space-y-6">
           {/* Question Text */}
           <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Question Text :</h3>
+            <h3 className="text-sm font-medium text-gray-700 mb-3">متن سؤال :</h3>
             <div className="flex items-center gap-2">
                 <input
                   type="text"
@@ -741,7 +741,7 @@ export default function Sidebar({
                   onChange={(e) => handleQuestionChange(e.target.value)}
                   ref={questionInputRef}
                   className="flex-1 border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent text-center"
-                  placeholder="Enter your question here..."
+                  placeholder="سؤال خود را اینجا بنویسید…"
                   disabled={isSaving}
                 />
               <div className="flex items-center gap-1">
@@ -758,7 +758,7 @@ export default function Sidebar({
                   <div className="relative group">
                     <img
                       src={question.question_image}
-                      alt="Question"
+                      alt="سؤال"
                       className="w-10 h-10 object-cover rounded-md border border-gray-300"
                       onError={(e) => {
                         e.target.style.display = 'none';
@@ -786,8 +786,8 @@ export default function Sidebar({
               {questionType && (
                 <div className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700 font-medium">
                   {questionType === "single"
-                    ? "Single Choice"
-                    : "Multiple Choice"}
+                    ? "تک‌گزینه‌ای"
+                    : "چندگزینه‌ای"}
                 </div>
               )}
             </div>
@@ -818,7 +818,7 @@ export default function Sidebar({
                             <div
                               {...provided.dragHandleProps}
                               className="p-2 bg-gray-100 rounded-lg cursor-grab hover:bg-gray-200 transition-colors border border-gray-200"
-                              title="Drag to reorder"
+                              title="برای جابه‌جایی بکشید"
                             >
                               <GripVertical className="w-4 h-4 text-gray-600" />
                             </div>
@@ -831,7 +831,7 @@ export default function Sidebar({
                                   ? "bg-green-100 border-green-200 text-green-600 hover:bg-green-200"
                                   : "bg-gray-100 border-gray-200 text-gray-500 hover:bg-gray-200"
                               }`}
-                              title="Mark as correct"
+                              title="علامت‌گذاری به‌عنوان پاسخ صحیح"
                               disabled={isSaving}
                             >
                               {opt.is_correct ? (
@@ -854,7 +854,7 @@ export default function Sidebar({
                                   )
                                 }
                                 className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent text-center"
-                                placeholder="Option text..."
+                                placeholder="متن گزینه…"
                                 disabled={isSaving}
                               />
 
@@ -862,7 +862,7 @@ export default function Sidebar({
                                 <div className="relative mt-1 w-fit group">
                                   <img
                                     src={opt.image_url}
-                                    alt="Option"
+                                    alt="گزینه"
                                     className="w-16 h-16 object-cover rounded-lg border border-gray-300"
                                     onError={(e) => {
                                       e.target.style.display = 'none';
@@ -897,7 +897,7 @@ export default function Sidebar({
                             <button
                               onClick={() => handleDeleteOption(opt.option_id)}
                               className="p-2 bg-gray-100 rounded-lg hover:bg-red-100 text-red-600 hover:text-red-700 transition-colors border border-gray-200"
-                              title="Delete option"
+                              title="حذف گزینه"
                               disabled={isSaving}
                             >
                               <Trash2 className="w-4 h-4" />
@@ -927,7 +927,7 @@ export default function Sidebar({
               "
             >
               <Plus className="w-4 h-4" />
-              <span className="text-sm">Add Option</span>
+              <span className="text-sm">افزودن گزینه</span>
             </button>
           </div>
 
@@ -942,7 +942,7 @@ export default function Sidebar({
 
           {/* Question Time */}
           <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Question Time :</h3>
+            <h3 className="text-sm font-medium text-gray-700 mb-3">زمان سؤال :</h3>
             <div className="flex items-center gap-3">
               <input
                 type="text"
@@ -960,19 +960,19 @@ export default function Sidebar({
                 disabled={isSaving}
               />
               <div>
-                <span className="text-sm font-medium text-gray-700">seconds</span>
-                <p className="text-xs text-gray-500 mt-1">Time given to answer this question</p>
+                <span className="text-sm font-medium text-gray-700">ثانیه</span>
+                <p className="text-xs text-gray-500 mt-1">زمان پاسخ‌دهی به این سؤال</p>
               </div>
             </div>
           </div>
 
           {/* Points */}
           <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Scoring :</h3>
+            <h3 className="text-sm font-medium text-gray-700 mb-3">امتیازدهی :</h3>
             
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Max Points</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1">حداکثر امتیاز</label>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -988,10 +988,10 @@ export default function Sidebar({
                   className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                   disabled={isSaving}
                 />
-                <p className="text-xs text-gray-500 mt-1">Points for answering at the start</p>
+                <p className="text-xs text-gray-500 mt-1">امتیاز پاسخ در شروع</p>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Min Points</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1">حداقل امتیاز</label>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -1009,14 +1009,14 @@ export default function Sidebar({
                   }`}
                   disabled={isSaving || !question.faster_answers_more_points}
                 />
-                <p className="text-xs text-gray-500 mt-1">Points for answering at the end</p>
+                <p className="text-xs text-gray-500 mt-1">امتیاز پاسخ در پایان</p>
               </div>
             </div>
 
             {/* Faster answers get more points toggle */}
             <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg bg-gray-50 mb-3">
               <label className="flex items-center gap-3 cursor-pointer flex-1">
-                <span className="text-sm font-medium text-gray-700">Faster answers get more points</span>
+                <span className="text-sm font-medium text-gray-700">پاسخ سریع‌تر، امتیاز بیشتر</span>
               </label>
               <input
                 type="checkbox"
@@ -1036,7 +1036,7 @@ export default function Sidebar({
               <label className={`flex items-center gap-3 flex-1 ${
                 questionType === "single" ? "cursor-not-allowed opacity-50" : "cursor-pointer"
               }`}>
-                <span className="text-sm font-medium text-gray-700">Partial scoring</span>
+                <span className="text-sm font-medium text-gray-700">امتیازدهی جزئی</span>
               </label>
               <input
                 type="checkbox"
@@ -1052,7 +1052,7 @@ export default function Sidebar({
             </div>
             {questionType === "single" && (
               <p className="text-xs text-gray-500 mt-2 ml-1">
-                Partial scoring is not available for Single Choice questions
+                امتیازدهی جزئی برای سؤال تک‌گزینه‌ای در دسترس نیست
               </p>
             )}
           </div>
@@ -1071,8 +1071,8 @@ export default function Sidebar({
                 disabled={isSaving}
               />
               <div>
-                <span className="text-sm font-medium text-gray-800 block">Show Leaderboard</span>
-                <p className="text-xs text-gray-600 mt-1">Display leaderboard after this question ends</p>
+                <span className="text-sm font-medium text-gray-800 block">نمایش جدول امتیازات</span>
+                <p className="text-xs text-gray-600 mt-1">نمایش جدول امتیازات پس از پایان این سؤال</p>
               </div>
             </label>
           </div>
@@ -1086,11 +1086,11 @@ export default function Sidebar({
           <div className="flex items-center gap-2 mb-2">
             {hasChanges && (
               <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-1 rounded-full">
-                Unsaved changes
+                تغییرات ذخیره‌نشده
               </span>
             )}
             {isSaving && (
-              <span className="text-xs text-blue-600">Saving in progress…</span>
+              <span className="text-xs text-blue-600">در حال ذخیره…</span>
             )}
           </div>
           <div className="flex gap-3">
@@ -1098,7 +1098,7 @@ export default function Sidebar({
               onClick={handleCancel}
               disabled={isSaving}
               className="flex-1 py-2.5 px-4 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg font-medium transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            >Cancel</button>
+            >انصراف</button>
             <button
               onClick={handleSubmit}
               disabled={!hasChanges || isSaving}
@@ -1107,18 +1107,18 @@ export default function Sidebar({
                   ? "bg-pink-600 text-white hover:bg-pink-700"
                   : "bg-gray-100 text-gray-400 cursor-not-allowed"
               }`}
-            >Save</button>
+            >ذخیره</button>
           </div>
         </div>
       ) : (
         <div className="hidden md:block mt-8 pt-4 pb-4 border-t border-gray-200 px-4">
           <div className="flex items-center justify-center gap-2 text-xs font-semibold text-emerald-600">
             <CheckCircle2 className="w-4 h-4" />
-            All changes saved
+            همه تغییرات ذخیره شد
           </div>
           {lastSavedAt && (
             <p className="text-xs text-gray-400 text-center mt-1">
-              Last saved at {lastSavedAt.toLocaleTimeString()}
+              آخرین ذخیره در {lastSavedAt.toLocaleTimeString()}
             </p>
           )}
         </div>
@@ -1130,11 +1130,11 @@ export default function Sidebar({
           <div className="flex items-center gap-2 mb-2">
             {hasChanges && (
               <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-1 rounded-full">
-                Unsaved changes
+                تغییرات ذخیره‌نشده
               </span>
             )}
             {isSaving && (
-              <span className="text-xs text-blue-600">Saving in progress.</span>
+              <span className="text-xs text-blue-600">در حال ذخیره…</span>
             )}
           </div>
           <div className="flex gap-3">
@@ -1142,7 +1142,7 @@ export default function Sidebar({
               onClick={handleCancel}
               disabled={isSaving}
               className="flex-1 py-2.5 px-4 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg font-medium transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            >Cancel</button>
+            >انصراف</button>
             <button
               onClick={handleSubmit}
               disabled={!hasChanges || isSaving}
@@ -1151,18 +1151,18 @@ export default function Sidebar({
                   ? "bg-pink-600 text-white hover:bg-pink-700 shadow-sm"
                   : "bg-gray-100 text-gray-400 cursor-not-allowed"
               }`}
-            >Save</button>
+            >ذخیره</button>
           </div>
         </div>
       ) : (
         <div className="md:hidden sticky bottom-0 bg-white border-t border-gray-200 mt-6 pt-3 pb-[calc(0.75rem+3.5rem+env(safe-area-inset-bottom))] px-4 shadow-[0_-6px_16px_rgba(0,0,0,0.08)] z-20">
           <div className="flex items-center justify-center gap-2 text-xs font-semibold text-emerald-600">
             <CheckCircle2 className="w-4 h-4" />
-            All changes saved
+            همه تغییرات ذخیره شد
           </div>
           {lastSavedAt && (
             <p className="text-xs text-gray-400 text-center mt-1">
-              Last saved at {lastSavedAt.toLocaleTimeString()}
+              آخرین ذخیره در {lastSavedAt.toLocaleTimeString()}
             </p>
           )}
         </div>

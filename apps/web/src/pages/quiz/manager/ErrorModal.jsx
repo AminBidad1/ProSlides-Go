@@ -13,7 +13,7 @@ export const ErrorModal = ({ isOpen, onClose, message }) => {
                 </svg>
               </div>
             </div>
-            <h3 className="ml-3 text-lg font-medium text-gray-900">Error</h3>
+            <h3 className="ml-3 text-lg font-medium text-gray-900">خطا</h3>
           </div>
           
           <p className="text-slate-700 mb-6">{message}</p>
@@ -23,7 +23,7 @@ export const ErrorModal = ({ isOpen, onClose, message }) => {
               onClick={onClose}
               className="px-4 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
             >
-              OK
+              باشه
             </button>
           </div>
         </div>

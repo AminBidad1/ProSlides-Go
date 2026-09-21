@@ -61,12 +61,12 @@ export default function AudioPanel({
   // Audio link testing and preview
   const testAudioLoad = () => {
     if (!audioUrl.trim()) {
-      setError("Please enter the link.");
+      setError("لطفاً پیوند را وارد کنید.");
       return;
     }
 
     if (!audioUrl.startsWith("http://") && !audioUrl.startsWith("https://")) {
-      setError("The link must start with http:// or https://");
+      setError("پیوند باید با http:// یا https:// شروع شود.");
       return;
     }
 
@@ -81,7 +81,7 @@ export default function AudioPanel({
     };
 
     audio.onerror = () => {
-      setError("Invalid audio link or cannot be loaded.");
+      setError("پیوند صوتی نامعتبر است یا قابل بارگذاری نیست.");
       setLoading(false);
     };
 
@@ -89,7 +89,7 @@ export default function AudioPanel({
 
     setTimeout(() => {
       if (audio.readyState === 0) {
-        setError("Audio loading took too long. Please try another link.");
+        setError("بارگذاری صدا خیلی طول کشید. لطفاً پیوند دیگری را امتحان کنید.");
         setLoading(false);
       }
     }, 5000);
@@ -147,7 +147,7 @@ export default function AudioPanel({
     }
 
     if (!quiz?.quiz_id) {
-      setErrorForModal("Quiz ID is required.");
+      setErrorForModal("شناسه آزمون الزامی است.");
       setErrorModalOpen(true);
       return;
     }
@@ -168,7 +168,7 @@ export default function AudioPanel({
       onClose();
 
       if (setAudioSaveNotice) {
-        setAudioSaveNotice("Audio changed successfully.");
+        setAudioSaveNotice("صدا با موفقیت تغییر کرد.");
         setTimeout(() => {
           setAudioSaveNotice(null);
         }, 2500);
@@ -182,9 +182,9 @@ export default function AudioPanel({
     } catch (saveError) {
       if (saveError.response?.status === 409 && saveError.response?.data?.error === "edit_conflict") {
         if (onConflict) await onConflict();
-        setErrorForModal("This presentation changed elsewhere. The latest version has been loaded.");
+        setErrorForModal("این ارائه در جای دیگر تغییر کرد. آخرین نسخه بارگذاری شد.");
       } else {
-        setErrorForModal("Failed to save changes. Please try again.");
+        setErrorForModal("ذخیره تغییرات انجام نشد. دوباره تلاش کنید.");
       }
       setErrorModalOpen(true);
       setSaving(false);
@@ -197,13 +197,13 @@ export default function AudioPanel({
     if (hasChanges) {
       setConfirmDialog({
         isOpen: true,
-        title: "Unsaved Changes",
-        description: "You have unsaved changes. Are you sure you want to cancel?",
+        title: "تغییرات ذخیره‌نشده",
+        description: "تغییرات ذخیره‌نشده‌ای دارید. آن‌ها را کنار بگذارید؟",
         onConfirm: () => {
           resetAudioToOriginal();
         },
-        confirmText: "Discard Changes",
-        cancelText: "Keep Editing",
+        confirmText: "رد تغییرات",
+        cancelText: "ادامه ویرایش",
       });
       return;
     }
@@ -246,10 +246,10 @@ export default function AudioPanel({
       <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <div>
-            <h3 className="font-semibold text-gray-900">Audio</h3>
+            <h3 className="font-semibold text-gray-900">صدا</h3>
             {hasChanges && (
               <p className="text-xs text-amber-600 mt-1">
-                You have unsaved changes
+                تغییرات ذخیره‌نشده دارید
               </p>
             )}
           </div>
@@ -267,7 +267,7 @@ export default function AudioPanel({
       <div className="space-y-6">
         {/* --------------- Upload Section --------------- */}
         <div className="space-y-4">
-          <h4 className="font-medium text-gray-900">Enter Audio URL :</h4>
+          <h4 className="font-medium text-gray-900">نشانی صدا را وارد کنید :</h4>
 
           <div className="space-y-3">
             <input
@@ -284,7 +284,7 @@ export default function AudioPanel({
               disabled={loading || !audioUrl.trim()}
               className="w-full px-4 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
             >
-              {loading ? "Checking..." : "Test & Preview Audio"}
+              {loading ? "در حال بررسی…" : "آزمایش و پیش‌نمایش صدا"}
             </button>
 
             {error && (
@@ -293,9 +293,9 @@ export default function AudioPanel({
           </div>
 
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-            <h5 className="font-medium text-amber-800 text-sm mb-1">?? Recommendation</h5>
+            <h5 className="font-medium text-amber-800 text-sm mb-1">پیشنهاد</h5>
             <p className="text-amber-700 text-xs">
-              Use short audio clips (under 30 seconds) for better experience. Audio will loop automatically.
+              برای تجربه بهتر از صداهای کوتاه (زیر ۳۰ ثانیه) استفاده کنید. صدا به‌صورت خودکار تکرار می‌شود.
             </p>
           </div>
         </div>
@@ -303,7 +303,7 @@ export default function AudioPanel({
 
         {/* --------------- Current Audio Section --------------- */}
         <div className="space-y-4">
-          <h4 className="font-medium text-gray-900">Current Audio :</h4>
+          <h4 className="font-medium text-gray-900">صدای فعلی :</h4>
           {localAudio ? (
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
               <div className="flex items-center gap-3 mb-4">
@@ -312,10 +312,10 @@ export default function AudioPanel({
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-gray-900 text-sm">
-                    {localAudio.split("/").pop().substring(0, 30) || "Audio link"}
+                    {localAudio.split("/").pop().substring(0, 30) || "پیوند صدا"}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
-                    {hasChanges ? "Unsaved changes" : "Saved"}
+                    {hasChanges ? "تغییرات ذخیره‌نشده" : "ذخیره شد"}
                   </p>
                 </div>
               </div>
@@ -352,15 +352,15 @@ export default function AudioPanel({
                   className="w-full flex items-center justify-center gap-2 py-2.5 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
-                  Remove Audio
+                  حذف صدا
                 </button>
               </div>
             </div>
           ) : (
             <div className="bg-gray-50 rounded-xl p-8 text-center border-2 border-dashed border-gray-200">
               <Music className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <p className="text-gray-600 text-sm mb-2">No audio selected</p>
-              <p className="text-gray-500 text-xs">Upload a background music for this quiz</p>
+              <p className="text-gray-600 text-sm mb-2">صدایی انتخاب نشده است</p>
+              <p className="text-gray-500 text-xs">برای این آزمون، موسیقی پس‌زمینه بارگذاری کنید.</p>
             </div>
           )}
         </div>
@@ -373,7 +373,7 @@ export default function AudioPanel({
               onClick={handleCancel}
               className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg font-medium transition-colors"
             >
-              Cancel
+              انصراف
             </button>
 
             <button
@@ -388,12 +388,12 @@ export default function AudioPanel({
               {saving ? (
                 <>
                   <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
-                  Saving...
+                  در حال ذخیره…
                 </>
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  Save Changes
+                  ذخیره تغییرات
                 </>
               )}
             </button>
@@ -401,8 +401,8 @@ export default function AudioPanel({
           
           <p className="text-xs text-gray-500 text-center mt-3">
             {hasChanges 
-              ? "Click 'Save Changes' to store music URL"
-              : "No changes to save"
+              ? "برای ذخیره نشانی موسیقی، دکمه «ذخیره تغییرات» را بزنید"
+              : "تغییری برای ذخیره وجود ندارد"
             }
           </p>
         </div>

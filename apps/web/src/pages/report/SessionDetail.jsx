@@ -12,7 +12,7 @@ export default function SessionDetail() {
   const [activeTab, setActiveTab] = useState("participants");
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [loggedInUser] = useState(
-    () => localStorage.getItem("auth.name") || "You"
+    () => localStorage.getItem("auth.name") || "شما"
   );
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -260,7 +260,7 @@ export default function SessionDetail() {
                 disabled={isRefreshing}
                 className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                {isRefreshing ? "Refreshing..." : "Refresh"}
+                {isRefreshing ? "در حال به‌روزرسانی…" : "به‌روزرسانی"}
               </button>
             </div>
           </div>
@@ -325,14 +325,14 @@ export default function SessionDetail() {
                 {/* Loading State */}
                 {loading && (
                   <div className="text-center py-8 text-gray-500">
-                    Loading leaderboard data...
+                    در حال بارگذاری داده جدول امتیازات…
                   </div>
                 )}
 
                 {/* Error State */}
                 {error && (
                   <div className="text-center py-8 text-red-500">
-                    Error loading data: {error}
+                    خطا در بارگذاری داده: {error}
                   </div>
                 )}
 
@@ -362,7 +362,7 @@ export default function SessionDetail() {
                                 calculateScorePercentage(scoreValue);
                               // Clean up player name and avatar (remove quotes if present)
                               const cleanName = String(
-                                participant.player_name || "Player"
+                                participant.player_name || "بازیکن"
                               ).replace(/^"|"$/g, "");
                               const cleanAvatar = String(
                                 participant.avatar || ""
@@ -477,8 +477,8 @@ export default function SessionDetail() {
                                   <Trophy className="h-8 w-8 text-slate-300" />
                                   <span className="text-sm font-medium text-slate-600">
                                     {participantSearchQuery
-                                      ? "No participants match your search."
-                                      : "No participants yet."}
+                              ? "هیچ شرکت‌کننده‌ای با این جست‌وجو یافت نشد."
+                              : "هنوز شرکت‌کننده‌ای وجود ندارد."}
                                   </span>
                                 </div>
                               </td>
@@ -495,7 +495,7 @@ export default function SessionDetail() {
                           const scorePercentage =
                             calculateScorePercentage(scoreValue);
                           const cleanName = String(
-                            participant.player_name || "Player"
+                            participant.player_name || "بازیکن"
                           ).replace(/^"|"$/g, "");
                           const cleanAvatar = String(
                             participant.avatar || ""
@@ -562,15 +562,15 @@ export default function SessionDetail() {
                       ) : (
                         <div className="rounded-xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
                           {participantSearchQuery
-                            ? "No participants match your search."
-                            : "No participants yet."}
+                            ? "هیچ شرکت‌کننده‌ای با این جست‌وجو یافت نشد."
+                            : "هنوز شرکت‌کننده‌ای وجود ندارد."}
                         </div>
                       )}
                     </div>
 
                     {/* Footer */}
                     <div className="text-sm text-slate-600 mt-6">
-                      Total {totalParticipants} participant(s)
+                      مجموع {totalParticipants} شرکت‌کننده
                     </div>
                     {hasMore && (
                       <button
@@ -578,7 +578,7 @@ export default function SessionDetail() {
                         disabled={isRefreshing}
                         className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
                       >
-                        {isRefreshing ? "Loading..." : "Load 100 more"}
+                        {isRefreshing ? "در حال بارگذاری…" : "بارگذاری ۱۰۰ مورد بیشتر"}
                       </button>
                     )}
                   </>
@@ -588,7 +588,7 @@ export default function SessionDetail() {
 
             {activeTab === "feedback" && (
               <div className="px-6 pb-6 text-sm text-gray-600">
-                No feedback yet.
+                هنوز بازخوردی ثبت نشده است.
               </div>
             )}
           </div>

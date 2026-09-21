@@ -73,12 +73,12 @@ export default function DesignPanel({
   // Image link testing and preview
   const testImageLoad = () => {
     if (!imageUrl.trim()) {
-      setError("Please enter the link.");
+      setError("لطفاً پیوند را وارد کنید.");
       return;
     }
 
     if (!imageUrl.startsWith("http://") && !imageUrl.startsWith("https://")) {
-      setError("The link must start with http:// or https://");
+      setError("پیوند باید با http:// یا https:// شروع شود.");
       return;
     }
 
@@ -97,7 +97,7 @@ export default function DesignPanel({
     };
     
     img.onerror = () => {
-      setError("Invalid image link or cannot be loaded.");
+      setError("پیوند تصویر نامعتبر است یا قابل بارگذاری نیست.");
       setPreview(null);
       setLocalQuiz({
         ...localQuiz,
@@ -111,7 +111,7 @@ export default function DesignPanel({
 
     setTimeout(() => {
       if (!img.complete) {
-        setError("Image loading took too long. Please try another link.");
+        setError("بارگذاری تصویر خیلی طول کشید. لطفاً پیوند دیگری را امتحان کنید.");
         setLoading(false);
       }
     }, 5000);
@@ -144,14 +144,14 @@ export default function DesignPanel({
 
   // Default colors
   const colorOptions = [
-    { name: "White", value: "#ffffff" },
-    { name: "Light Blue", value: "#eff6ff" },
-    { name: "Light Pink", value: "#fdf2f8" },
-    { name: "Light Gray", value: "#f3f4f6" },
-    { name: "Beige", value: "#fafaf0" },
-    { name: "Mint", value: "#f0fdf4" },
-    { name: "Lavender", value: "#f5f3ff" },
-    { name: "Custom", value: "custom" },
+    { name: "سفید", value: "#ffffff" },
+    { name: "آبی روشن", value: "#eff6ff" },
+    { name: "صورتی روشن", value: "#fdf2f8" },
+    { name: "خاکستری روشن", value: "#f3f4f6" },
+    { name: "بژ", value: "#fafaf0" },
+    { name: "نعنایی", value: "#f0fdf4" },
+    { name: "یاسی", value: "#f5f3ff" },
+    { name: "سفارشی", value: "custom" },
   ];
 
   
@@ -248,7 +248,7 @@ export default function DesignPanel({
       onClose();
 
       if (setBackgroundSaveNotice) {
-        setBackgroundSaveNotice("Quiz background changed successfully.");
+        setBackgroundSaveNotice("پس‌زمینه ارائه با موفقیت تغییر کرد.");
         setTimeout(() => {
           setBackgroundSaveNotice(null);
         }, 2500);
@@ -263,9 +263,9 @@ export default function DesignPanel({
       setSaving(false);
       if (saveError.response?.status === 409 && saveError.response?.data?.error === "edit_conflict") {
         if (onConflict) await onConflict();
-        setErrorForModal("This presentation changed elsewhere. The latest version has been loaded.");
+        setErrorForModal("این ارائه در جای دیگر تغییر کرد. آخرین نسخه بارگذاری شد.");
       } else {
-        setErrorForModal("Failed to save changes. Please try again.");
+        setErrorForModal("ذخیره تغییرات انجام نشد. دوباره تلاش کنید.");
       }
       setErrorModalOpen(true);
     }
@@ -277,13 +277,13 @@ export default function DesignPanel({
     if (hasChanges) {
       setConfirmDialog({
         isOpen: true,
-        title: "Unsaved Changes",
-        description: "You have unsaved changes. Are you sure you want to cancel?",
+        title: "تغییرات ذخیره‌نشده",
+        description: "تغییرات ذخیره‌نشده‌ای دارید. آن‌ها را کنار بگذارید؟",
         onConfirm: () => {
           resetToOriginal();
         },
-        confirmText: "Discard Changes",
-        cancelText: "Keep Editing",
+        confirmText: "رد تغییرات",
+        cancelText: "ادامه ویرایش",
       });
       return;
     }
@@ -359,10 +359,10 @@ export default function DesignPanel({
       <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <div>
-            <h3 className="font-semibold text-gray-900">Design</h3>
+            <h3 className="font-semibold text-gray-900">طراحی</h3>
             {hasChanges && (
               <p className="text-xs text-amber-600 mt-1">
-                You have unsaved changes
+                تغییرات ذخیره‌نشده دارید
               </p>
             )}
           </div>
@@ -386,7 +386,7 @@ export default function DesignPanel({
               : "bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200"
           }`}
         >
-          Color
+          رنگ
         </button>
         <button
           onClick={() => setActiveTab("image")}
@@ -396,7 +396,7 @@ export default function DesignPanel({
               : "bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200"
           }`}
         >
-          Image
+          تصویر
         </button>
       </div>
 
@@ -406,7 +406,7 @@ export default function DesignPanel({
         <div className="space-y-6">
           <div>
             <h3 className="text-sm font-medium text-gray-700 mb-3">
-              Background Color :
+              رنگ پس‌زمینه :
             </h3>
             <div className="grid grid-cols-4 gap-3">
               {colorOptions.map((color) => (
@@ -437,12 +437,12 @@ export default function DesignPanel({
 
           <div className="pt-4 border-t border-gray-200">
             <h3 className="text-sm font-medium text-gray-700 mb-3">
-              Text Color :
+              رنگ متن :
             </h3>
             <div className="flex items-center gap-3">
               {[
-                { label: "Black", value: "#111827" },
-                { label: "White", value: "#ffffff" },
+                { label: "مشکی", value: "#111827" },
+                { label: "سفید", value: "#ffffff" },
               ].map((opt) => (
                 <button
                   key={opt.value}
@@ -465,7 +465,7 @@ export default function DesignPanel({
 
           <div className="pt-4 border-t border-gray-200">
             <h3 className="text-sm font-medium text-gray-700 mb-2">
-              Current Color :
+              رنگ فعلی :
             </h3>
             <div className="flex items-center gap-3">
               <div
@@ -483,18 +483,18 @@ export default function DesignPanel({
               <div>
                 <span className="text-sm font-mono text-gray-700 block">
                   {localQuiz.background_image_url 
-                    ? "Image URL" 
+                    ? "نشانی تصویر" 
                     : localQuiz.background_color || "#ffffff"
                   }
                 </span>
                 <span className="text-xs text-gray-500 block">
-                  Text: {localQuiz.text_color || "#111827"}
+                  متن: {localQuiz.text_color || "#111827"}
                 </span>
                 <span
                   className="mt-1 inline-block text-xs"
                   style={{ color: localQuiz.text_color || "#111827" }}
                 >
-                  Sample text preview
+                  پیش‌نمایش نمونه متن
                 </span>
               </div>
             </div>
@@ -504,7 +504,7 @@ export default function DesignPanel({
         <div className="space-y-6">
           <div>
             <h3 className="text-sm font-medium text-gray-700 mb-3">
-              Enter Background Image URL :
+              نشانی تصویر پس‌زمینه را وارد کنید :
             </h3>
             <div className="space-y-3">
               <div className="relative">
@@ -526,7 +526,7 @@ export default function DesignPanel({
                 disabled={loading || !imageUrl.trim()}
                 className="w-full px-4 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
               >
-                {loading ? "Checking..." : "Test & Preview Image"}
+                {loading ? "در حال بررسی…" : "آزمایش و پیش‌نمایش تصویر"}
               </button>
               
               {error && (
@@ -541,7 +541,7 @@ export default function DesignPanel({
           {/* --------------- Preview Section --------------- */}
           <div>
             <h3 className="text-sm font-medium text-gray-700 mb-3">
-              Preview :
+              پیش‌نمایش :
             </h3>
             <div className="relative rounded-lg overflow-hidden border-2 border-dashed border-gray-300">
               <div 
@@ -550,12 +550,12 @@ export default function DesignPanel({
               >
                 {!preview && !localQuiz.background_color && !localQuiz.background_image_url && (
                   <div className="text-gray-400 text-sm">
-                    No background selected
+                    پس‌زمینه‌ای انتخاب نشده است
                   </div>
                 )}
                 {!preview && localQuiz.background_color && (
                   <div className="text-gray-600 text-sm">
-                    Color background
+                    پس‌زمینه رنگی
                   </div>
                 )}
               </div>
@@ -566,7 +566,7 @@ export default function DesignPanel({
                     <button
                       onClick={handleRemoveImage}
                       className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                      title="Remove image"
+                      title="حذف تصویر"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -581,7 +581,7 @@ export default function DesignPanel({
                     onClick={handleRemoveImage}
                     className="w-full py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                   >
-                    Remove Image
+                    حذف تصویر
                   </button>
               )}
             </div>
@@ -597,7 +597,7 @@ export default function DesignPanel({
             onClick={handleCancel}
             className="flex-1 py-2.5 px-4 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg font-medium transition-colors text-sm"
           >
-            Cancel
+            انصراف
           </button>
           <button
             onClick={handleSubmit}
@@ -611,20 +611,20 @@ export default function DesignPanel({
             {saving ? (
               <>
                 <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
-                Saving...
+                در حال ذخیره…
               </>
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                Save Changes
+                ذخیره تغییرات
               </>
             )}
           </button>
         </div>
         <p className="text-xs text-gray-500 text-center mt-3">
           {hasChanges 
-            ? "Click 'Save Changes' to update quiz background"
-            : "No changes to save"
+            ? "برای به‌روزرسانی پس‌زمینه ارائه، دکمه «ذخیره تغییرات» را بزنید"
+            : "تغییری برای ذخیره وجود ندارد"
           }
         </p>
       </div>

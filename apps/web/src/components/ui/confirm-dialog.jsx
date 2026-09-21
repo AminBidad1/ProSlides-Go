@@ -9,8 +9,8 @@ const ConfirmDialog = ({
   onConfirm,
   title,
   description,
-  confirmText = "Confirm",
-  cancelText = "Cancel",
+  confirmText = "تأیید",
+  cancelText = "انصراف",
   confirmVariant = "default",
   isLoading = false,
 }) => {
@@ -78,7 +78,7 @@ const ConfirmDialog = ({
               {isLoading ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  Processing...
+                  در حال انجام…
                 </div>
               ) : (
                 confirmText

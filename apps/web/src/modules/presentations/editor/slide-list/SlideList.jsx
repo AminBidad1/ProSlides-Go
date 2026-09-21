@@ -123,7 +123,7 @@ export default function SlidesPanel({
       if (onRefresh) await onRefresh();
     } catch (error) {
       console.error("Failed to update slide order:", error);
-      notify("Failed to reorder slide.", "error");
+      notify("جابه‌جایی اسلاید انجام نشد.", "error");
       setLocalSlides(previousSlides);
       if (error.response?.status === 409 && onRefresh) await onRefresh();
     } finally {
@@ -135,13 +135,13 @@ export default function SlidesPanel({
   const handleDeleteSlide = (slideId, slideType) => {
     setConfirmDialog({
       isOpen: true,
-      title: "Delete Slide",
-      description: "Are you sure you want to delete this slide?",
+      title: "حذف اسلاید",
+      description: "مطمئنید می‌خواهید این اسلاید را حذف کنید؟",
       onConfirm: async () => {
         await performDeleteSlide(slideId, slideType);
       },
-      confirmText: "Delete",
-      cancelText: "Cancel",
+      confirmText: "حذف",
+      cancelText: "انصراف",
     });
   };
 
@@ -174,7 +174,7 @@ export default function SlidesPanel({
       }
     } catch (error) {
       console.error("Failed to delete slide:", error);
-      notify("Failed to delete slide.", "error");
+      notify("حذف اسلاید انجام نشد.", "error");
     }
   };
 
@@ -210,7 +210,7 @@ export default function SlidesPanel({
       }
     } catch (error) {
       console.error("Failed to add new slide:", error);
-      notify("Failed to add new slide.", "error");
+      notify("افزودن اسلاید جدید انجام نشد.", "error");
     }
   };
 
