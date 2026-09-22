@@ -220,3 +220,269 @@ test("stream reconnect refreshes the snapshot before resuming from the new curso
 
   runtime.destroy();
 });
+
+test("presence updates preserve score ordering while the manager is on a leaderboard", async () => {
+  let onEvent = null;
+  const rosterOrders = [];
+  const runtime = createLiveRuntime("manager", {
+    storage: null,
+    transport: {
+      createRequestId: () => "00000000-0000-4000-8000-000000000020",
+      createLiveSession: async () => managerSession("session", "leaderboard", 3),
+      getLiveSnapshot: async () =>
+        managerSnapshot("session", {
+          eventId: 20,
+          stateVersion: 3,
+          state: "leaderboard",
+        }),
+      getRosterPage: async (_id, order) => {
+        rosterOrders.push(order);
+        return emptyRoster(order);
+      },
+      streamLiveEvents: async (_id, _lastEventId, options) => {
+        onEvent = options.onEvent;
+        return parkedStream(_id, _lastEventId, options);
+      },
+    },
+  });
+
+  assert.equal(await runtime.connect("presentation"), true);
+  assert.equal(rosterOrders.at(-1), "score");
+
+  onEvent({
+    event_id: 21,
+    schema_version: 1,
+    session_id: "session",
+    state_version: 3,
+    name: "presence.updated",
+    payload: { participant_delta: 1 },
+    occurred_at: new Date().toISOString(),
+  });
+
+  for (let index = 0; index < 10 && rosterOrders.length < 2; index += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  assert.equal(rosterOrders.at(-1), "score");
+  runtime.destroy();
+});
+
+test("older roster responses cannot overwrite a newer roster request", async () => {
+  let resolveJoined;
+  let phase = "connect";
+  const runtime = createLiveRuntime("manager", {
+    storage: null,
+    transport: {
+      createRequestId: () => "00000000-0000-4000-8000-000000000021",
+      createLiveSession: async () => managerSession("session"),
+      getLiveSnapshot: async () => managerSnapshot("session"),
+      getRosterPage: async (_id, order) => {
+        if (phase === "connect") return emptyRoster(order);
+        if (order === "joined") {
+          return new Promise((resolve) => {
+            resolveJoined = () =>
+              resolve({
+                ...emptyRoster("joined"),
+                items: [{
+                  participant_id: "stale",
+                  display_name: "Stale",
+                  score: 1,
+                  joined_at: new Date().toISOString(),
+                }],
+              });
+          });
+        }
+        return {
+          ...emptyRoster("score"),
+          items: [{
+            participant_id: "ranked",
+            display_name: "Ranked",
+            score: 100,
+            joined_at: new Date().toISOString(),
+          }],
+        };
+      },
+      streamLiveEvents: parkedStream,
+    },
+  });
+
+  assert.equal(await runtime.connect("presentation"), true);
+  phase = "race";
+
+  const staleRequest = runtime.loadRoster("joined", false);
+  const currentRequest = runtime.loadRoster("score", false);
+  assert.equal(await currentRequest, true);
+  assert.equal(runtime.getState().rosterOrder, "score");
+  assert.equal(runtime.getState().roster[0].participant_id, "ranked");
+
+  resolveJoined();
+  assert.equal(await staleRequest, false);
+  assert.equal(runtime.getState().rosterOrder, "score");
+  assert.equal(runtime.getState().roster[0].participant_id, "ranked");
+
+  runtime.destroy();
+});
+
+test("a successful manager mutation stays successful when only the follow-up refresh fails", async () => {
+  let snapshotReads = 0;
+  const runtime = createLiveRuntime("manager", {
+    storage: null,
+    transport: {
+      createRequestId: () => "00000000-0000-4000-8000-000000000022",
+      createLiveSession: async () => managerSession("session", "lobby", 1),
+      getLiveSnapshot: async () => {
+        snapshotReads += 1;
+        if (snapshotReads === 1) {
+          return managerSnapshot("session", {
+            eventId: 1,
+            stateVersion: 1,
+            state: "lobby",
+          });
+        }
+        throw new Error("snapshot temporarily unavailable");
+      },
+      getRosterPage: async (_id, order) => emptyRoster(order),
+      streamLiveEvents: parkedStream,
+      applyLiveAction: async () => managerSession("session", "question_open", 2),
+    },
+  });
+
+  assert.equal(await runtime.connect("presentation"), true);
+  const ok = await runtime.sendNavigation("start", {
+    slide: { slide_type: 1, slide_id: "q1", question_time: 30 },
+  });
+
+  assert.equal(ok, true);
+  assert.equal(runtime.getState().snapshot.session.state, "question_open");
+  assert.equal(runtime.getState().connectionError, "snapshot temporarily unavailable");
+
+  runtime.destroy();
+});
+
+test("refresh requests arriving during roster loading are drained before reconnect continues", async () => {
+  let onEvent = null;
+  let snapshotReads = 0;
+  let rosterReads = 0;
+  let releaseRoster;
+  const blockedRoster = new Promise((resolve) => {
+    releaseRoster = resolve;
+  });
+
+  const runtime = createLiveRuntime("manager", {
+    storage: null,
+    transport: {
+      createRequestId: () => "00000000-0000-4000-8000-000000000023",
+      createLiveSession: async () => managerSession("session"),
+      getLiveSnapshot: async () => {
+        snapshotReads += 1;
+        if (snapshotReads === 1) {
+          return managerSnapshot("session", {
+            eventId: 1,
+            stateVersion: 1,
+            state: "lobby",
+          });
+        }
+        if (snapshotReads === 2) {
+          return managerSnapshot("session", {
+            eventId: 2,
+            stateVersion: 2,
+            state: "leaderboard",
+          });
+        }
+        return managerSnapshot("session", {
+          eventId: 3,
+          stateVersion: 3,
+          state: "leaderboard",
+        });
+      },
+      getRosterPage: async (_id, order) => {
+        rosterReads += 1;
+        if (rosterReads === 2) await blockedRoster;
+        return emptyRoster(order);
+      },
+      streamLiveEvents: async (_id, _lastEventId, options) => {
+        onEvent = options.onEvent;
+        return parkedStream(_id, _lastEventId, options);
+      },
+    },
+  });
+
+  assert.equal(await runtime.connect("presentation"), true);
+
+  onEvent({
+    event_id: 2,
+    schema_version: 1,
+    session_id: "session",
+    state_version: 2,
+    name: "session.state_changed",
+    payload: {},
+    occurred_at: new Date().toISOString(),
+  });
+
+  for (let index = 0; index < 20 && rosterReads < 2; index += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+  assert.equal(rosterReads, 2);
+
+  onEvent({
+    event_id: 3,
+    schema_version: 1,
+    session_id: "session",
+    state_version: 3,
+    name: "leaderboard.updated",
+    payload: {},
+    occurred_at: new Date().toISOString(),
+  });
+
+  releaseRoster();
+
+  for (let index = 0; index < 20 && snapshotReads < 3; index += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  assert.equal(snapshotReads, 3);
+  assert.equal(runtime.getState().snapshot.last_event_id, 3);
+  assert.equal(runtime.getState().snapshot.session.state_version, 3);
+  runtime.destroy();
+});
+
+test("disconnect during manager connect cannot resurrect stale session state", async () => {
+  let releaseSnapshot;
+  const snapshotReady = new Promise((resolve) => {
+    releaseSnapshot = resolve;
+  });
+
+  const runtime = createLiveRuntime("manager", {
+    storage: null,
+    transport: {
+      createRequestId: () => "00000000-0000-4000-8000-000000000024",
+      createLiveSession: async () => managerSession("session"),
+      getLiveSnapshot: async () => {
+        await snapshotReady;
+        return managerSnapshot("session", {
+          eventId: 9,
+          stateVersion: 4,
+          state: "lobby",
+        });
+      },
+      getRosterPage: async (_id, order) => emptyRoster(order),
+      streamLiveEvents: parkedStream,
+    },
+  });
+
+  const connecting = runtime.connect("presentation");
+  for (let index = 0; index < 10 && runtime.getState().sessionId !== "session"; index += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  runtime.disconnect();
+  releaseSnapshot();
+
+  assert.equal(await connecting, false);
+  assert.equal(runtime.getState().sessionId, null);
+  assert.equal(runtime.getState().snapshot, null);
+  assert.equal(runtime.getState().isConnected, false);
+
+  runtime.destroy();
+});
+
