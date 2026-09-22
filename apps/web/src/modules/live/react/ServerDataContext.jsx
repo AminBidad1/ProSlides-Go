@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useMemo, useState } from "react";
-import { projectLiveSnapshot } from "../live/protocol";
+import { projectLiveSnapshot } from "../runtime/protocol";
 
 export const ServerDataContext = createContext(null);
 

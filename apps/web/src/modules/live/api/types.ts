@@ -1,4 +1,4 @@
-import type { components } from "../shared/api/generated/openapi.ts";
+import type { components } from "../../../shared/api/generated/openapi.ts";
 
 export type LiveState = "draft" | "lobby" | "content" | "question_open" | "question_closed" | "leaderboard" | "ended";
 

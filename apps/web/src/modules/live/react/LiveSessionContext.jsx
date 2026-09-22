@@ -10,8 +10,8 @@ import {
   joinLiveSession,
   streamLiveEvents,
   submitLiveAnswer,
-} from "../live/liveApi";
-import { advanceLiveCursor, liveCursorFromSnapshot, planLiveEnd, planLiveNavigation, shouldApplyLiveEvent } from "../live/protocol";
+} from "../api/liveApi";
+import { advanceLiveCursor, liveCursorFromSnapshot, planLiveEnd, planLiveNavigation, shouldApplyLiveEvent } from "../runtime/protocol";
 
 export const LiveSessionContext = createContext(null);
 

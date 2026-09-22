@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { LiveSessionContext } from "../contexts/LiveSessionContext";
+import { LiveSessionContext } from "./LiveSessionContext";
 
 export const useLiveSession = () => {
   const context = useContext(LiveSessionContext);
