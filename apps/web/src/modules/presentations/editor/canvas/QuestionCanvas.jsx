@@ -75,7 +75,7 @@ export default function MiniResultsResultsOnly({
           >
             <img
               src={question.image_url}
-              alt="Question"
+              alt="سؤال"
               className="max-h-full max-w-full rounded-xl shadow-lg object-contain"
             />
           </div>

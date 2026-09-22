@@ -33,7 +33,7 @@ export default function EditorPage() {
   const fetchQuiz = useCallback(async () => {
     const sequence = ++fetchSequenceRef.current;
     if (!quizId) {
-      setError("There is no quiz.");
+      setError("ارائه‌ای وجود ندارد.");
       setLoading(false);
       return;
     }
@@ -45,7 +45,7 @@ export default function EditorPage() {
       setError(null);
     } catch (err) {
       if (sequence !== fetchSequenceRef.current) return;
-      setError("Failed to load quiz");
+      setError("بارگذاری ارائه انجام نشد");
       console.error(err);
     } finally {
       if (sequence === fetchSequenceRef.current) setLoading(false);
@@ -141,11 +141,11 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
     : [];
   const presentStatus = (() => {
     if (hasUnsavedChanges) {
-      return { ready: false, reason: "Save or discard your changes before presenting." };
+      return { ready: false, reason: "پیش از اجرا، تغییرات را ذخیره یا رها کنید." };
     }
     const validationError = getPresentationValidationError(quiz);
     if (validationError) return { ready: false, reason: validationError };
-    return { ready: true, reason: "Start presentation" };
+    return { ready: true, reason: "شروع ارائه" };
   })();
 
   const [activeTab, setActiveTab] = useState(null);
@@ -325,14 +325,14 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
       if (isTogglingSidebar || isLeavingSidebar) {
         setConfirmDialog({
           isOpen: true,
-          title: "Unsaved Changes",
-          description: "You have unsaved changes. Do you want to discard them?",
+          title: "تغییرات ذخیره‌نشده",
+          description: "تغییرات ذخیره‌نشده‌ای دارید. آن‌ها را کنار بگذارید؟",
           onConfirm: () => {
             setHasSidebarChanges(false);
             proceedTabChange(tabId);
           },
-          confirmText: "Discard Changes",
-          cancelText: "Keep Editing",
+          confirmText: "رد تغییرات",
+          cancelText: "ادامه ویرایش",
         });
         return;
       }
@@ -344,14 +344,14 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
       if (isTogglingAudio || isLeavingAudio) {
         setConfirmDialog({
           isOpen: true,
-          title: "Unsaved Changes",
-          description: "You have unsaved changes. Do you want to discard them?",
+          title: "تغییرات ذخیره‌نشده",
+          description: "تغییرات ذخیره‌نشده‌ای دارید. آن‌ها را کنار بگذارید؟",
           onConfirm: () => {
             setHasAudioChanges(false);
             proceedTabChange(tabId);
           },
-          confirmText: "Discard Changes",
-          cancelText: "Keep Editing",
+          confirmText: "رد تغییرات",
+          cancelText: "ادامه ویرایش",
         });
         return;
       }
@@ -363,14 +363,14 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
       if (isTogglingDesign || isLeavingDesign) {
         setConfirmDialog({
           isOpen: true,
-          title: "Unsaved Changes",
-          description: "You have unsaved changes. Do you want to discard them?",
+          title: "تغییرات ذخیره‌نشده",
+          description: "تغییرات ذخیره‌نشده‌ای دارید. آن‌ها را کنار بگذارید؟",
           onConfirm: () => {
             setHasDesignChanges(false);
             proceedTabChange(tabId);
           },
-          confirmText: "Discard Changes",
-          cancelText: "Keep Editing",
+          confirmText: "رد تغییرات",
+          cancelText: "ادامه ویرایش",
         });
         return;
       }
@@ -461,16 +461,16 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
     }
     setConfirmDialog({
       isOpen: true,
-      title: "Leave panel?",
-      description: "You have unsaved changes. Do you want to discard them?",
+      title: "خروج از ویرایشگر؟",
+      description: "تغییرات ذخیره‌نشده‌ای دارید. آن‌ها را کنار بگذارید؟",
       onConfirm: () => {
         setHasSidebarChanges(false);
         setHasAudioChanges(false);
         setHasDesignChanges(false);
         navigate("/manager/panel");
       },
-      confirmText: "Discard Changes",
-      cancelText: "Keep Editing",
+      confirmText: "رد تغییرات",
+      cancelText: "ادامه ویرایش",
     });
   };
 
@@ -485,14 +485,14 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
     if (hasSidebarChanges && id !== activeSlide?.slide_id) {
       setConfirmDialog({
         isOpen: true,
-        title: "Unsaved Changes",
-        description: "You have unsaved changes. Do you want to discard them?",
+        title: "تغییرات ذخیره‌نشده",
+        description: "تغییرات ذخیره‌نشده‌ای دارید. آن‌ها را کنار بگذارید؟",
         onConfirm: () => {
           setHasSidebarChanges(false);
           proceedWithSlideChange(id);
         },
-        confirmText: "Discard Changes",
-        cancelText: "Keep Editing",
+        confirmText: "رد تغییرات",
+        cancelText: "ادامه ویرایش",
       });
       return;
     }
@@ -504,15 +504,15 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
     if (hasSidebarChanges && id !== activeSlide?.slide_id) {
       setConfirmDialog({
         isOpen: true,
-        title: "Unsaved Changes",
-        description: "You have unsaved changes. Do you want to discard them?",
+        title: "تغییرات ذخیره‌نشده",
+        description: "تغییرات ذخیره‌نشده‌ای دارید. آن‌ها را کنار بگذارید؟",
         onConfirm: () => {
           setHasSidebarChanges(false);
           proceedWithSlideChange(id);
           setShowSlidesPanel(false);
         },
-        confirmText: "Discard Changes",
-        cancelText: "Keep Editing",
+        confirmText: "رد تغییرات",
+        cancelText: "ادامه ویرایش",
       });
       return;
     }
@@ -535,15 +535,15 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
     if (!forceClose && hasSidebarChanges) {
       setConfirmDialog({
         isOpen: true,
-        title: "Unsaved Changes",
-        description: "You have unsaved changes. Do you want to discard them?",
+        title: "تغییرات ذخیره‌نشده",
+        description: "تغییرات ذخیره‌نشده‌ای دارید. آن‌ها را کنار بگذارید؟",
         onConfirm: () => {
           setHasSidebarChanges(false);
           setShowSidebar(false);
           setActiveTab(null);
         },
-        confirmText: "Discard Changes",
-        cancelText: "Keep Editing",
+        confirmText: "رد تغییرات",
+        cancelText: "ادامه ویرایش",
       });
       return;
     }
@@ -554,14 +554,14 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
   // ???? ???? ???? ????? ????? ??????
   const getSlideTitle = (slide) => {
     if (slide.slide_type === 1 && slide.question) {
-      return slide.question.text || "Question Slide";
+      return slide.question.text || "اسلاید سؤال";
     } else if (slide.slide_type === 2) {
-      return slide.title || slide.content_text || "Content Slide";
+      return slide.title || slide.content_text || "اسلاید محتوا";
     } else if (slide.slide_type === 3) {
-      return slide.title || "Leaderboard";
+      return slide.title || "جدول امتیازات";
     }
     // return `Slide ${slide.order}`;
-    return "No Question Yet";
+    return "سؤالی هنوز ساخته نشده";
   };
 
   // ????? ?????? ????
@@ -594,7 +594,7 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
       await refreshQuiz();
     } catch (error) {
       console.error("Failed to delete slide:", error);
-      showNotice("Failed to delete slide.", "error");
+      showNotice("حذف اسلاید انجام نشد.", "error");
     }
   };
 
@@ -606,16 +606,16 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
     if (hasSidebarChanges) {
       setConfirmDialog({
         isOpen: true,
-        title: "Change Question Type",
+        title: "تغییر نوع سؤال",
         description:
-          "You have unsaved changes. Do you want to discard them before changing the question type?",
+          "تغییرات ذخیره‌نشده‌ای دارید. پیش از تغییر نوع سؤال آن‌ها را کنار بگذارید؟",
         onConfirm: () => {
           setHasSidebarChanges(false);
           handleCloseSidebarPanel(true);
           proceedWithTypeChange();
         },
-        confirmText: "Discard Changes",
-        cancelText: "Keep Editing",
+        confirmText: "رد تغییرات",
+        cancelText: "ادامه ویرایش",
       });
       return;
     }
@@ -656,8 +656,8 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
         nextQuestion = {
           question_id: String(slideId),
           title: "",
-          text: "New Question",
-          question_text: "New Question",
+          text: "سؤال جدید",
+          question_text: "سؤال جدید",
           question_type: questionType,
           min_point: 0,
           max_point: 100,
@@ -668,8 +668,8 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
           faster_answers_more_points: false,
           partial_scoring: false,
           options: [
-            { option_id: globalThis.crypto.randomUUID(), text: "Option 1", is_correct: true, image_url: "", order: 1 },
-            { option_id: globalThis.crypto.randomUUID(), text: "Option 2", is_correct: false, image_url: "", order: 2 },
+            { option_id: globalThis.crypto.randomUUID(), text: "گزینه ۱", is_correct: true, image_url: "", order: 1 },
+            { option_id: globalThis.crypto.randomUUID(), text: "گزینه ۲", is_correct: false, image_url: "", order: 2 },
           ],
         };
       } else {
@@ -677,7 +677,7 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
         while (existingOptions.length < 2) {
           existingOptions.push({
             option_id: globalThis.crypto.randomUUID(),
-            text: `Option ${existingOptions.length + 1}`,
+            text: `گزینه ${existingOptions.length + 1}`,
             is_correct: existingOptions.length === 0,
             image_url: "",
             order: existingOptions.length + 1,
@@ -725,7 +725,7 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
         slides: updatedSlides,
       });
       setTypeSelectionNotice(
-        `Question type set to ${requestedMode === "single" ? "Single Choice" : "Multiple Choice"}.`
+        `نوع سؤال به ${requestedMode === "single" ? "تک‌گزینه‌ای" : "چندگزینه‌ای"} تغییر کرد.`
       );
       setTimeout(() => {
         setTypeSelectionNotice(null);
@@ -740,18 +740,18 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
 
       if (error.response?.status === 409 && error.response?.data?.error === "edit_conflict") {
         await recoverConflict();
-        setTypeSelectionError("This question changed elsewhere. The latest version has been loaded.");
+        setTypeSelectionError("این سؤال جای دیگری تغییر کرده بود؛ آخرین نسخه بارگذاری شد.");
       } else if (error.response?.status === 409 && error.response?.data?.error === "slide_has_results") {
-        setTypeSelectionError("This slide has live results. Reset the presentation results before changing its type.");
+        setTypeSelectionError("این اسلاید نتیجه زنده دارد. پیش از تغییر نوع، نتایج ارائه را بازنشانی کنید.");
       } else if (error.response?.status === 400) {
         const errorMsg = error.response.data;
         setTypeSelectionError(
           typeof errorMsg === "string"
             ? errorMsg
-            : "We could not apply this change. Please try again."
+            : "اعمال این تغییر ممکن نشد. دوباره تلاش کنید."
         );
       } else {
-        setTypeSelectionError("Unexpected error. Please try again.");
+        setTypeSelectionError("خطای غیرمنتظره رخ داد. دوباره تلاش کنید.");
       }
     } finally {
       setIsSelectingType(false);
@@ -767,8 +767,8 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
       const question = isContent ? null : {
         question_id: slideId,
         title: "",
-        text: "New Question",
-        question_text: "New Question",
+        text: "سؤال جدید",
+        question_text: "سؤال جدید",
         question_type: questionType,
         min_point: 0,
         max_point: 100,
@@ -779,8 +779,8 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
         faster_answers_more_points: false,
         partial_scoring: false,
         options: [
-          { option_id: globalThis.crypto.randomUUID(), text: "Option 1", is_correct: true, image_url: "", order: 1 },
-          { option_id: globalThis.crypto.randomUUID(), text: "Option 2", is_correct: false, image_url: "", order: 2 },
+          { option_id: globalThis.crypto.randomUUID(), text: "گزینه ۱", is_correct: true, image_url: "", order: 1 },
+          { option_id: globalThis.crypto.randomUUID(), text: "گزینه ۲", is_correct: false, image_url: "", order: 2 },
         ],
       };
       const newSlideData = {
@@ -789,7 +789,7 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
         order: slides.length,
         slide_type: isContent ? 2 : 1,
         show_leaderboard_after: false,
-        title: isContent ? "New content slide" : "",
+        title: isContent ? "اسلاید محتوایی جدید" : "",
         content_text: "",
         content_image_url: "",
         question,
@@ -840,13 +840,13 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
             ...activeSlide,
             slide_type: 2,
             question: null,
-            title: activeSlide.title || "New content slide",
+            title: activeSlide.title || "اسلاید محتوایی جدید",
             content_text: activeSlide.content_text || "",
             content_image_url: activeSlide.content_image_url || "",
             show_leaderboard_after: false,
           });
           handleSlideUpdated(updatedSlide);
-          setTypeSelectionNotice("Slide type set to Content.");
+          setTypeSelectionNotice("نوع اسلاید به محتوا تغییر کرد.");
           setShowTypeBox(false);
           setShowSidebar(true);
           setShowDesignPanel(false);
@@ -855,11 +855,11 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
         } catch (error) {
           if (error.response?.status === 409 && error.response?.data?.error === "edit_conflict") {
             await recoverConflict();
-            setTypeSelectionError("This slide changed elsewhere. The latest version has been loaded.");
+            setTypeSelectionError("این اسلاید جای دیگری تغییر کرده بود؛ آخرین نسخه بارگذاری شد.");
           } else if (error.response?.status === 409 && error.response?.data?.error === "slide_has_results") {
-            setTypeSelectionError("This slide has live results. Reset the presentation results before changing its type.");
+            setTypeSelectionError("این اسلاید نتیجه زنده دارد. پیش از تغییر نوع، نتایج ارائه را بازنشانی کنید.");
           } else {
-            setTypeSelectionError("We could not convert this slide. Please try again.");
+            setTypeSelectionError("تبدیل این اسلاید ممکن نشد. دوباره تلاش کنید.");
           }
         } finally {
           setIsSelectingType(false);
@@ -877,11 +877,11 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
           setIsSelectingType(false);
           setConfirmDialog({
             isOpen: true,
-            title: "Convert to a content slide?",
-            description: "The question and its answer options will be replaced with content. Continue?",
+            title: "تبدیل به اسلاید محتوایی؟",
+            description: "سؤال و گزینه‌های آن با محتوا جایگزین می‌شوند. ادامه می‌دهید؟",
             onConfirm: applyContentTypeChange,
-            confirmText: "Convert",
-            cancelText: "Cancel",
+            confirmText: "تبدیل",
+            cancelText: "انصراف",
           });
           return;
         }
@@ -895,18 +895,18 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
         setIsSelectingType(false);
         setConfirmDialog({
           isOpen: true,
-          title: "Convert to a question?",
-          description: "The content slide will be replaced with a new question. Continue?",
+          title: "تبدیل به سؤال؟",
+          description: "اسلاید محتوایی با یک سؤال جدید جایگزین می‌شود. ادامه می‌دهید؟",
           onConfirm: () => applyQuestionTypeChange({ currentQuestion: null, questionType, quizId, slideId, requestedMode }),
-          confirmText: "Convert",
-          cancelText: "Cancel",
+          confirmText: "تبدیل",
+          cancelText: "انصراف",
         });
         return;
       }
 
       if (currentQuestion?.question_type === questionType) {
         setTypeSelectionNotice(
-          `Question type is already ${requestedMode === "single" ? "Single Choice" : "Multiple Choice"}.`
+          `نوع سؤال هم‌اکنون ${requestedMode === "single" ? "تک‌گزینه‌ای" : "چندگزینه‌ای"} است.`
         );
         setTimeout(() => {
           setTypeSelectionNotice(null);
@@ -923,9 +923,9 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
         setIsSelectingType(false);
         setConfirmDialog({
           isOpen: true,
-          title: "Switch to Single Choice?",
+          title: "تغییر به تک‌گزینه‌ای؟",
           description:
-            "Switching to single choice keeps only one correct option. Continue?",
+            "در حالت تک‌گزینه‌ای فقط یک گزینه صحیح باقی می‌ماند. ادامه می‌دهید؟",
           onConfirm: () => {
             applyQuestionTypeChange({
               currentQuestion,
@@ -935,8 +935,8 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
               requestedMode,
             });
           },
-          confirmText: "Continue",
-          cancelText: "Cancel",
+          confirmText: "ادامه",
+          cancelText: "انصراف",
         });
         return;
       }
@@ -950,7 +950,7 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
       });
     } catch (error) {
       console.error("Error resolving question type change:", error);
-      setTypeSelectionError("Unexpected error. Please try again.");
+      setTypeSelectionError("خطای غیرمنتظره رخ داد. دوباره تلاش کنید.");
     } finally {
       setIsSelectingType(false);
     }
@@ -1082,14 +1082,14 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
                     )}
                     {leaderboardLoading[activeSlide.slide_id] && (
                       <div className="text-sm text-slate-500 mb-2">
-                        Loading leaderboard...
+                        در حال بارگذاری جدول امتیازات…
                       </div>
                     )}
                     {!leaderboardLoading[activeSlide.slide_id] &&
                       !leaderboardError &&
                       activeLeaderboardEntries.length === 0 && (
                         <div className="text-sm text-slate-500 mb-2">
-                          No results yet. Run the quiz to see the leaderboard.
+                          هنوز نتیجه‌ای نیست. برای دیدن جدول امتیازات، کوئیز را اجرا کنید.
                         </div>
                       )}
                     <LeaderboardPreview
@@ -1120,7 +1120,7 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
                   {activeSlide.content_image_url && (
                     <img src={activeSlide.content_image_url} alt="" className="max-h-[45%] max-w-[80%] rounded-xl object-contain" />
                   )}
-                  <h2 className="text-3xl font-bold">{activeSlide.title || "Content slide"}</h2>
+                  <h2 className="text-3xl font-bold">{activeSlide.title || "اسلاید محتوا"}</h2>
                   {activeSlide.content_text && <p className="max-w-3xl whitespace-pre-wrap text-lg">{activeSlide.content_text}</p>}
                 </div>
               ) : activeSlideType === 1 && activeSlide.question ? (
@@ -1291,8 +1291,8 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
                 {/* ??? ?? ??? */}
                 <div className="flex-grow flex items-center justify-center">
                   <p className="text-gray-700 font-medium text-2xl mb-30">
-                    This slide does not require any additional settings.
-                  </p>
+این اسلاید به تنظیمات اضافه نیاز ندارد.
+                    </p>
                 </div>
               </div>
             ) : (
@@ -1318,13 +1318,13 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
                         </svg>
                       </div>
                       <p className="text-gray-700 font-medium">
-                        First, select the question type.
+                        ابتدا نوع سؤال را انتخاب کنید.
                       </p>
                       <button
                         onClick={handleTypeChangeClick}
                         className="mt-4 rounded-control bg-brand px-4 py-2 text-content-inverse transition hover:bg-brand-strong"
                       >
-                        Select Type
+                        انتخاب نوع
                       </button>
                     </div>
                   );
@@ -1355,7 +1355,7 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
                         </svg>
                       </div>
                       <p className="text-gray-700 font-medium">
-                        Question type is invalid.
+                        نوع سؤال نامعتبر است.
                       </p>
                     </div>
                   );

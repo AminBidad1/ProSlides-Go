@@ -25,7 +25,7 @@ export default function LeaderboardPreview({
       .slice(0, 5) // Limit to top 5 for preview
       .map((player, index) => ({
         user_id: player.rust_session_id || `player-${index}`,
-        name: player.player_name || `Player ${index + 1}`,
+        name: player.player_name || `بازیکن ${index + 1}`,
         character: player.avatar || "🙂",
         color: getColorForUser(player.rust_session_id || index),
         rank: player.rank || index + 1,
@@ -97,10 +97,10 @@ export default function LeaderboardPreview({
         {/* --------------- Title Section --------------- */}
         <div className="text-center w-full mb-6 mt-15">
           <h2 className={`${titleSize} font-bold mb-2`} style={textStyle}>
-            {slide?.leaderboard_title || "Leaderboard"}
+            {slide?.leaderboard_title || "جدول امتیازات"}
           </h2>
           <p className={`${subtitleSize}`} style={mutedStyle}>
-            {players.length} {players.length === 1 ? "player" : "players"}
+            {players.length} بازیکن
           </p>
         </div>
 
@@ -108,7 +108,7 @@ export default function LeaderboardPreview({
         <div className="w-full max-w-3xl flex-1">
           {players.length === 0 ? (
             <div className="text-center py-6" style={mutedStyle}>
-              No results yet
+              هنوز نتیجه‌ای نیست
             </div>
           ) : (
             <ul className="space-y-4 w-full flex flex-col items-stretch py-2">

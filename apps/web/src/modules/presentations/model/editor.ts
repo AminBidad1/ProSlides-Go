@@ -59,52 +59,52 @@ export type QuestionLike = Omit<Partial<EditorQuestion>, "options"> & {
 };
 
 export const getQuestionValidationError = (question: QuestionLike | null | undefined): string | null => {
-  if (!question || typeof question !== "object") return "Add a question before presenting.";
+  if (!question || typeof question !== "object") return "پیش از اجرا یک سؤال اضافه کنید.";
 
   const text = String(question.text ?? question.question_text ?? "").trim();
-  if (!text) return "Enter the question text.";
+  if (!text) return "متن سؤال را وارد کنید.";
 
   const options = Array.isArray(question.options) ? question.options : [];
-  if (options.length < 2) return "Add at least two options.";
-  if (options.length > 100) return "A question can have at most 100 options.";
+  if (options.length < 2) return "حداقل دو گزینه اضافه کنید.";
+  if (options.length > 100) return "هر سؤال حداکثر ۱۰۰ گزینه می‌تواند داشته باشد.";
   if (options.some((option) => !String(option.text ?? option.option_text ?? "").trim())) {
-    return "Every option must have text.";
+    return "هر گزینه باید متن داشته باشد.";
   }
   const ids = options.map((option) => String(option.option_id ?? "").trim());
   if (ids.some((id) => !id) || new Set(ids).size !== ids.length) {
-    return "Every option must have a unique identifier.";
+    return "شناسه گزینه‌ها باید یکتا باشد.";
   }
 
   const type = question.question_type;
-  if (type !== "single" && type !== "multiple") return "Select a valid question type.";
+  if (type !== "single" && type !== "multiple") return "نوع معتبری برای سؤال انتخاب کنید.";
   const correctCount = options.filter((option) => option.is_correct === true).length;
-  if (correctCount === 0) return "Select at least one correct option.";
-  if (type === "single" && correctCount !== 1) return "Single choice questions need exactly one correct option.";
-  if (type === "single" && question.partial_scoring === true) return "Partial scoring is only available for multiple choice questions.";
+  if (correctCount === 0) return "حداقل یک گزینه صحیح انتخاب کنید.";
+  if (type === "single" && correctCount !== 1) return "سؤال تک‌گزینه‌ای دقیقاً یک گزینه صحیح نیاز دارد.";
+  if (type === "single" && question.partial_scoring === true) return "امتیازدهی جزئی فقط برای سؤال چندگزینه‌ای در دسترس است.";
 
   const duration = Number(question.question_time ?? question.time_limit);
   if (!Number.isInteger(duration) || duration < 1 || duration > 86400) {
-    return "Question time must be between 1 and 86400 seconds.";
+    return "زمان سؤال باید بین ۱ تا ۸۶۴۰۰ ثانیه باشد.";
   }
 
   const minPoints = Number(question.min_point);
   const maxPoints = Number(question.max_point);
   if (!Number.isInteger(minPoints) || minPoints < 0 || !Number.isInteger(maxPoints) || maxPoints < 1 || minPoints > maxPoints) {
-    return "Points must be whole numbers with 0 <= minimum <= maximum.";
+    return "حداقل و حداکثر امتیاز باید عدد صحیح باشند و ۰ ≤ حداقل ≤ حداکثر.";
   }
 
   return null;
 };
 
 export const getPresentationValidationError = (presentation: Pick<EditorPresentation, "slides">): string | null => {
-  if (!presentation.slides.length) return "Add at least one slide to present.";
+  if (!presentation.slides.length) return "برای اجرا حداقل یک اسلاید اضافه کنید.";
   for (const slide of presentation.slides) {
     if (slide.slide_type === 1) {
       const error = getQuestionValidationError(slide.question);
       if (error) return error;
     }
     if (slide.slide_type === 2 && !String(slide.title || slide.content_text || slide.content_image_url || "").trim()) {
-      return "Add content to every content slide before presenting.";
+      return "پیش از اجرا به همه اسلایدهای محتوایی مطلب اضافه کنید.";
     }
   }
   return null;

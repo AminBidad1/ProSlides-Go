@@ -137,7 +137,7 @@ export default function ManagerJoinPage({
   const handleStart = async () => {
     setStartError("");
     if (!quiz?.slides?.length) {
-      setStartError("This presentation has no slides to start.");
+      setStartError("این ارائه اسلایدی برای شروع ندارد.");
       return;
     }
     const invalidQuestion = quiz.slides.find((slide) => {
@@ -148,26 +148,26 @@ export default function ManagerJoinPage({
         (slide.question_type === "single" && correct !== 1);
     });
     if (invalidQuestion) {
-      setStartError("Complete every question with at least two options and a valid correct answer before presenting.");
+      setStartError("پیش از اجرا، هر سؤال باید حداقل دو گزینه و یک پاسخ صحیح داشته باشد.");
       return;
     }
     if (sessionInProgress) {
-      setStartError("Session is already in progress. Resuming current slide...");
+      setStartError("جلسه در حال اجراست. ادامه اسلاید فعلی…");
       onNext?.();
       return;
     }
     if (!hasSyncedState) {
-      setStartError("Syncing live session state. Please wait a moment.");
+      setStartError("در حال همگام‌سازی جلسه. لحظه‌ای صبر کنید.");
       return;
     }
     if (!isConnected) {
-      setStartError("Connection is not ready. Please wait and try again.");
+      setStartError("اتصال آماده نیست. کمی صبر کنید و دوباره تلاش کنید.");
       return;
     }
     // Send start command
     const ok = await sendNavigation("start", { slide: quiz?.slides?.[0] });
     if (!ok) {
-      setStartError("Failed to send start command. Please try again.");
+      setStartError("ارسال دستور شروع موفق نشد. دوباره تلاش کنید.");
       return;
     }
 
@@ -306,7 +306,7 @@ export default function ManagerJoinPage({
               "bg-[color:var(--live-surface)] text-[color:var(--quiz-text)]"
             }`}
           >
-            Syncing live session...
+            در حال همگام‌سازی جلسه…
           </div>
         </div>
       ) : (
@@ -339,7 +339,7 @@ export default function ManagerJoinPage({
                 : "Quiz"}
             </div> */}
             <div className="text-xs md:text-sm text-[color:var(--quiz-text-muted)]">
-              {playersReady} players ready
+              {playersReady} بازیکن آماده
             </div>
           </div>
 
@@ -354,7 +354,7 @@ export default function ManagerJoinPage({
                       marginBottom: "190px",
                     }}
                   >
-                    <div>Waiting for players to join...</div>
+                    <div>در انتظار ورود بازیکنان…</div>
                   </div>
                 )}
                 {displayUsers.length > 0 && (
@@ -421,10 +421,10 @@ export default function ManagerJoinPage({
                     disabled={!isConnected || sessionInProgress || !hasSyncedState}
                   >
                     {sessionInProgress
-                      ? "Resuming..."
+                      ? "ادامه جلسه…"
                       : !hasSyncedState
-                      ? "Syncing..."
-                      : "Start"}
+                      ? "در حال همگام‌سازی…"
+                      : "شروع"}
                   </button>
                 </div>
                 {startError && (
@@ -434,7 +434,7 @@ export default function ManagerJoinPage({
                 )}
                 {connectionError && (
                   <div className="mt-3 text-center text-sm text-red-500">
-                    Live session connection failed. Sign in again or retry this page.
+                    اتصال به جلسه برقرار نشد. دوباره وارد شوید یا این صفحه را مجدداً تلاش کنید.
                   </div>
                 )}
                 {hasMoreRoster && (
@@ -445,7 +445,7 @@ export default function ManagerJoinPage({
                       disabled={isRosterLoading}
                       className="rounded-lg border border-white/30 px-4 py-2 text-sm text-[color:var(--quiz-text)] disabled:opacity-50"
                     >
-                      {isRosterLoading ? "Loading..." : "Load more players"}
+                      {isRosterLoading ? "در حال بارگذاری…" : "نمایش بازیکنان بیشتر"}
                     </button>
                   </div>
                 )}

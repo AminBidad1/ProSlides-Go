@@ -8,15 +8,15 @@ function parseJson(response) {
 }
 
 function getPasswordPolicyError(value) {
-  if (!value) return "Enter a password.";
-  if (value.length < 12) return "Use at least 12 characters.";
-  if (/^\d+$/.test(value)) return "Password cannot be all numbers.";
+  if (!value) return "رمز عبور را وارد کنید.";
+  if (value.length < 12) return "حداقل ۱۲ نویسه وارد کنید.";
+  if (/^\d+$/.test(value)) return "رمز عبور نمی‌تواند فقط عدد باشد.";
   return "";
 }
 
 function getPasswordStrength(value) {
   if (!value) {
-    return { score: 0, label: "Weak" };
+    return { score: 0, label: "ضعیف" };
   }
   const length = value.length;
   const hasLower = /[a-z]/.test(value);
@@ -33,7 +33,7 @@ function getPasswordStrength(value) {
   if (variety >= 3) score += 1;
 
   const label =
-    score >= 4 ? "Strong" : score === 3 ? "Good" : score === 2 ? "Fair" : "Weak";
+    score >= 4 ? "قوی" : score === 3 ? "خوب" : score === 2 ? "معمولی" : "ضعیف";
   return { score, label };
 }
 
@@ -130,7 +130,7 @@ export default function ResetPasswordPage() {
   );
   const confirmError =
     confirmPassword && password !== confirmPassword
-      ? "Passwords do not match."
+      ? "رمز عبور و تکرار آن یکسان نیست."
       : "";
   const passwordStrength = useMemo(
     () => getPasswordStrength(password.trim()),
@@ -159,18 +159,18 @@ export default function ResetPasswordPage() {
       });
       const payload = await parseJson(response);
       if (!response.ok) {
-        const message = payload?.detail || "Unable to reset password.";
+        const message = payload?.detail || "تنظیم مجدد رمز عبور انجام نشد.";
         throw new Error(message);
       }
       setStatus({
         type: "success",
-        message: "Your password has been updated. You can log in now.",
+        message: "رمز عبور شما به‌روزرسانی شد. اکنون می‌توانید وارد شوید.",
       });
       setTimeout(() => navigate("/login"), 1200);
     } catch (error) {
       setStatus({
         type: "error",
-        message: error.message || "Unable to reset password.",
+        message: error.message || "تنظیم مجدد رمز عبور انجام نشد.",
       });
     } finally {
       setSubmitting(false);
@@ -230,7 +230,7 @@ export default function ResetPasswordPage() {
 
         {!uid || !token ? (
           <div className="mt-6 rounded-xl bg-[#fee2e2] px-3 py-2 text-left text-xs text-[#991b1b]">
-            Reset link is missing or invalid. Request a new password reset.
+            خطای بازنشانی: لینک ناقص یا نامعتبر است. درخواست بازنشانی مجدد رمز عبور بدهید.
           </div>
         ) : (
           <form className="mt-6 flex flex-col" onSubmit={handleSubmit}>
@@ -257,7 +257,7 @@ export default function ResetPasswordPage() {
                 type="button"
                 className="flex h-12 w-12 items-center justify-center text-[#6b7280]"
                 onClick={() => setShowPassword((prev) => !prev)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-label={showPassword ? "پنهان کردن رمز" : "نمایش رمز"}
               >
                 <EyeIcon open={showPassword} />
               </button>
@@ -291,7 +291,7 @@ export default function ResetPasswordPage() {
                 type="button"
                 className="flex h-12 w-12 items-center justify-center text-[#6b7280]"
                 onClick={() => setShowConfirm((prev) => !prev)}
-                aria-label={showConfirm ? "Hide password" : "Show password"}
+                aria-label={showConfirm ? "پنهان کردن رمز" : "نمایش رمز"}
               >
                 <EyeIcon open={showConfirm} />
               </button>
@@ -305,7 +305,7 @@ export default function ResetPasswordPage() {
             {password.trim() && (
               <div className="mb-3 text-left text-xs text-[#6b7280] sm:mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-[#374151]">Strength:</span>
+                  <span className="font-semibold text-[#374151]">قدرت:</span>
                   <span className="text-[#6b7280]">{passwordStrength.label}</span>
                 </div>
                 <div className="mt-2 flex gap-1">
@@ -321,8 +321,7 @@ export default function ResetPasswordPage() {
                   ))}
                 </div>
                 <div className="mt-2">
-                  Use at least 8 characters. Avoid passwords made of numbers
-                  only.
+                  حداقل ۸ نویسه استفاده کنید. از رمز عبور صرفاً عددی خودداری کنید.
                 </div>
               </div>
             )}
@@ -346,7 +345,7 @@ export default function ResetPasswordPage() {
               className="rounded-xl bg-[#6c4cf5] py-2.5 text-sm font-semibold text-white transition enabled:hover:bg-[#5b3fe7] disabled:cursor-not-allowed disabled:bg-[#eceef2] disabled:text-[#b5bbc7]"
               disabled={!isReady || submitting}
             >
-              {submitting ? "Updating..." : "Update password"}
+              {submitting ? "در حال به‌روزرسانی…" : "به‌روزرسانی رمز عبور"}
             </button>
           </form>
         )}
