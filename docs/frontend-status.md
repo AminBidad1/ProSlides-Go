@@ -10,7 +10,7 @@ status and priorities live in `status/current.md`.
 | Area | Evidence/implementation |
 |---|---|
 | Product flow | Identity, dashboard, editor, reports and live flows use the Go HTTP/SSE boundary. |
-| Live correctness | Snapshot recovery, stable request IDs, event/state ordering and participant non-disclosure have protocol/unit coverage. |
+| Live correctness | A typed runtime controller owns snapshot/cursor/reconnect/roster/command state; React is a thin adapter, projections are single-sourced from snapshot + roster, and protocol/unit coverage guards ordering, retry and disclosure invariants. |
 | Presentation contract | Generated OpenAPI transport types and editor domain adapters exist; revision conflicts are recoverable. |
 | Persian UX | Participant live surfaces are Persian/RTL and consume display-safe presentation theming; editor/client copy has continued moving to Persian. |
 | Accessibility | Critical stable routes have axe/browser checks, focus/reduced-motion/overflow assertions. |
@@ -24,7 +24,6 @@ status and priorities live in `status/current.md`.
 | P2 | The API error contract and identity UI now use stable machine codes through the shared typed `ApiError` boundary; most backend handlers still emit only the code and optional retry metadata. | Add structured field errors/correlation metadata only where they provide concrete UX or operational value; do not return to parsing human-readable server text. |
 | P1 | TypeScript coverage is partial; active JSX is outside `tsc`. | Migrate feature/domain boundaries deliberately, not by mechanical extension renames. |
 | P1 | Legacy top-level `pages/components/services/utils/routes` ownership still coexists with `app/modules/shared`; active live API/runtime/React ownership has moved into `modules/live`. | Continue moving active legacy areas by vertical slice and enforce `app -> modules -> shared` with dependency tooling. |
-| P1 | Live transport/protocol/React ownership is now physically under `modules/live/api + runtime + react`, and `ServerDataContext` now derives its projection directly from the authoritative snapshot + roster; reconnect/roster/command state remains heavily embedded in the React provider. | Extract the stateful live runtime behind a typed store/controller and thin React adapter while keeping projection ownership single-sourced. |
 | P2 | Core Button/ConfirmDialog primitives now use the ProSlides semantic token vocabulary and Radix AlertDialog, but legacy routes still contain direct colors and ad-hoc controls. | Continue route-by-route token migration, move remaining reusable controls into shared primitives/patterns, and add headless primitives only where keyboard/focus behavior warrants them. |
 | P2 | Playwright runs in CI against a real API/PostgreSQL/Redis stack and now covers a manager + participant lifecycle through join, answer, leaderboard, participant reconnect and manager end-state. | Extend the browser gate only when a material uncovered live behavior is identified; keep protocol/unit tests as the denser correctness layer. |
 
