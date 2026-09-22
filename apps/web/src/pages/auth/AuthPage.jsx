@@ -1,63 +1,14 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { apiFetch } from "../../utils/apiFetch";
+
 import Seo from "../../components/Seo";
-
-function formatError(payload) {
-  if (!payload) return "خطایی رخ داد. دوباره تلاش کنید";
-  if (payload.error === "invalid_credentials") return "ایمیل یا رمز عبور نادرست است.";
-  if (payload.error === "email_taken") return "این ایمیل قبلاً ثبت شده است.";
-  if (payload.error === "invalid_request") return "اطلاعات واردشده معتبر نیست.";
-  if (payload.email) {
-    const message = Array.isArray(payload.email)
-      ? payload.email.join(", ")
-      : payload.email;
-    if (message.toLowerCase().includes("already")) {
-      return "این ایمیل قبلاً ثبت شده است";
-    }
-    return `ایمیل: ${message}`;
-  }
-  if (payload.detail) return payload.detail;
-  const keys = Object.keys(payload);
-  if (!keys.length) return "خطایی رخ داد. دوباره تلاش کنید.";
-  const firstKey = keys[0];
-  const value = payload[firstKey];
-  if (Array.isArray(value)) return `${firstKey}: ${value.join(", ")}`;
-  return `${firstKey}: ${value}`;
-}
-
-function normalizeErrorValue(value) {
-  if (Array.isArray(value)) return value.join(", ");
-  if (value === null || value === undefined) return "";
-  return String(value);
-}
-
-function getGoogleAuthErrorMessage(payload) {
-  const detail = normalizeErrorValue(payload?.detail || "");
-  if (!detail) return "";
-  const normalized = detail.toLowerCase();
-  if (normalized.includes("not configured")) {
-    return "ورود با گوگل در حال حاضر فعال نیست. لطفاً با پشتیبانی تماس بگیرید.";
-  }
-  if (normalized.includes("invalid google token")) {
-    return "ورود با گوگل ناموفق بود. لطفاً دوباره تلاش کنید.";
-  }
-  return "";
-}
-
-function extractFieldErrors(payload) {
-  if (!payload || typeof payload !== "object") return {};
-  const errors = {};
-  if (payload.email) errors.email = normalizeErrorValue(payload.email);
-  if (payload.username && !errors.email) {
-    errors.email = normalizeErrorValue(payload.username);
-  }
-  if (payload.password) errors.password = normalizeErrorValue(payload.password);
-  if (payload.full_name) errors.full_name = normalizeErrorValue(payload.full_name);
-  if (payload.code) errors.code = normalizeErrorValue(payload.code);
-  if (payload.detail) errors.form = normalizeErrorValue(payload.detail);
-  return errors;
-}
+import { identityApi } from "../../modules/identity/api/identityApi.ts";
+import {
+  identityErrorCode,
+  identityErrorMessage,
+  identityFieldErrors,
+  retryAfterSeconds,
+} from "../../modules/identity/api/identityErrors.ts";
 
 function isEmailValid(value) {
   if (!value) return false;
@@ -94,27 +45,6 @@ function getPasswordPolicyError(value) {
   return "";
 }
 
-function isDuplicateEmailError(payload) {
-  if (!payload || typeof payload !== "object") return false;
-  const message = normalizeErrorValue(payload.email || payload.detail || payload.error || "");
-  return /already|exist|used/i.test(message);
-}
-
-function isOtpExpiredError(payload) {
-  if (!payload || typeof payload !== "object") return false;
-  const message = normalizeErrorValue(payload.detail || "");
-  return /expired/i.test(message);
-}
-
-function isNetworkError(error) {
-  const message = error?.message || "";
-  return (
-    error?.name === "TypeError" ||
-    message.includes("Failed to fetch") ||
-    message.includes("NetworkError")
-  );
-}
-
 function getResendSeconds(payload, fallbackSeconds) {
   if (!payload || typeof payload !== "object") return fallbackSeconds;
   const seconds =
@@ -135,14 +65,6 @@ function formatCountdown(totalSeconds) {
   const minutes = Math.floor(safeSeconds / 60);
   const seconds = safeSeconds % 60;
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
-}
-
-async function parseJson(response) {
-  try {
-    return await response.json();
-  } catch {
-    return null;
-  }
 }
 
 const GOOGLE_COOKIE_HELP_URL =
@@ -714,17 +636,9 @@ export default function AuthPage() {
       setSubmitting(true);
       setStatus(null);
       try {
-        const googleResponse = await apiFetch("/auth/google", {
-          method: "POST",
-          auth: false,
-          json: { token: response.credential },
+        const payload = await identityApi.authenticateWithGoogle({
+          token: response.credential,
         });
-        const payload = await parseJson(googleResponse);
-        if (!googleResponse.ok) {
-          setFieldErrors(extractFieldErrors(payload));
-          const friendlyMessage = getGoogleAuthErrorMessage(payload);
-          throw new Error(friendlyMessage || formatError(payload));
-        }
 
         const resolvedName =
           payload?.display_name || payload?.full_name || payload?.name;
@@ -738,17 +652,10 @@ export default function AuthPage() {
 
         navigateToDashboard();
       } catch (error) {
-        if (isNetworkError(error)) {
-          setStatus({
-            type: "network",
-            message:
-              "ارتباط با سرور برقرار نشد. اتصال اینترنت خود را بررسی کرده و دوباره تلاش کنید.",
-          });
-          return;
-        }
+        setFieldErrors(identityFieldErrors(error));
         setStatus({
           type: "error",
-          message: error.message || "ورود با گوگل ناموفق بود.",
+          message: identityErrorMessage(error, "ورود با گوگل ناموفق بود."),
         });
       } finally {
         setSubmitting(false);
@@ -828,23 +735,15 @@ export default function AuthPage() {
   };
 
   const handleLogin = async () => {
-    const response = await apiFetch("/auth/login", {
-      method: "POST",
-      auth: false,
-      json: {
+    let payload;
+    try {
+      payload = await identityApi.login({
         email: email.trim(),
         password: password.trim(),
-      },
-    });
-
-    const payload = await parseJson(response);
-    if (!response.ok) {
-      const message = formatError(payload);
-      setFieldErrors(extractFieldErrors(payload));
-      if (
-        payload?.error === "email_not_verified" ||
-        message.toLowerCase().includes("no active account")
-      ) {
+      });
+    } catch (error) {
+      setFieldErrors(identityFieldErrors(error));
+      if (identityErrorCode(error) === "email_not_verified") {
         setMode("verify");
         setStatus({
           type: "info",
@@ -856,12 +755,11 @@ export default function AuthPage() {
         }
         return;
       }
-      throw new Error(message);
+      throw error;
     }
 
     setAuthEmail(trimmedEmail);
-    const resolvedName =
-      payload?.display_name || payload?.full_name || payload?.name || fullName.trim();
+    const resolvedName = payload?.display_name || fullName.trim();
     if (resolvedName) {
       localStorage.setItem("auth.name", resolvedName);
     }
@@ -881,36 +779,19 @@ export default function AuthPage() {
     setSubmitting(true);
     setStatus(null);
     try {
-      const response = await apiFetch("/auth/password/reset", {
-        method: "POST",
-        auth: false,
-        json: { email: email.trim() },
-      });
-      const payload = await parseJson(response);
-      if (response.status === 503) {
-        throw new Error("سرویس ارسال ایمیل بازیابی هنوز پیکربندی نشده است.");
-      }
-      if (!response.ok) {
-        if (isOtpExpiredError(payload)) {
-          setOtpExpiresIn(0);
-          setStatus({
-            type: "otp-expired",
-            message:
-              "کد منقضی شده است. برای ادامه، یک کد جدید درخواست کنید.",
-          });
-          return;
-        }
-        setFieldErrors(extractFieldErrors(payload));
-        throw new Error(formatError(payload));
-      }
+      await identityApi.requestPasswordReset({ email: email.trim() });
       setStatus({
         type: "info",
         message: "راهنمای بازیابی رمز عبور به ایمیل شما ارسال شد.",
       });
     } catch (error) {
+      setFieldErrors(identityFieldErrors(error));
       setStatus({
         type: "error",
-        message: error.message || "امکان ارسال راهنمای بازیابی وجود ندارد.",
+        message: identityErrorMessage(
+          error,
+          "امکان ارسال راهنمای بازیابی وجود ندارد.",
+        ),
       });
     } finally {
       setSubmitting(false);
@@ -919,35 +800,29 @@ export default function AuthPage() {
 
   const handleSignup = async () => {
     const trimmedName = fullName.trim();
-    const requestPayload = {
-      email: email.trim(),
-      password: password.trim(),
-      display_name: trimmedName,
-    };
-
-    const response = await apiFetch("/auth/register", {
-      method: "POST",
-      auth: false,
-      json: requestPayload,
-    });
-
-    const responsePayload = await parseJson(response);
-    if (!response.ok) {
+    let responsePayload;
+    try {
+      responsePayload = await identityApi.register({
+        email: email.trim(),
+        password: password.trim(),
+        display_name: trimmedName,
+      });
+    } catch (error) {
       setHasSubmitted(true);
-      setFieldErrors(extractFieldErrors(responsePayload));
-      if (isDuplicateEmailError(responsePayload)) {
+      setFieldErrors(identityFieldErrors(error));
+      if (identityErrorCode(error) === "email_taken") {
         setStatus({
           type: "email-exists",
           message:
-            "این ایمیل قبلاً ثبت شده است. می‌توانید با گوگل وارد شوید یا رمز عبور تنظیم کنید.",
+            "این ایمیل قبلاً ثبت شده است. می‌توانید وارد شوید یا در صورت نیاز رمز عبور خود را بازیابی کنید.",
         });
         return;
       }
-      throw new Error(formatError(responsePayload));
+      throw error;
     }
 
-    if (fullName.trim()) {
-      localStorage.setItem("auth.name", fullName.trim());
+    if (trimmedName) {
+      localStorage.setItem("auth.name", trimmedName);
     }
     setAuthEmail(trimmedEmail);
 
@@ -958,7 +833,7 @@ export default function AuthPage() {
 
     setStatus({
       type: "info",
-      message: `کد 6 رقمی به ${maskEmail(email)} ارسال شد. برای تایید حساب آن را وارد کنید.`,
+      message: `کد ۶ رقمی به ${maskEmail(email)} ارسال شد. برای تأیید حساب آن را وارد کنید.`,
     });
     setMode("verify");
     startResendCooldown(getResendSeconds(responsePayload, 60));
@@ -971,27 +846,24 @@ export default function AuthPage() {
     setSubmitting(true);
     setStatus(null);
     try {
-      const response = await apiFetch("/auth/verify", {
-        method: "POST",
-        auth: false,
-        json: {
-          email: email.trim(),
-          code: verificationCode.trim(),
-        },
+      await identityApi.verifyEmail({
+        email: email.trim(),
+        code: verificationCode.trim(),
       });
-
-      const payload = await parseJson(response);
-      if (!response.ok) {
-        setFieldErrors(extractFieldErrors(payload));
-        throw new Error(formatError(payload));
-      }
 
       setAuthEmail(trimmedEmail);
       navigateToDashboard();
     } catch (error) {
+      setFieldErrors(identityFieldErrors(error));
+      if (identityErrorCode(error) === "verification_expired") {
+        setOtpExpiresIn(0);
+      }
       setStatus({
-        type: "error",
-        message: error.message || "امکان تأیید ایمیل وجود ندارد.",
+        type:
+          identityErrorCode(error) === "verification_expired"
+            ? "otp-expired"
+            : "error",
+        message: identityErrorMessage(error, "امکان تأیید ایمیل وجود ندارد."),
       });
     } finally {
       setSubmitting(false);
@@ -1010,29 +882,27 @@ export default function AuthPage() {
     setSubmitting(true);
     setStatus(null);
     try {
-      const response = await apiFetch("/auth/verify/resend", {
-        method: "POST",
-        auth: false,
-        json: { email: email.trim() },
+      const payload = await identityApi.resendVerification({
+        email: email.trim(),
       });
-      const payload = await parseJson(response);
-      if (!response.ok) {
-        setHasSubmitted(true);
-        setResendCooldown(getResendSeconds(payload, resendCooldown));
-        setFieldErrors(extractFieldErrors(payload));
-        throw new Error(formatError(payload));
-      }
       setStatus({
         type: "info",
-        message: payload?.detail || "کد تأیید ارسال شد.",
+        message: "کد تأیید ارسال شد.",
       });
       startResendCooldown(getResendSeconds(payload, 60));
       startOtpExpiry(getOtpExpirySeconds(payload, DEFAULT_OTP_TTL_SECONDS));
       setVerificationCode("");
     } catch (error) {
+      setHasSubmitted(true);
+      const retrySeconds = retryAfterSeconds(error, resendCooldown);
+      if (retrySeconds > 0) setResendCooldown(retrySeconds);
+      setFieldErrors(identityFieldErrors(error));
       setStatus({
         type: "error",
-        message: error.message || "امکان ارسال مجدد کد وجود ندارد.",
+        message: identityErrorMessage(
+          error,
+          "امکان ارسال مجدد کد وجود ندارد.",
+        ),
       });
     } finally {
       setSubmitting(false);
@@ -1054,18 +924,10 @@ export default function AuthPage() {
         await handleLogin();
       }
     } catch (error) {
-      if (isNetworkError(error)) {
-        setStatus({
-          type: "network",
-          message:
-            "ارتباط با سرور برقرار نشد. اتصال اینترنت خود را بررسی کرده و دوباره تلاش کنید.",
-        });
-      } else {
-        setStatus({
-          type: "error",
-          message: error.message || "خطایی رخ داد. لطفاً دوباره تلاش کنید.",
-        });
-      }
+      setStatus({
+        type: "error",
+        message: identityErrorMessage(error),
+      });
     } finally {
       setSubmitting(false);
     }
