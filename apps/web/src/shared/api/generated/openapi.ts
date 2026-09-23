@@ -676,6 +676,7 @@ export interface components {
         PresentationSettingsInput: {
             background_color?: string;
             background_image_url?: string;
+            music_url?: string;
             text_color?: string;
         } & {
             [key: string]: unknown;
@@ -856,11 +857,12 @@ export interface components {
             presentation_id: string;
             presentation: components["schemas"]["PublicLivePresentation"];
         };
-        /** @description Public, display-only presentation metadata safe for participant theming. */
+        /** @description Public, display-only presentation metadata safe for participant theming and presentation audio. */
         PublicLivePresentation: {
             title: string;
             background_color: string;
             background_image_url: string;
+            music_url: string;
             text_color: string;
         };
         ParticipantLiveSnapshot: {

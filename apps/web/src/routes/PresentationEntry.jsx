@@ -5,7 +5,7 @@ import { LiveSessionProvider } from "../modules/live/react/LiveSessionContext";
 import { ServerDataProvider } from "../modules/live/react/ServerDataContext";
 import { useServerData } from "../modules/live/react/useServerData";
 import { useLiveSession } from "../modules/live/react/useLiveSession";
-import { AudioProvider, useAudio } from "../contexts/AudioContext";
+import { AudioProvider, useAudio } from "../contexts/AudioContext.tsx";
 import { getPresentation, resolveLiveSession } from "../modules/live/api/liveApi";
 import { presentationSlideToLegacy } from "../modules/live/runtime/protocol";
 import { hasLeaderboardEntries } from "../pages/presentation/utils/leaderboardUtils";
@@ -111,7 +111,7 @@ function AccessCodeResolver() {
               image: data.presentation.background_image_url,
               text_color: data.presentation.text_color,
             },
-            music_url: "",
+            music_url: data.presentation.music_url || "",
             slides: [],
             text_color: data.presentation.text_color,
           });
@@ -311,9 +311,7 @@ function AppPresentation({ roomId, role, initialQuizData }) {
   // Set quiz music when loaded
   const { setQuizMusic } = useAudio();
   useEffect(() => {
-    if (remoteQuiz?.music_url) {
-      setQuizMusic(remoteQuiz.music_url);
-    }
+    setQuizMusic(remoteQuiz?.music_url || "");
   }, [remoteQuiz?.music_url, setQuizMusic]);
 
   const {

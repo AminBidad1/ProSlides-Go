@@ -61,12 +61,13 @@ func (s *PostgresStore) ResolveSession(c context.Context, code string) (SessionL
 	err := s.pool.QueryRow(c, `SELECT ls.id::text,ls.presentation_id::text,p.title,
 		CASE WHEN p.settings->>'background_color' ~ '^#[0-9A-Fa-f]{6}$' THEN p.settings->>'background_color' ELSE '#1e1e2e' END,
 		COALESCE(p.settings->>'background_image_url',''),
+		COALESCE(p.settings->>'music_url',''),
 		CASE WHEN p.settings->>'text_color' ~ '^#[0-9A-Fa-f]{6}$' THEN p.settings->>'text_color' ELSE '#ffffff' END
 		FROM live_sessions ls JOIN presentations p ON p.id=ls.presentation_id
 		WHERE ls.join_code=$1 AND ls.state<>'ended' LIMIT 1`, code).Scan(
 		&out.SessionID, &out.PresentationID, &out.Presentation.Title,
 		&out.Presentation.BackgroundColor, &out.Presentation.BackgroundImageURL,
-		&out.Presentation.TextColor)
+		&out.Presentation.MusicURL, &out.Presentation.TextColor)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return out, ErrNotFound
 	}
