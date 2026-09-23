@@ -1,10 +1,43 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState, type ChangeEvent, type KeyboardEvent } from "react";
 import QRCode from "qrcode";
 import { X, Check, Loader2 } from "lucide-react";
 import { quizService } from "../api/presentationRepository.ts";
+import { ApiError } from "../../../shared/api/http.ts";
 import Notice from "../../../shared/ui/Notice";
 import { fa } from "../../../shared/i18n/fa";
 
+
+type ShareDialogProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  accessCode: string;
+  onAccessCodeSaved?: (accessCode: string) => void;
+  quizId: string;
+};
+
+type MenuItemProps = {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+};
+
+type InviteAudienceProps = {
+  BASE: string;
+  code: string;
+  onCodeChange: (value: string) => void;
+  qr: string;
+  inputError: string;
+  onSave: () => void | Promise<void>;
+  onConfirmSave: () => void | Promise<void>;
+  onCancelConfirm: () => void;
+  onClose: () => void;
+  isSaving: boolean;
+  saveError: string;
+  saveSuccess: boolean;
+  hasChanges: boolean;
+  confirmingSave: boolean;
+  isCodeValid: boolean;
+};
 
 export default function ShareMenu({
   isOpen,
@@ -12,9 +45,9 @@ export default function ShareMenu({
   accessCode,
   onAccessCodeSaved,
   quizId,
-}) {
+}: ShareDialogProps) {
 
-  const [section, setSection] = useState("invite");
+  const [section, setSection] = useState<"invite">("invite");
   const [code, setCode] = useState(accessCode || "");
   const [initialCode, setInitialCode] = useState(accessCode || "");
   const [qr, setQr] = useState("");
@@ -30,7 +63,7 @@ export default function ShareMenu({
 
 
   // Checking the validity of the code
-  const validateCode = (input) => {
+  const validateCode = (input: string): string => {
     if (!input) {
       return "";
     }
@@ -76,7 +109,10 @@ export default function ShareMenu({
 
       return true;
     } catch (error) {
-      if (error?.response?.status === 409) {
+      if (
+        error instanceof ApiError &&
+        error.code === "access_code_taken"
+      ) {
         setSaveError("این کد ورود قبلاً استفاده شده است.");
       } else {
         setSaveError("ذخیره کد ورود انجام نشد. دوباره تلاش کنید.");
@@ -114,7 +150,7 @@ export default function ShareMenu({
 
   const isCodeValid = code.length >= 5 && !inputError;
 
-  const handleCodeChange = (nextCode) => {
+  const handleCodeChange = (nextCode: string) => {
     setCode(nextCode);
     setInputError(validateCode(nextCode));
     setSaveError("");
@@ -216,7 +252,7 @@ export default function ShareMenu({
 }
 
 
-function MenuItem({ label, active, onClick }) {
+function MenuItem({ label, active, onClick }: MenuItemProps) {
   return (
     <button
       className={`w-full rounded-control px-3 py-2 text-start font-medium transition
@@ -249,14 +285,14 @@ function InviteAudienceUI({
   hasChanges,
   confirmingSave,
   isCodeValid
-}) {
+}: InviteAudienceProps) {
 
-  const handleCodeChange = (e) => {
+  const handleCodeChange = (e: ChangeEvent<HTMLInputElement>) => {
     const newCode = e.target.value.replace(/\s+/g, "");
     onCodeChange(newCode);
   };
 
-  const handleKeyDown = (event) => {
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
       event.preventDefault();
       onSave();

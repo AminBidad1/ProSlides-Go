@@ -3,15 +3,15 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import QuestionCanvas from "../canvas/QuestionCanvas";
 import ContentCanvas from "../canvas/ContentCanvas";
 import LeaderboardPreview from "../canvas/LeaderboardCanvas";
-import QuizHeader from "../toolbar/EditorHeader";
+import QuizHeader from "../toolbar/EditorHeader.tsx";
 import Sidebar from "../inspector/QuestionInspector";
 import SlidesPanel from "../slide-list/SlideList.tsx";
-import RightToolbar from "../toolbar/EditorToolbar";
+import RightToolbar from "../toolbar/EditorToolbar.tsx";
 import DesignPanel from "../inspector/DesignInspector";
 import AudioPanel from "../inspector/AudioInspector.tsx";
 import ContentSidebar from "../inspector/ContentInspector";
 import { quizService } from "../../api/presentationRepository.ts";
-import { getPresentationValidationError } from "../model/validation";
+import { getPresentationValidationError, type EditorPresentation } from "../../model/editor.ts";
 import { X, ArrowRight, Plus, RefreshCw, Sparkles } from "lucide-react";
 import { ConfirmDialog } from "../../../../shared/ui/primitives/ConfirmDialog.tsx";
 import EditorRouteSkeleton from "./EditorRouteSkeleton";
@@ -29,15 +29,36 @@ import { useEditorSlideMutations } from "../model/useEditorSlideMutations.ts";
 import { useEditorSlideOrder } from "../model/useEditorSlideOrder.ts";
 import { useEditorSlideSelection } from "../model/useEditorSlideSelection.ts";
 
+type EditorRouteLocationState = {
+  createdPresentation?: boolean;
+};
+
+type LeaderboardEntry =
+  Awaited<ReturnType<typeof quizService.getQuestionLeaderboard>>[number];
+
+type QuestionEditorProps = {
+  quiz: EditorPresentation;
+  updateQuiz: (quiz: EditorPresentation) => void;
+  refreshQuiz: () => Promise<void>;
+  createdPresentation: boolean;
+};
+
+const SLIDE_TYPE_CHOICES = [
+  "Single Choice",
+  "Multiple Choice",
+  "Content Slide",
+] as const;
+
+
 export default function EditorPage() {
   const { roomId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const quizId = roomId?.trim() || "";
 
-  const [quiz, setQuiz] = useState(null);
+  const [quiz, setQuiz] = useState<EditorPresentation | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const fetchSequenceRef = useRef(0);
 
   const fetchQuiz = useCallback(async () => {
@@ -69,7 +90,7 @@ export default function EditorPage() {
     };
   }, [fetchQuiz]);
 
-  const updateQuiz = (updatedQuiz) => {
+  const updateQuiz = (updatedQuiz: EditorPresentation) => {
     setQuiz(updatedQuiz);
   };
 
@@ -107,32 +128,32 @@ export default function EditorPage() {
       quiz={quiz}
       updateQuiz={updateQuiz}
       refreshQuiz={fetchQuiz}
-      createdPresentation={location.state?.createdPresentation === true}
+      createdPresentation={(location.state as EditorRouteLocationState | null)?.createdPresentation === true}
     />
   );
 }
 
 
-function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) {
+function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }: QuestionEditorProps) {
 
   const navigate = useNavigate();
-  const [leaderboardPreviewData, setLeaderboardPreviewData] = useState({});
-  const [leaderboardError, setLeaderboardError] = useState(null);
-  const [leaderboardLoading, setLeaderboardLoading] = useState({});
+  const [leaderboardPreviewData, setLeaderboardPreviewData] = useState<Record<string, LeaderboardEntry[]>>({});
+  const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
+  const [leaderboardLoading, setLeaderboardLoading] = useState<Record<string, boolean>>({});
   const editorStatus = useEditorStatus();
   const hasSidebarChanges = editorStatus.dirty.content;
   const hasAudioChanges = editorStatus.dirty.audio;
   const hasDesignChanges = editorStatus.dirty.design;
   const setHasSidebarChanges = useCallback(
-    (dirty) => editorStatus.setDirty("content", Boolean(dirty)),
+    (dirty: boolean) => editorStatus.setDirty("content", Boolean(dirty)),
     [editorStatus],
   );
   const setHasAudioChanges = useCallback(
-    (dirty) => editorStatus.setDirty("audio", Boolean(dirty)),
+    (dirty: boolean) => editorStatus.setDirty("audio", Boolean(dirty)),
     [editorStatus],
   );
   const setHasDesignChanges = useCallback(
-    (dirty) => editorStatus.setDirty("design", Boolean(dirty)),
+    (dirty: boolean) => editorStatus.setDirty("design", Boolean(dirty)),
     [editorStatus],
   );
   const hasUnsavedChanges = editorStatus.hasUnsavedChanges;
@@ -229,7 +250,7 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
     editorStatus.clearConflict();
   }, [editorStatus, refreshQuiz]);
 
-  const loadLeaderboardPreview = useCallback(async (slideId) => {
+  const loadLeaderboardPreview = useCallback(async (slideId: string) => {
     if (!slideId) return;
     try {
       setLeaderboardLoading((prev) => ({ ...prev, [slideId]: true }));
@@ -370,7 +391,7 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
         onNotify={showNotice}
         onBack={handleExitPanel}
         onQuizUpdated={updateQuiz}
-        onAccessCodeSaved={(accessCode) => updateQuiz({ ...quiz, access_code: accessCode })}
+        onAccessCodeSaved={(accessCode: string) => updateQuiz({ ...quiz, access_code: accessCode })}
         onConflict={recoverConflict}
         saveState={editorStatus.saveState}
       />
@@ -551,7 +572,7 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
                     </Notice>
                   )}
 
-                  {["Single Choice", "Multiple Choice", "Content Slide"].map((type) => {
+                  {SLIDE_TYPE_CHOICES.map((type) => {
                     const isSingle = type === "Single Choice";
                     const isContent = type === "Content Slide";
                     const description = isContent ? "نمایش متن و تصویر بدون دریافت پاسخ" : isSingle
@@ -625,7 +646,7 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
                 {/* ???? ???? ???? ???? */}
                 <div className="w-full flex justify-end mb-4">
                   <button
-                    onClick={handleCloseSidebarPanel}
+                    onClick={() => handleCloseSidebarPanel()}
                     className="rounded-lg p-2 transition-colors hover:bg-danger-soft"
                   >
                     <X className="w-5 h-5 text-gray-500" />
@@ -710,7 +731,6 @@ function QuestionEditor({ quiz, updateQuiz, refreshQuiz, createdPresentation }) 
                     <Sidebar
                       quizId={quiz.quiz_id}
                       slide={activeSlide}
-                      activeSlideType={activeSlideType}
                       onClose={handleCloseSidebarPanel}
                       onDirtyChange={setHasSidebarChanges}
                       onSlideUpdated={handleSlideUpdated}

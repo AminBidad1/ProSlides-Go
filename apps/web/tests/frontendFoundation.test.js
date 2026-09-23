@@ -26,18 +26,27 @@ test("shared notice exposes assertive errors and polite pending or success state
 
 test("F2 dashboard editor and share slice has no native alerts and owns direction boundaries", () => {
   const paths = [
-    "src/modules/presentations/editor/toolbar/EditorHeader.jsx",
-    "src/modules/presentations/sharing/ShareDialog.jsx",
+    "src/modules/presentations/editor/toolbar/EditorHeader.tsx",
+    "src/modules/presentations/sharing/ShareDialog.tsx",
     "src/modules/presentations/dashboard/PresentationDashboard.jsx",
-    "src/modules/presentations/editor/routes/EditorRoute.jsx",
+    "src/modules/presentations/editor/routes/EditorRoute.tsx",
     "src/modules/presentations/editor/inspector/QuestionInspector.tsx",
     "src/modules/presentations/editor/slide-list/SlideList.tsx",
   ];
   const combined = paths.map(source).join("\n");
+  const header = source("src/modules/presentations/editor/toolbar/EditorHeader.tsx");
+  const toolbar = source("src/modules/presentations/editor/toolbar/EditorToolbar.tsx");
+  const share = source("src/modules/presentations/sharing/ShareDialog.tsx");
 
   assert.doesNotMatch(combined, /(?:window\.)?alert\s*\(/);
-  assert.match(source("src/modules/presentations/editor/toolbar/EditorHeader.jsx"), /dir="auto"/);
-  assert.match(source("src/modules/presentations/sharing/ShareDialog.jsx"), /dir="ltr"/);
+  assert.match(header, /dir="auto"/);
+  assert.match(share, /dir="ltr"/);
+  assert.doesNotMatch(header, /error\.response/);
+  assert.doesNotMatch(share, /error\?*\.response|error\.response/);
+  assert.match(header, /error instanceof ApiError/);
+  assert.match(share, /error instanceof ApiError/);
+  assert.match(toolbar, /border-e/);
+  assert.doesNotMatch(toolbar, /violet-|border-r/);
   assert.match(source("src/modules/presentations/dashboard/PresentationDashboard.jsx"), /dir="auto"/);
 });
 
@@ -58,8 +67,8 @@ test("typed Persian catalog is consumed by manager dashboard editor and share", 
   assert.match(catalog, /export const fa =/);
   assert.match(catalog, /as const/);
   assert.match(source("src/modules/presentations/dashboard/PresentationDashboard.jsx"), /fa\.dashboard\.title/);
-  assert.match(source("src/modules/presentations/editor/routes/EditorRoute.jsx"), /fa\.managerShell\.backToDashboard/);
-  assert.match(source("src/modules/presentations/sharing/ShareDialog.jsx"), /fa\.share\.title/);
+  assert.match(source("src/modules/presentations/editor/routes/EditorRoute.tsx"), /fa\.managerShell\.backToDashboard/);
+  assert.match(source("src/modules/presentations/sharing/ShareDialog.tsx"), /fa\.share\.title/);
 });
 
 test("presentation transport types come from the checked-in OpenAPI output", () => {
@@ -76,14 +85,14 @@ test("presentation transport types come from the checked-in OpenAPI output", () 
 });
 
 test("F3 owns presentation UI and keeps slide mutation selection and reorder behind typed editor boundaries", () => {
-  const route = source("src/modules/presentations/editor/routes/EditorRoute.jsx");
+  const route = source("src/modules/presentations/editor/routes/EditorRoute.tsx");
   const mutations = source("src/modules/presentations/editor/model/useEditorSlideMutations.ts");
   const selection = source("src/modules/presentations/editor/model/useEditorSlideSelection.ts");
   const order = source("src/modules/presentations/editor/model/useEditorSlideOrder.ts");
   const slideList = source("src/modules/presentations/editor/slide-list/SlideList.tsx");
 
   assert.match(source("src/modules/presentations/dashboard/PresentationDashboard.jsx"), /\.\.\/api\/presentationRepository/);
-  assert.match(source("src/modules/presentations/sharing/ShareDialog.jsx"), /\.\.\/api\/presentationRepository/);
+  assert.match(source("src/modules/presentations/sharing/ShareDialog.tsx"), /\.\.\/api\/presentationRepository/);
   assert.match(route, /useEditorStatus/);
   assert.match(route, /useEditorSlideMutations/);
   assert.match(route, /useEditorSlideSelection/);
@@ -311,7 +320,7 @@ test("live projection is derived directly from authoritative snapshot and roster
 
 
 test("question editor keeps one typed draft across inspector and canvas", () => {
-  const route = source("src/modules/presentations/editor/routes/EditorRoute.jsx");
+  const route = source("src/modules/presentations/editor/routes/EditorRoute.tsx");
   const inspector = source("src/modules/presentations/editor/inspector/QuestionInspector.tsx");
   const canvas = source("src/modules/presentations/editor/canvas/QuestionCanvas.tsx");
   const options = source("src/modules/presentations/editor/inspector/QuestionOptionsEditor.tsx");
@@ -349,7 +358,7 @@ test("question editor keeps one typed draft across inspector and canvas", () => 
 
 
 test("content editor shares one typed draft across inspector and canvas", () => {
-  const route = source("src/modules/presentations/editor/routes/EditorRoute.jsx");
+  const route = source("src/modules/presentations/editor/routes/EditorRoute.tsx");
   const inspector = source("src/modules/presentations/editor/inspector/ContentInspector.tsx");
   const canvas = source("src/modules/presentations/editor/canvas/ContentCanvas.tsx");
   const provider = source("src/modules/presentations/editor/model/ContentDraftProvider.tsx");
@@ -377,7 +386,7 @@ test("content editor shares one typed draft across inspector and canvas", () => 
 
 
 test("audio editor uses one typed presentation draft and accessible native preview", () => {
-  const route = source("src/modules/presentations/editor/routes/EditorRoute.jsx");
+  const route = source("src/modules/presentations/editor/routes/EditorRoute.tsx");
   const inspector = source("src/modules/presentations/editor/inspector/AudioInspector.tsx");
   const draft = source("src/modules/presentations/editor/model/audioDraft.ts");
   const hook = source("src/modules/presentations/editor/model/useAudioDraft.ts");
@@ -406,7 +415,7 @@ test("audio editor uses one typed presentation draft and accessible native previ
 });
 
 test("design editor shares one typed presentation draft across all preview surfaces", () => {
-  const route = source("src/modules/presentations/editor/routes/EditorRoute.jsx");
+  const route = source("src/modules/presentations/editor/routes/EditorRoute.tsx");
   const inspector = source("src/modules/presentations/editor/inspector/DesignInspector.tsx");
   const question = source("src/modules/presentations/editor/canvas/QuestionCanvas.tsx");
   const content = source("src/modules/presentations/editor/canvas/ContentCanvas.tsx");

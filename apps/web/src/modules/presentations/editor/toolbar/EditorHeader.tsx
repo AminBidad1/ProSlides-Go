@@ -1,13 +1,34 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { quizService } from "../../api/presentationRepository.ts";
-import ShareMenu from "../../sharing/ShareDialog";
+import ShareMenu from "../../sharing/ShareDialog.tsx";
 import { fa } from "../../../../shared/i18n/fa";
+import { ApiError } from "../../../../shared/api/http.ts";
+import type { NoticeTone } from "../../../../shared/ui/Notice.tsx";
+import type { EditorPresentation } from "../../model/editor.ts";
+import type { EditorSaveState } from "../model/useEditorStatus.ts";
 
+
+type EditorHeaderProps = {
+  accessCode?: string;
+  quizTitle?: string;
+  quizId: string;
+  quizRevision: number;
+  onNotify?: (
+    message: string,
+    tone?: NoticeTone,
+    pending?: boolean,
+  ) => void;
+  onBack?: () => void;
+  onQuizUpdated?: (quiz: EditorPresentation) => void;
+  onConflict?: () => void | Promise<void>;
+  onAccessCodeSaved?: (accessCode: string) => void;
+  saveState?: EditorSaveState;
+};
 
 export default function QuizHeader({
   accessCode = "ABC123",
-  quizTitle = "", 
+  quizTitle = "",
   quizId,
   quizRevision,
   onNotify,
@@ -16,7 +37,7 @@ export default function QuizHeader({
   onConflict,
   onAccessCodeSaved,
   saveState = "saved",
-}) {
+}: EditorHeaderProps) {
 
   const navigate = useNavigate();
   const [showShareModal, setShowShareModal] = useState(false);
@@ -62,23 +83,23 @@ export default function QuizHeader({
       if (onQuizUpdated) onQuizUpdated(updatedQuiz);
       onNotify?.("نام ارائه ذخیره شد.", "success");
     } catch (error) {
-      if (error.response?.status === 409 && error.response?.data?.error === "edit_conflict") {
-        if (onConflict) await onConflict();
-        onNotify?.("این ارائه جای دیگری تغییر کرده است. آخرین نسخه بارگذاری شد.", "warning");
+      if (error instanceof ApiError && error.isConflict) {
+        await onConflict?.();
+        onNotify?.(
+          "این ارائه جای دیگری تغییر کرده است. آخرین نسخه بارگذاری شد.",
+          "warning",
+        );
         return;
       }
-      // Return to previous name
+
       setNewQuizTitle(quizTitle || "");
 
-      // Display an error message to the user
-      if (error.response) {
+      if (error instanceof ApiError) {
         onNotify?.(
-          `خطای ذخیره: ${
-            error.response.data?.message || "ذخیره نام انجام نشد."
-          }`,
-          "error"
+          `خطای ذخیره: ${error.data?.message || "ذخیره نام انجام نشد."}`,
+          "error",
         );
-      } else if (error.request) {
+      } else if (error instanceof TypeError) {
         onNotify?.("ارتباط با سرور برقرار نشد.", "error");
       } else {
         onNotify?.("خطای پیش‌بینی‌نشده‌ای رخ داد.", "error");
@@ -97,7 +118,7 @@ export default function QuizHeader({
 
 
   // تابع handleInputChange برای اطمینان از مقدار معتبر
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value || "";
     setNewQuizTitle(value);
   };
