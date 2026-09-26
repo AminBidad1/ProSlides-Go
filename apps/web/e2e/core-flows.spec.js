@@ -654,6 +654,9 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
       manager.getByRole("heading", { name: "پایتخت ایران کدام شهر است؟" }),
     ).toBeVisible({ timeout: 15000 });
     await expect(
+      manager.getByRole("button", { name: "نمایش نتیجه", exact: true }),
+    ).toBeVisible();
+    await expect(
       stage.getByRole("heading", { name: "پایتخت ایران کدام شهر است؟" }),
     ).toBeVisible({ timeout: 15000 });
     await expect(stage.getByText("پاسخ صحیح", { exact: true })).toBeHidden();
@@ -726,6 +729,35 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
     await expect(backstage.getByText("شرکت‌کننده تست")).toBeVisible();
     await expect(backstage.getByText("+۱۰۰", { exact: true })).toBeVisible();
     await expectAccessible(manager, "manager backstage activity result");
+
+    await expect(
+      participant.getByText("پاسخ‌گویی پایان یافت", { exact: true }),
+    ).toBeVisible({ timeout: 15000 });
+    await expect(
+      participant.getByRole("heading", { name: "پایتخت ایران کدام شهر است؟" }),
+    ).toBeVisible();
+    await expect(
+      participant.getByText("پاسخ شما ثبت شده است", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      participant.getByText("نتیجه هنوز نمایش داده نشده است.", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      participant.getByText("پاسخ صحیح", { exact: true }),
+    ).toBeHidden();
+    await expectAccessible(participant, "participant closed activity");
+    await expectNoOverflow(participant);
+
+    await participant.reload();
+    await expect(
+      participant.getByText("پاسخ‌گویی پایان یافت", { exact: true }),
+    ).toBeVisible({ timeout: 15000 });
+    await expect(
+      participant.getByText("پاسخ شما ثبت شده است", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      participant.getByText("پاسخ صحیح", { exact: true }),
+    ).toBeHidden();
 
     const privateRankingTrigger = backstage.getByRole("button", {
       name: "مشاهده خصوصی رتبه‌بندی کلی",

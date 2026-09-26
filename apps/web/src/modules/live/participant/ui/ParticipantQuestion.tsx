@@ -141,8 +141,25 @@ export function ParticipantQuestion({
                   انتخاب شما ذخیره شده است. منتظر نمایش نتیجه بمانید.
                 </p>
               </div>
-            ) : controller.submitState === "retryable" &&
-              controller.timeLeft > 0 ? (
+            ) : timedOut ? (
+              <div
+                className="rounded-2xl border border-[color:var(--live-border)] bg-white/5 px-5 py-4 text-center"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                <p className="text-lg font-black">پاسخ‌گویی پایان یافت</p>
+                <p className="mt-1 text-sm leading-6 text-[color:var(--live-muted)]">
+                  {controller.submitState === "expired" &&
+                  controller.submitMessage
+                    ? controller.submitMessage
+                    : "دیگر امکان ثبت پاسخ وجود ندارد."}
+                </p>
+                <p className="mt-1 text-sm leading-6 text-[color:var(--live-muted)]">
+                  منتظر نمایش نتیجه توسط ارائه‌دهنده بمانید.
+                </p>
+              </div>
+            ) : controller.submitState === "retryable" ? (
               <button
                 type="button"
                 onClick={() => void controller.retry()}
@@ -159,13 +176,13 @@ export function ParticipantQuestion({
               >
                 {controller.submitState === "sending"
                   ? "در حال ارسال…"
-                  : timedOut
-                    ? "زمان پایان یافت"
-                    : "ثبت پاسخ"}
+                  : "ثبت پاسخ"}
               </button>
             )}
 
-            {controller.submitMessage && controller.submitState !== "sent" ? (
+            {controller.submitMessage &&
+            controller.submitState !== "sent" &&
+            controller.submitState !== "expired" ? (
               <p
                 role={
                   controller.submitState === "rejected" ? "alert" : "status"
@@ -173,15 +190,6 @@ export function ParticipantQuestion({
                 className="mt-3 text-center text-sm text-[color:var(--live-muted)]"
               >
                 {controller.submitMessage}
-              </p>
-            ) : null}
-
-            {timedOut && controller.submitState !== "sent" ? (
-              <p
-                role="status"
-                className="mt-3 text-center text-sm text-[color:var(--live-muted)]"
-              >
-                در انتظار ادامهٔ ارائه‌دهنده…
               </p>
             ) : null}
           </div>

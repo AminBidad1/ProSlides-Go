@@ -6,6 +6,7 @@ import type {
   LegacyQuestionResult,
   LegacyQuestionSlide,
 } from "../model/serverData.ts";
+import { ParticipantActivityClosed } from "../participant/ui/ParticipantActivityClosed.tsx";
 import { ParticipantActivityResult } from "../participant/ui/ParticipantActivityResult.tsx";
 import { ParticipantContentSlide } from "../participant/ui/ParticipantContentSlide.tsx";
 import { ParticipantFinalResult } from "../participant/ui/ParticipantFinalResult.tsx";
@@ -14,6 +15,7 @@ import { ParticipantLeaderboard } from "../participant/ui/ParticipantLeaderboard
 import { ParticipantQuestion } from "../participant/ui/ParticipantQuestion.tsx";
 import { ParticipantWordCloud } from "../participant/ui/ParticipantWordCloud.tsx";
 import { ParticipantWaiting } from "../participant/ui/ParticipantWaiting.tsx";
+import { normalizeLiveSlide } from "../runtime/protocol.ts";
 import type { LiveSnapshot } from "../api/types.ts";
 
 type PlayerViewProps = {
@@ -58,6 +60,40 @@ export function PlayerPresentationView({
         quiz={quiz}
         question={currentQuestion}
         result={questionResults}
+      />
+    );
+  }
+
+  if (
+    snapshot?.role === "participant" &&
+    snapshot.session.state === "presenting" &&
+    snapshot.session.stage_view === "item" &&
+    snapshot.session.activity_phase === "closed"
+  ) {
+    const normalizedClosedItem = normalizeLiveSlide(
+      snapshot.active_item,
+      snapshot.session,
+    );
+    const activeItemId = String(snapshot.session.active_item_id ?? "");
+    const rememberedQuestion =
+      lastActive?.kind === "question" &&
+      String(
+        lastActive.payload.question_id ??
+          lastActive.payload.slide_id ??
+          "",
+      ) === activeItemId
+        ? lastActive.payload
+        : null;
+    const closedQuestion =
+      normalizedClosedItem?.item_kind === "activity"
+        ? normalizedClosedItem
+        : rememberedQuestion;
+
+    return (
+      <ParticipantActivityClosed
+        quiz={quiz}
+        question={closedQuestion}
+        hasResponded={snapshot.has_responded}
       />
     );
   }

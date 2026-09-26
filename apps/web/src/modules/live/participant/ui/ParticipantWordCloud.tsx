@@ -369,7 +369,24 @@ export function ParticipantWordCloud({
                   متن شما ذخیره شده است. منتظر نمایش نتیجه بمانید.
                 </p>
               </div>
-            ) : submitState === "retryable" && timeLeft > 0 ? (
+            ) : submitState === "expired" || timeLeft <= 0 ? (
+              <div
+                className="rounded-2xl border border-[color:var(--live-border)] bg-white/5 px-5 py-4 text-center"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                <p className="text-lg font-black">پاسخ‌گویی پایان یافت</p>
+                <p className="mt-1 text-sm leading-6 text-[color:var(--live-muted)]">
+                  {submitState === "expired" && submitMessage
+                    ? submitMessage
+                    : "دیگر امکان ثبت پاسخ وجود ندارد."}
+                </p>
+                <p className="mt-1 text-sm leading-6 text-[color:var(--live-muted)]">
+                  منتظر نمایش نتیجه توسط ارائه‌دهنده بمانید.
+                </p>
+              </div>
+            ) : submitState === "retryable" ? (
               <button
                 type="button"
                 onClick={() => void retry()}
@@ -384,14 +401,12 @@ export function ParticipantWordCloud({
                 onClick={() => void submit()}
                 disabled={!canSubmit}
               >
-                {submitState === "sending"
-                  ? "در حال ارسال…"
-                  : submitState === "expired"
-                    ? "زمان پایان یافت"
-                    : "ثبت پاسخ"}
+                {submitState === "sending" ? "در حال ارسال…" : "ثبت پاسخ"}
               </button>
             )}
-            {submitMessage && submitState !== "sent" ? (
+            {submitMessage &&
+            submitState !== "sent" &&
+            submitState !== "expired" ? (
               <p
                 role={submitState === "rejected" ? "alert" : "status"}
                 className="mt-3 text-center text-sm text-[color:var(--live-muted)]"

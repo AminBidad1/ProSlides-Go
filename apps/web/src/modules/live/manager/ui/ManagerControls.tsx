@@ -8,6 +8,8 @@ type ManagerControlsProps = {
   onNext?: () => void | Promise<void>;
   onEnd: () => void | Promise<void>;
   onShowLeaderboard?: () => void;
+  primaryLabel?: string;
+  primaryAriaLabel?: string;
   endOnLastSlide?: boolean;
 };
 
@@ -17,6 +19,8 @@ export function ManagerControls({
   onNext,
   onEnd,
   onShowLeaderboard,
+  primaryLabel,
+  primaryAriaLabel,
   endOnLastSlide = true,
 }: ManagerControlsProps) {
   const [confirmEnd, setConfirmEnd] = useState(false);
@@ -85,11 +89,15 @@ export function ManagerControls({
           <button
             type="button"
             onClick={handlePrimary}
-            aria-label={atEnd ? "پایان از کنترل آیتم" : "آیتم بعدی"}
+            aria-label={
+              atEnd
+                ? "پایان از کنترل آیتم"
+                : primaryAriaLabel || primaryLabel || "آیتم بعدی"
+            }
             disabled={!atEnd && !onNext}
             className="min-h-11 rounded-xl bg-brand px-5 text-sm font-black text-content-inverse hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
           >
-            {atEnd ? "پایان" : "بعدی"}
+            {atEnd ? "پایان" : primaryLabel || "بعدی"}
           </button>
         </div>
       </footer>

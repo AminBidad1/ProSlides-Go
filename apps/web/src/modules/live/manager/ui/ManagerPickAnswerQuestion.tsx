@@ -166,11 +166,19 @@ export function ManagerPickAnswerQuestion({
     timerState.totalSeconds,
   ]);
 
+  const activityPhase = snapshot?.session.activity_phase ?? null;
+  const primaryControlLabel =
+    activityPhase === "accepting" || activityPhase === "closed"
+      ? "نمایش نتیجه"
+      : activityPhase === "revealed" &&
+          currentQuestion?.show_leaderboard_after
+        ? "نمایش رتبه‌بندی"
+        : "بعدی";
+
   const handleNext = async () => {
     if (!currentQuestion) return;
 
-    const phase = snapshot?.session.activity_phase ?? null;
-    if (phase === "accepting" || phase === "closed") {
+    if (activityPhase === "accepting" || activityPhase === "closed") {
       await sendNavigation("next");
       return;
     }
@@ -253,7 +261,7 @@ export function ManagerPickAnswerQuestion({
                 role="status"
                 aria-live="polite"
               >
-                در انتظار نتیجه نهایی سرور…
+                زمان پاسخ‌گویی پایان یافت؛ برای ادامه نتیجه را نمایش دهید.
               </div>
             ) : !showResults && timerState.remaining > 0 ? (
               <div
@@ -342,6 +350,8 @@ export function ManagerPickAnswerQuestion({
         totalSlides={totalSlides}
         onNext={currentQuestion ? handleNext : undefined}
         onEnd={handleEnd}
+        primaryLabel={primaryControlLabel}
+        primaryAriaLabel={primaryControlLabel}
         onShowLeaderboard={() => {
           setShowLeaderboard(true);
           void loadRoster("score", false);

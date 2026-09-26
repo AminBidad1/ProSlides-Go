@@ -227,6 +227,12 @@ flow DSL. v2.0 does not need that abstraction.
 
 ### Default flow
 
+The `closed` phase is a deliberate presenter-controlled boundary, not a loading
+state. While an Activity is closed but not yet revealed, participant devices
+keep the Activity context visible and show only whether that participant has a
+durable response. Correctness, aggregate results and score delta remain hidden
+until `revealed`.
+
 Scored Activity:
 
     activity
@@ -357,8 +363,12 @@ Mobile-first personal interaction surface:
 
 - current Activity;
 - submission state;
-- personal result/score/rank;
-- waiting/recovery state.
+- a distinct closed-Activity state that preserves prompt context and clearly
+  says whether the participant's response was registered, without disclosing
+  correctness or results before presenter reveal;
+- personal result/score/rank after reveal;
+- waiting/recovery state only for genuine loading/recovery, not normal
+  Activity lifecycle transitions.
 
 Manager-only correctness or complete roster/score-map data must never leak into
 participant snapshots.

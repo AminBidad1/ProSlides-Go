@@ -267,6 +267,8 @@ test("participant live UI is Persian, theme-driven, and disclosure-safe", () => 
   const theme = source("src/modules/live/participant/theme.ts");
   const sharedTheme = source("src/shared/styles/presentationTheme.ts");
   const question = source("src/modules/live/participant/ui/ParticipantQuestion.tsx");
+  const closed = source("src/modules/live/participant/ui/ParticipantActivityClosed.tsx");
+  const playerView = source("src/modules/live/routes/PlayerPresentationView.tsx");
   const leaderboard = source("src/modules/live/participant/ui/ParticipantLeaderboard.tsx");
   const answerController = source(
     "src/modules/live/participant/useParticipantAnswerController.ts",
@@ -278,6 +280,11 @@ test("participant live UI is Persian, theme-driven, and disclosure-safe", () => 
   assert.match(theme, /presentationTheme as participantTheme/);
   assert.match(sharedTheme, /--live-bg/);
   assert.match(question, /ثبت پاسخ/);
+  assert.match(question, /پاسخ‌گویی پایان یافت/);
+  assert.match(closed, /پاسخ‌گویی پایان یافت/);
+  assert.match(closed, /نتیجه هنوز نمایش داده نشده است/);
+  assert.match(playerView, /activity_phase === "closed"/);
+  assert.match(playerView, /ParticipantActivityClosed/);
   assert.doesNotMatch(question, />\s*(?:Submitted|Submit|Loading quiz|You voted)\s*</);
   assert.doesNotMatch(leaderboard, /players\.map|roster/);
   assert.doesNotMatch(question, /answer\s*===\s*true|is_correct|correctness/);
@@ -828,6 +835,9 @@ test("manager live UI is module-owned, typed, Persian and contract-driven", () =
   assert.match(question, /alt="تصویر سؤال"/);
   assert.match(question, /activeTimerIdentityRef/);
   assert.match(question, /timerIdentity/);
+  assert.match(question, /primaryLabel=\{primaryControlLabel\}/);
+  assert.match(question, /نمایش نتیجه/);
+  assert.match(controls, /primaryLabel/);
   assert.doesNotMatch(
     question,
     /\[currentQuestion,\s*liveCurrentQuestion,\s*liveMatchesDefinition\]/,
