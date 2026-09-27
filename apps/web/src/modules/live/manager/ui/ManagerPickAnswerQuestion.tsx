@@ -146,6 +146,18 @@ export function ManagerPickAnswerQuestion({
 
   const showResults = resultMatches && questionResults !== null;
   const totalVotes = votes.reduce((sum, count) => sum + count, 0);
+  const isWordCloud = currentQuestion?.activity_kind === "text";
+  const wordTerms = useMemo(
+    () => (resultMatches ? questionResults?.wordTerms ?? [] : []),
+    [questionResults, resultMatches],
+  );
+  const maxWordCount = Math.max(
+    1,
+    ...wordTerms.map((term) => Math.max(0, Number(term.count))),
+  );
+  const responseCount = resultMatches
+    ? Number(questionResults?.response_count ?? 0)
+    : 0;
 
   useEffect(() => {
     if (!currentQuestion || showResults || timerState.totalSeconds <= 0) return;
@@ -273,74 +285,128 @@ export function ManagerPickAnswerQuestion({
               </div>
             ) : null}
 
-            <div className="mt-6 flex min-h-0 flex-1 gap-5 overflow-hidden">
-              {currentQuestion.image_url ? (
-                <div className="hidden w-1/4 shrink-0 items-center justify-center lg:flex">
-                  <img
-                    src={currentQuestion.image_url}
-                    alt="تصویر سؤال"
-                    className="max-h-[58dvh] max-w-full rounded-2xl object-contain shadow-xl"
-                  />
-                </div>
-              ) : null}
-
-              <div className="flex min-w-0 flex-1 items-end gap-3 overflow-x-auto pb-4 sm:gap-5">
-                {options.map((option, index) => {
-                  const correct = option.answer === true;
-                  const count = votes[index] ?? 0;
-                  const height =
-                    showResults && totalVotes > 0
-                      ? Math.max(6, (count / totalVotes) * 100)
-                      : 0;
-                  const color = getColorForUser(option.option_id);
-
-                  return (
-                    <article
-                      key={option.option_id}
-                      className="flex h-[52dvh] min-w-36 flex-1 flex-col items-center justify-end"
-                    >
-                      {showResults ? (
-                        <p className="mb-2 text-2xl font-black">
-                          {count.toLocaleString("fa-IR")}
-                        </p>
-                      ) : null}
-                      {option.image_url ? (
-                        <img
-                          src={option.image_url}
-                          alt={option.option_text}
-                          className="mb-2 max-h-28 max-w-full rounded-xl object-contain"
-                        />
-                      ) : null}
-                      <div className="flex h-full w-full items-end">
-                        <div
-                          className={`w-full rounded-t-2xl transition-[height] duration-700 ${
-                            showResults && hasCorrectAnswer
-                              ? correct
-                                ? "bg-success"
-                                : "bg-danger/80"
-                              : "bg-white/10"
-                          }`}
+            {isWordCloud ? (
+              <div className="mt-6 flex min-h-0 flex-1 flex-col">
+                {showResults ? (
+                  <p className="mb-4 text-center text-sm text-[color:var(--live-muted)]">
+                    {responseCount.toLocaleString("fa-IR")} پاسخ ثبت‌شده
+                  </p>
+                ) : null}
+                <div
+                  className="flex min-h-[20rem] flex-1 flex-wrap items-center justify-center gap-x-8 gap-y-6 overflow-y-auto rounded-[2.5rem] border border-white/10 bg-white/5 p-7 shadow-2xl"
+                  aria-label={
+                    showResults
+                      ? "نتیجه ابر واژه"
+                      : "در انتظار پاسخ‌های ابر واژه"
+                  }
+                >
+                  {!showResults ? (
+                    <p className="max-w-2xl text-center text-lg font-bold leading-8 text-[color:var(--live-muted)]">
+                      پاسخ‌ها در حال جمع‌آوری هستند. ابر واژه پس از نمایش نتیجه
+                      در همین صفحه ظاهر می‌شود.
+                    </p>
+                  ) : wordTerms.length === 0 ? (
+                    <p className="text-center text-lg text-[color:var(--live-muted)]">
+                      هنوز واژه‌ای برای نمایش وجود ندارد.
+                    </p>
+                  ) : (
+                    wordTerms.map((term) => {
+                      const ratio = Math.max(
+                        0.3,
+                        Number(term.count) / maxWordCount,
+                      );
+                      return (
+                        <span
+                          key={term.text}
+                          dir="auto"
+                          className="font-black leading-none"
                           style={{
-                            height: showResults ? `${height}%` : "8%",
-                            backgroundColor:
-                              showResults && hasCorrectAnswer
-                                ? undefined
-                                : color,
+                            fontSize: 22 + Math.round(ratio * 46),
                           }}
-                          aria-hidden="true"
-                        />
-                      </div>
-                      <p
-                        className="mt-3 min-h-14 text-center text-base font-bold sm:text-lg"
-                        dir="auto"
-                      >
-                        {option.option_text}
-                      </p>
-                    </article>
-                  );
-                })}
+                          aria-label={
+                            term.text +
+                            "، " +
+                            Number(term.count).toLocaleString("fa-IR") +
+                            " بار"
+                          }
+                        >
+                          {term.text}
+                        </span>
+                      );
+                    })
+                  )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="mt-6 flex min-h-0 flex-1 gap-5 overflow-hidden">
+                {currentQuestion.image_url ? (
+                  <div className="hidden w-1/4 shrink-0 items-center justify-center lg:flex">
+                    <img
+                      src={currentQuestion.image_url}
+                      alt="تصویر سؤال"
+                      className="max-h-[58dvh] max-w-full rounded-2xl object-contain shadow-xl"
+                    />
+                  </div>
+                ) : null}
+
+                <div className="flex min-w-0 flex-1 items-end gap-3 overflow-x-auto pb-4 sm:gap-5">
+                  {options.map((option, index) => {
+                    const correct = option.answer === true;
+                    const count = votes[index] ?? 0;
+                    const height =
+                      showResults && totalVotes > 0
+                        ? Math.max(6, (count / totalVotes) * 100)
+                        : 0;
+                    const color = getColorForUser(option.option_id);
+
+                    return (
+                      <article
+                        key={option.option_id}
+                        className="flex h-[52dvh] min-w-36 flex-1 flex-col items-center justify-end"
+                      >
+                        {showResults ? (
+                          <p className="mb-2 text-2xl font-black">
+                            {count.toLocaleString("fa-IR")}
+                          </p>
+                        ) : null}
+                        {option.image_url ? (
+                          <img
+                            src={option.image_url}
+                            alt={option.option_text}
+                            className="mb-2 max-h-28 max-w-full rounded-xl object-contain"
+                          />
+                        ) : null}
+                        <div className="flex h-full w-full items-end">
+                          <div
+                            className={`w-full rounded-t-2xl transition-[height] duration-700 ${
+                              showResults && hasCorrectAnswer
+                                ? correct
+                                  ? "bg-success"
+                                  : "bg-danger/80"
+                                : "bg-white/10"
+                            }`}
+                            style={{
+                              height: showResults ? `${height}%` : "8%",
+                              backgroundColor:
+                                showResults && hasCorrectAnswer
+                                  ? undefined
+                                  : color,
+                            }}
+                            aria-hidden="true"
+                          />
+                        </div>
+                        <p
+                          className="mt-3 min-h-14 text-center text-base font-bold sm:text-lg"
+                          dir="auto"
+                        >
+                          {option.option_text}
+                        </p>
+                      </article>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </section>
         )}
       </main>
