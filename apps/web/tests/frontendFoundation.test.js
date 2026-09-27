@@ -549,6 +549,8 @@ test("live presentation route owns a typed role composition without a legacy bri
   assert.match(flow, /AppPresentationProps/);
   assert.match(flow, /<ManagerPresentationView/);
   assert.match(flow, /<PlayerPresentationView/);
+  assert.match(flow, /setQuizMusic\(quiz\.music_url\)/);
+  assert.doesNotMatch(flow, /setQuizMusic\(remoteQuiz/);
   assert.match(managerView, /useNavigate/);
   assert.match(managerView, /\.\.\/manager\/ui\/ManagerJoinPage\.tsx/);
   assert.match(managerView, /\.\.\/manager\/ui\/ManagerPickAnswerQuestion\.tsx/);
@@ -794,7 +796,7 @@ test("audio editor uses one typed presentation draft and accessible native previ
   assert.match(hook, /audioDraftEquals/);
   assert.match(provider, /createContext<AudioContextValue \| null>/);
   assert.doesNotMatch(provider, /createOscillator|webkitAudioContext/);
-  assert.match(source("src/modules/live/routes/PresentationFlow.tsx"), /setQuizMusic\(remoteQuiz\?\.music_url \?\? ""\)/);
+  assert.match(source("src/modules/live/routes/PresentationFlow.tsx"), /setQuizMusic\(quiz\.music_url\)/);
 });
 
 test("design editor shares one typed presentation draft across all preview surfaces", () => {

@@ -60,7 +60,7 @@ export function AppPresentation({
     };
   }, [role, roomId, snapshot?.role, connect]);
 
-  const { remoteQuiz, quiz, isRemoteReady } = useLivePresentationModel({
+  const { quiz, isRemoteReady } = useLivePresentationModel({
     roomId,
     role,
     initialQuizData,
@@ -69,8 +69,8 @@ export function AppPresentation({
 
   const { setQuizMusic } = useAudio();
   useEffect(() => {
-    setQuizMusic(remoteQuiz?.music_url ?? "");
-  }, [remoteQuiz?.music_url, setQuizMusic]);
+    setQuizMusic(quiz.music_url);
+  }, [quiz.music_url, setQuizMusic]);
 
   const {
     currentQuestion,
