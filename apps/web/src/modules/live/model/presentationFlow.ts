@@ -149,6 +149,52 @@ export const isQuestionSlide = (
   isRecord(slide) &&
   slide.item_kind === "activity";
 
+export type LiveActivityStartIssue =
+  | "choice_prompt_required"
+  | "choice_options_too_few"
+  | "choice_correct_answer_invalid"
+  | "text_prompt_required";
+
+export const getLiveActivityStartIssue = (
+  slide: unknown,
+): LiveActivityStartIssue | null => {
+  if (!isQuestionSlide(slide)) return null;
+
+  const prompt = String(slide.question_text ?? "").trim();
+
+  if (slide.activity_kind === "text") {
+    return prompt ? null : "text_prompt_required";
+  }
+
+  if (!prompt) return "choice_prompt_required";
+
+  const options = Array.isArray(slide.options) ? slide.options : [];
+  if (options.length < 2) return "choice_options_too_few";
+
+  const requiresCorrectness = slide.has_correct_answer !== false;
+  if (!requiresCorrectness) return null;
+
+  const correct = options.filter((option) => option.answer === true).length;
+  if (
+    correct < 1 ||
+    (slide.question_type === "single" && correct !== 1)
+  ) {
+    return "choice_correct_answer_invalid";
+  }
+
+  return null;
+};
+
+export const findLiveActivityStartIssue = (
+  slides: Array<LegacyLiveSlide | null>,
+): LiveActivityStartIssue | null => {
+  for (const slide of slides) {
+    const issue = getLiveActivityStartIssue(slide);
+    if (issue) return issue;
+  }
+  return null;
+};
+
 const hasContentPayload = (slide: unknown): boolean =>
   isRecord(slide) &&
   (

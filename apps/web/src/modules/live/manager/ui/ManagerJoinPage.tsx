@@ -2,7 +2,10 @@ import { useMemo, useState } from "react";
 
 import Notice from "../../../../shared/ui/Notice.tsx";
 import { getColorForUser } from "../../../../shared/lib/playerColor.ts";
-import { isQuestionSlide } from "../../model/presentationFlow.ts";
+import {
+  findLiveActivityStartIssue,
+  type LiveActivityStartIssue,
+} from "../../model/presentationFlow.ts";
 import { participantTheme } from "../../participant/theme.ts";
 import { useLiveSession } from "../../react/useLiveSession.ts";
 import { useServerData } from "../../react/useServerData.ts";
@@ -45,25 +48,23 @@ export function ManagerJoinPage({
     currentContent !== null ||
     (leaderboardResults?.length ?? 0) > 0;
 
-  const invalidQuestion = useMemo(
-    () =>
-      quiz.slides.find((slide) => {
-        if (!isQuestionSlide(slide)) return false;
-        const options = Array.isArray(slide.options) ? slide.options : [];
-        const correct = options.filter((option) => option.answer === true).length;
-        const title = String(slide.question_text ?? "").trim();
-        const requiresCorrectness = slide.has_correct_answer !== false;
-
-        return (
-          !title ||
-          options.length < 2 ||
-          (requiresCorrectness &&
-            (correct < 1 ||
-              (slide.question_type === "single" && correct !== 1)))
-        );
-      }),
+  const startIssue = useMemo(
+    () => findLiveActivityStartIssue(quiz.slides),
     [quiz.slides],
   );
+
+  const startIssueMessage = (issue: LiveActivityStartIssue): string => {
+    switch (issue) {
+      case "text_prompt_required":
+        return "پیش از اجرا، متن پرسش ابر واژه را وارد کنید.";
+      case "choice_prompt_required":
+        return "پیش از اجرا، متن فعالیت انتخابی را وارد کنید.";
+      case "choice_options_too_few":
+        return "پیش از اجرا، هر فعالیت انتخابی باید حداقل دو گزینه داشته باشد.";
+      case "choice_correct_answer_invalid":
+        return "پیش از اجرا، پاسخ صحیح فعالیت ارزیابی‌شونده را مشخص کنید.";
+    }
+  };
 
   const toggleName = (userId: string) => {
     setHiddenUserIds((current) => {
@@ -82,10 +83,8 @@ export function ManagerJoinPage({
       setStartError("این ارائه اسلایدی برای شروع ندارد.");
       return;
     }
-    if (invalidQuestion) {
-      setStartError(
-        "پیش از اجرا، هر فعالیت انتخابی باید متن و حداقل دو گزینه داشته باشد؛ فعالیت‌های ارزیابی‌شونده نیز به پاسخ صحیح معتبر نیاز دارند.",
-      );
+    if (startIssue) {
+      setStartError(startIssueMessage(startIssue));
       return;
     }
     if (sessionInProgress) {
