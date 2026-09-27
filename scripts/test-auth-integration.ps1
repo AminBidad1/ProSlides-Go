@@ -428,10 +428,34 @@ try {
   $rejoinHandler.Dispose()
   $participantCookies.SetCookies($apiBaseUrl, "proslides_participant=$rejoinRequestID; Path=/api/v1/live/sessions/$($liveSession.id)")
 
+  # Keep a manager SSE subscriber open while a Content Item is active.
+  $contentStreamRequest = [System.Net.Http.HttpRequestMessage]::new([System.Net.Http.HttpMethod]::Get, "$apiBaseUrl/api/v1/live/sessions/$($liveSession.id)/events")
+  $contentStreamRequest.Headers.Add("Last-Event-ID", [string]$restoredManagerSnapshot.last_event_id)
+  $contentStreamResponse = $loginClient.SendAsync($contentStreamRequest, [System.Net.Http.HttpCompletionOption]::ResponseHeadersRead).GetAwaiter().GetResult()
+  if ([int]$contentStreamResponse.StatusCode -ne 200 -or $contentStreamResponse.Content.Headers.ContentType.MediaType -ne "text/event-stream") {
+    throw "Manager SSE did not open before the Content Item transition"
+  }
+  $metricsBeforeContent = $loginClient.GetStringAsync("$apiBaseUrl/metrics").GetAwaiter().GetResult()
+  if ($metricsBeforeContent -notmatch '(?m)^proslides_live_broker_database_failures_total ([0-9]+)$') {
+    throw "Broker database failure metric was not available before the Content Item transition"
+  }
+  $brokerFailuresBeforeContent = [long]$Matches[1]
+
   $presentedContent = Invoke-API -Method POST -Path "/api/v1/live/sessions/$($liveSession.id)/actions" -Client $loginClient -Headers @{ "X-CSRF-Token" = $loginCSRF } -Body (@{ request_id = [guid]::NewGuid().ToString(); expected_state_version = $rankedAfterDeadlinePayload.state_version; action = "present_item"; item_id = $contentID } | ConvertTo-Json -Compress) -ExpectedStatus 201
   $presentedContentPayload = $presentedContent.Content | ConvertFrom-Json
   $frozenContentSnapshot = (Invoke-API -Method GET -Path "/api/v1/live/sessions/$($liveSession.id)/snapshot" -Client $loginClient -ExpectedStatus 200).Content | ConvertFrom-Json
   if ($frozenContentSnapshot.active_item.content.text -ne "Updated content") { throw "Live run observed an editor mutation made after its immutable snapshot" }
+  Start-Sleep -Milliseconds 1000
+  $metricsAfterContent = $loginClient.GetStringAsync("$apiBaseUrl/metrics").GetAwaiter().GetResult()
+  if ($metricsAfterContent -notmatch '(?m)^proslides_live_broker_database_failures_total ([0-9]+)$') {
+    throw "Broker database failure metric was not available after the Content Item transition"
+  }
+  $brokerFailuresAfterContent = [long]$Matches[1]
+  if ($brokerFailuresAfterContent -ne $brokerFailuresBeforeContent) {
+    throw "Content Item caused the live event broker deadline reconciliation to fail and reconnect SSE"
+  }
+  $contentStreamResponse.Dispose()
+  $contentStreamRequest.Dispose()
   $presentedAgain = Invoke-API -Method POST -Path "/api/v1/live/sessions/$($liveSession.id)/actions" -Client $loginClient -Headers @{ "X-CSRF-Token" = $loginCSRF } -Body (@{ request_id = [guid]::NewGuid().ToString(); expected_state_version = $presentedContentPayload.state_version; action = "present_item"; item_id = $questionID } | ConvertTo-Json -Compress) -ExpectedStatus 201
   $presentedAgainPayload = $presentedAgain.Content | ConvertFrom-Json
   Invoke-API -Method POST -Path "/api/v1/live/sessions/$($liveSession.id)/actions" -Client $loginClient -Headers @{ "X-CSRF-Token" = $loginCSRF } -Body (@{ request_id = [guid]::NewGuid().ToString(); expected_state_version = $presentedAgainPayload.state_version; action = "end" } | ConvertTo-Json -Compress) -ExpectedStatus 409 | Out-Null

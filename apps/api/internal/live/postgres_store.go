@@ -394,11 +394,19 @@ func (s *PostgresStore) ApplyAction(c context.Context, session, host, request st
 // clock deadline from slipping through.
 func (s *PostgresStore) ReconcileDeadline(c context.Context, session string) (bool, error) {
 	var expired bool
-	if e := s.pool.QueryRow(c, `SELECT state='presenting' AND activity_phase='accepting' AND ends_at<=clock_timestamp() FROM live_sessions WHERE id=$1`, session).Scan(&expired); errors.Is(e, pgx.ErrNoRows) {
-		return false, nil
-	} else if e != nil {
+	e := s.pool.QueryRow(c, `SELECT EXISTS(
+		SELECT 1
+		FROM live_sessions
+		WHERE id=$1
+		  AND state='presenting'
+		  AND activity_phase='accepting'
+		  AND ends_at IS NOT NULL
+		  AND ends_at<=clock_timestamp()
+	)`, session).Scan(&expired)
+	if e != nil {
 		return false, e
-	} else if !expired {
+	}
+	if !expired {
 		return false, nil
 	}
 
