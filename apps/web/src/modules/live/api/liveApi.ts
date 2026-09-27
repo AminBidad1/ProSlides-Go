@@ -1,5 +1,5 @@
 import type { AnswerResult, LiveEvent, LiveSessionLocator, LiveSessionResult, LiveSnapshot, ParticipantResult, RosterPage, StageSnapshot } from "./types";
-import { createSecureUUID } from "./secureUuid.ts";
+import { createSecureUUID } from "../../../shared/browser/secureUuid.ts";
 
 const normalizeBase = (value: string) => value.trim().replace(/\/+$/, "");
 

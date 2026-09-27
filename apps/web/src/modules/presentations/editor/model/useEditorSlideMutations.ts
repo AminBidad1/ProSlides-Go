@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ApiError } from "../../../../shared/api/http.ts";
+import { createSecureUUID } from "../../../../shared/browser/secureUuid.ts";
 import type { NoticeTone } from "../../../../shared/ui/Notice.tsx";
 import { quizService } from "../../api/presentationRepository.ts";
 import type {
@@ -259,7 +260,7 @@ export function useEditorSlideMutations({
         const nextSlide = convertEditorSlideToType(
           slide,
           choiceId,
-          () => globalThis.crypto.randomUUID(),
+          createSecureUUID,
         );
         const updatedSlide = await quizService.updateSlide(
           presentation.quiz_id,
@@ -295,17 +296,17 @@ export function useEditorSlideMutations({
       if (isSelectingType) return;
 
       const choice = getEditorTypeChoice(choiceId);
-      const newSlide = createEditorSlideForType(
-        presentation.slides.length,
-        choiceId,
-        () => globalThis.crypto.randomUUID(),
-      );
 
       setIsSelectingType(true);
       setTypeSelectionError(null);
       setTypeSelectionMode(choiceId);
 
       try {
+        const newSlide = createEditorSlideForType(
+          presentation.slides.length,
+          choiceId,
+          createSecureUUID,
+        );
         const createdSlide = await quizService.createSlide(
           presentation.quiz_id,
           newSlide,

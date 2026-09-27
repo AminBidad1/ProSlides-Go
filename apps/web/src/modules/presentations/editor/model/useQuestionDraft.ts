@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer } from "react";
 
+import { createSecureUUID } from "../../../../shared/browser/secureUuid.ts";
 import type { EditorSlide } from "../../model/editor.ts";
 import {
   createQuestionDraft,
@@ -14,13 +15,6 @@ const requireQuestionDraft = (slide: EditorSlide): QuestionDraft => {
     throw new Error("Question draft requires a question slide.");
   }
   return draft;
-};
-
-const createOptionId = (): string => {
-  if (typeof globalThis.crypto?.randomUUID === "function") {
-    return globalThis.crypto.randomUUID();
-  }
-  return `option-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
 export function useQuestionDraft(slide: EditorSlide) {
@@ -80,7 +74,7 @@ export function useQuestionDraft(slide: EditorSlide) {
   }, []);
 
   const addOption = useCallback(() => {
-    dispatch({ type: "add-option", optionId: createOptionId() });
+    dispatch({ type: "add-option", optionId: createSecureUUID() });
   }, []);
 
   const deleteOption = useCallback((optionId: string) => {

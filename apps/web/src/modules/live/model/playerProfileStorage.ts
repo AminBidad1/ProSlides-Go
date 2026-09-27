@@ -1,4 +1,4 @@
-import { createSecureUUID } from "../api/secureUuid.ts";
+import { createSecureUUID } from "../../../shared/browser/secureUuid.ts";
 
 export const LEGACY_PLAYER_PROFILE_KEY = "presentation_player_profile_v1";
 export const PLAYER_PROFILE_KEY_PREFIX = "presentation_player_profile_v2:";
