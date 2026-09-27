@@ -4,10 +4,16 @@ import { useParams } from "react-router-dom";
 import { AudioProvider } from "../react/AudioProvider.tsx";
 import Waiting from "../ui/WaitingScreen.tsx";
 import {
+  getLiveSnapshot,
   LiveAPIError,
   resolveLiveSession,
 } from "../api/liveApi.ts";
 import type { LiveSessionLocator } from "../api/types.ts";
+import {
+  clearAccessSessionRecovery,
+  readAccessSessionRecovery,
+  saveAccessSessionRecovery,
+} from "../model/accessSessionRecovery.ts";
 import type { LivePresentationModel } from "../model/presentation.ts";
 import type { LiveClientRole } from "../runtime/LiveRuntime.ts";
 import { LiveSessionProvider } from "../react/LiveSessionProvider.tsx";
@@ -22,6 +28,23 @@ type PresentationEntryProps = {
 };
 
 type ResolveStatus = "loading" | "invalid" | "unavailable" | "success";
+
+const toResolvedMeta = (
+  accessCode: string,
+  data: LiveSessionLocator,
+): LivePresentationModel => ({
+  quiz_id: data.presentation_id,
+  title: data.presentation.title,
+  access_code: accessCode,
+  background: {
+    color: data.presentation.background_color,
+    image: data.presentation.background_image_url,
+    text_color: data.presentation.text_color,
+  },
+  music_url: data.presentation.music_url || "",
+  slides: [],
+  text_color: data.presentation.text_color,
+});
 
 export default function PresentationEntry({
   mode,
@@ -62,27 +85,53 @@ function AccessCodeResolver() {
           return;
         }
 
+        saveAccessSessionRecovery(accessCode, data);
         setResolvedData(data);
-        setResolvedMeta({
-          quiz_id: data.presentation_id,
-          title: data.presentation.title,
-          access_code: accessCode,
-          background: {
-            color: data.presentation.background_color,
-            image: data.presentation.background_image_url,
-            text_color: data.presentation.text_color,
-          },
-          music_url: data.presentation.music_url || "",
-          slides: [],
-          text_color: data.presentation.text_color,
-        });
+        setResolvedMeta(toResolvedMeta(accessCode, data));
         setStatus("success");
       } catch (error) {
         if (!active) return;
+
         if (error instanceof LiveAPIError && error.status === 404) {
-          setStatus("invalid");
-          return;
+          const cached = readAccessSessionRecovery(accessCode);
+          if (!cached) {
+            setStatus("invalid");
+            return;
+          }
+
+          try {
+            const snapshot = await getLiveSnapshot(cached.session_id);
+            if (!active) return;
+
+            if (snapshot.role !== "participant") {
+              clearAccessSessionRecovery(accessCode);
+              setStatus("invalid");
+              return;
+            }
+
+            setResolvedData(cached);
+            setResolvedMeta(toResolvedMeta(accessCode, cached));
+            setStatus("success");
+            return;
+          } catch (recoveryError) {
+            if (!active) return;
+            if (
+              recoveryError instanceof LiveAPIError &&
+              [401, 404].includes(recoveryError.status)
+            ) {
+              clearAccessSessionRecovery(accessCode);
+              setStatus("invalid");
+              return;
+            }
+            console.error(
+              "[AccessCodeResolver] participant recovery failed:",
+              recoveryError,
+            );
+            setStatus("unavailable");
+            return;
+          }
         }
+
         console.error("[AccessCodeResolver] Error:", error);
         setStatus("unavailable");
       }

@@ -958,6 +958,19 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
     await expectNoOverflow(participant);
     await expectNoOverflow(stage);
 
+    const endedResolve = participant.waitForResponse(
+      (response) =>
+        response.url().includes("/api/v1/live/sessions/resolve") &&
+        response.request().method() === "GET",
+    );
+    await participant.reload();
+    expect((await endedResolve).status()).toBe(404);
+    await expect(
+      participant.getByRole("heading", { name: "نتیجه نهایی شما" }),
+    ).toBeVisible({ timeout: 15000 });
+    await expect(participant.getByText("جلسه پایان یافت")).toBeVisible();
+    await expectNoOverflow(participant);
+
     expect(forbiddenStageReads).toEqual([]);
     expect(managerFailures).toEqual([]);
     expect(stageFailures).toEqual([]);
