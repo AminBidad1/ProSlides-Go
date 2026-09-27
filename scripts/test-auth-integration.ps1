@@ -400,18 +400,23 @@ try {
   $resumeResponse.Dispose()
   $resumeRequest.Dispose()
 
-  # A participant whose last SSE stream closed can restore their existing
-  # record and score in the same session by rejoining with the same name and a
-  # new credential. An actively connected name is never taken over.
-  $disconnectSQL = "UPDATE participants SET disconnected_at=clock_timestamp() WHERE session_id='$($liveSession.id)' AND display_name='Live Player';"
-  & docker @composeArgs exec -T postgres psql -U proslides -d proslides -v ON_ERROR_STOP=1 -c $disconnectSQL | Out-Null
-  if ($LASTEXITCODE -ne 0) { throw "Could not disconnect the original participant integration fixture" }
+  # Same-session restore is allowed only after the last participant SSE stream
+  # closes. A stale disconnected_at timestamp must not permit takeover while a
+  # connection reference is still active.
+  $partiallyDisconnectedSQL = "UPDATE participants SET disconnected_at=clock_timestamp(), active_sse_connections=1 WHERE session_id='$($liveSession.id)' AND display_name='Live Player';"
+  & docker @composeArgs exec -T postgres psql -U proslides -d proslides -v ON_ERROR_STOP=1 -c $partiallyDisconnectedSQL | Out-Null
+  if ($LASTEXITCODE -ne 0) { throw "Could not prepare the multi-stream participant integration fixture" }
   $rejoinHandler = [System.Net.Http.HttpClientHandler]::new()
   $rejoinHandler.UseProxy = $false
   $rejoinCookies = [System.Net.CookieContainer]::new()
   $rejoinHandler.CookieContainer = $rejoinCookies
   $rejoinClient = [System.Net.Http.HttpClient]::new($rejoinHandler)
   $rejoinClient.Timeout = [TimeSpan]::FromSeconds(10)
+  $blockedRestore = Invoke-API -Method POST -Path "/api/v1/live/sessions/$($liveSession.id)/join" -Client $rejoinClient -Body (@{ request_id = [guid]::NewGuid().ToString(); display_name = "Live Player"; avatar = "P" } | ConvertTo-Json -Compress) -ExpectedStatus 409
+  if ((($blockedRestore.Content | ConvertFrom-Json).error) -ne "display_name_taken") { throw "Participant restore ignored an active SSE connection reference" }
+  $disconnectSQL = "UPDATE participants SET disconnected_at=clock_timestamp(), active_sse_connections=0 WHERE session_id='$($liveSession.id)' AND display_name='Live Player';"
+  & docker @composeArgs exec -T postgres psql -U proslides -d proslides -v ON_ERROR_STOP=1 -c $disconnectSQL | Out-Null
+  if ($LASTEXITCODE -ne 0) { throw "Could not disconnect the final participant stream integration fixture" }
   $rejoinRequestID = [guid]::NewGuid().ToString()
   $restoredJoin = Invoke-API -Method POST -Path "/api/v1/live/sessions/$($liveSession.id)/join" -Client $rejoinClient -Body (@{ request_id = $rejoinRequestID; display_name = "Live Player"; avatar = "P" } | ConvertTo-Json -Compress) -ExpectedStatus 200
   if (($restoredJoin.Content | ConvertFrom-Json).id -ne $snapshotPayload.participant.id) { throw "Rejoin did not restore the original participant record" }

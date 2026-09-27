@@ -18,6 +18,7 @@ type rejoinParticipant struct {
 	requestID    string
 	displayName  string
 	disconnected bool
+	connections  int
 }
 
 type rejoinStore struct {
@@ -89,18 +90,24 @@ func (s *rejoinStore) Join(_ context.Context, session, request, name, avatar str
 		return Participant{}, false, ErrConflict
 	}
 	if existing := s.byName[name]; existing != nil {
-		if !existing.disconnected {
+		if !existing.disconnected || existing.connections != 0 {
 			return Participant{}, false, ErrNameTaken
 		}
 		existing.requestID = request
 		existing.participant.Avatar = avatar
 		existing.disconnected = false
+		existing.connections = 0
 		s.byRequest[request] = existing
 		return existing.participant, true, nil
 	}
 	participant := Participant{ID: name + "-participant-id", DisplayName: name, Avatar: avatar}
-	s.byRequest[request] = &rejoinParticipant{participant: participant, requestID: request, displayName: name}
-	s.byName[name] = &rejoinParticipant{participant: participant, requestID: request, displayName: name}
+	record := &rejoinParticipant{
+		participant: participant,
+		requestID: request,
+		displayName: name,
+	}
+	s.byRequest[request] = record
+	s.byName[name] = record
 	return participant, false, nil
 }
 
@@ -108,11 +115,24 @@ func (s *rejoinStore) SetParticipantPresence(_ context.Context, session string, 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for _, rp := range s.byRequest {
-		if string(tokenHash(rp.requestID)) == string(hash) {
-			rp.disconnected = disconnected
-			s.presence = append(s.presence, presenceCall{session: session, participant: rp.participant, disconnected: disconnected})
-			return nil
+		if string(tokenHash(rp.requestID)) != string(hash) {
+			continue
 		}
+		if disconnected {
+			if rp.connections > 0 {
+				rp.connections--
+			}
+			rp.disconnected = rp.connections == 0
+		} else {
+			rp.connections++
+			rp.disconnected = false
+		}
+		s.presence = append(s.presence, presenceCall{
+			session: session,
+			participant: rp.participant,
+			disconnected: disconnected,
+		})
+		return nil
 	}
 	return nil
 }
@@ -218,6 +238,63 @@ func TestServiceSetParticipantPresence(t *testing.T) {
 	defer store.mu.Unlock()
 	if len(store.presence) != before {
 		t.Fatal("invalid presence call reached the store")
+	}
+}
+
+func TestParticipantPresenceRequiresLastStreamToCloseBeforeRestore(t *testing.T) {
+	store := newRejoinStore(true, rejoinParticipant{
+		participant: Participant{ID: "existing-id", DisplayName: "Player", Avatar: "A"},
+		requestID: testParticipantToken,
+	})
+	service := NewService(store, DeductionPolicy{})
+
+	if err := service.SetParticipantPresence(context.Background(), testSessionID, testParticipantToken, false); err != nil {
+		t.Fatal(err)
+	}
+	if err := service.SetParticipantPresence(context.Background(), testSessionID, testParticipantToken, false); err != nil {
+		t.Fatal(err)
+	}
+	if err := service.SetParticipantPresence(context.Background(), testSessionID, testParticipantToken, true); err != nil {
+		t.Fatal(err)
+	}
+
+	store.mu.Lock()
+	record := store.byName["Player"]
+	if record.connections != 1 || record.disconnected {
+		t.Fatalf("presence after one close = connections=%d disconnected=%v", record.connections, record.disconnected)
+	}
+	store.mu.Unlock()
+
+	if _, _, err := service.Join(
+		context.Background(),
+		testSessionID,
+		"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+		"Player",
+		"B",
+	); !errors.Is(err, ErrNameTaken) {
+		t.Fatalf("join while one stream remains = %v, want ErrNameTaken", err)
+	}
+
+	if err := service.SetParticipantPresence(context.Background(), testSessionID, testParticipantToken, true); err != nil {
+		t.Fatal(err)
+	}
+
+	store.mu.Lock()
+	record = store.byName["Player"]
+	if record.connections != 0 || !record.disconnected {
+		t.Fatalf("presence after last close = connections=%d disconnected=%v", record.connections, record.disconnected)
+	}
+	store.mu.Unlock()
+
+	participant, restored, err := service.Join(
+		context.Background(),
+		testSessionID,
+		"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+		"Player",
+		"C",
+	)
+	if err != nil || !restored || participant.ID != "existing-id" {
+		t.Fatalf("restore after last close = participant=%+v restored=%v err=%v", participant, restored, err)
 	}
 }
 

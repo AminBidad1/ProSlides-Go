@@ -6,6 +6,16 @@ For every deployment record the commit SHA, immutable API/web image digests,
 configuration version, migration list, operator, start/end time, topology, and
 verification result. Never record secret values.
 
+For the release that introduces migration
+`0024_live_multistream_presence.sql`, do not leave old and new API replicas
+serving participant SSE concurrently. Apply the migration, stop routing new
+traffic to the old API replicas, drain or terminate their long-lived SSE
+connections, then route traffic to the new version. Clients reconnect
+automatically and the new runtime registers each stream in
+`active_sse_connections`. Streams created by the pre-0024 runtime cannot be
+retroactively counted, so a mixed-version rollout would temporarily weaken the
+same-name restore invariant this migration is intended to enforce.
+
 ## PostgreSQL backup
 
 Use the managed service's encrypted snapshot and point-in-time recovery when

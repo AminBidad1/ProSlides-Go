@@ -159,11 +159,15 @@ participant count when cumulative ranking is shown. Complete rows are never
 broadcast. Both result/ranking event families use schema version 2; migrations
 normalize retained pre-v2 payloads before replay.
 
-Participant SSE streams announce connection and disconnection in PostgreSQL
-(a nullable `participants.disconnected_at`), so a participant who loses the
-stream can restore their existing record by rejoining the same session: the
-server rotates the credential to the new `request_id`, clears the disconnect
-marker, and keeps the row, answers, and score untouched, so
+Participant SSE presence is tracked in PostgreSQL with both a nullable
+`participants.disconnected_at` marker and an active-stream reference count.
+Opening a participant stream increments the count; closing one decrements it,
+and `disconnected_at` is set only when the last active stream is gone. This
+prevents one tab or an overlapping reconnect from making an otherwise connected
+participant eligible for display-name takeover. Once the last stream closes, a
+participant can restore their existing record by rejoining the same session:
+the server rotates the credential to the new `request_id`, clears the
+disconnect marker, and keeps the row, answers, and score untouched, so
 `participant_count` never increases for a restore. An actively connected
 display name continues to be rejected with `409 display_name_taken`; a new run
 is a new session, so the name joins fresh there. A host reconnection recreates

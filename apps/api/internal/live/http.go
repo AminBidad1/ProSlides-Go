@@ -329,25 +329,37 @@ func (h *HTTP) events(w http.ResponseWriter, r *http.Request) {
 		returnError(w, errors.New("stream unsupported"))
 		return
 	}
-	// A live participant stream announces connection and disconnection so a
-	// rejoin within the same session reclaims the existing record and score.
-	if viewer.participantToken != "" {
-		_ = h.service.SetParticipantPresence(r.Context(), sessionID, viewer.participantToken, false)
-	}
 	subscription, unsubscribe, e := h.broker.Subscribe(r.Context(), sessionID)
 	if e != nil {
 		returnError(w, e)
 		return
 	}
 	defer unsubscribe()
-	defer func() {
-		if viewer.participantToken == "" {
+
+	// Presence is reference-counted per participant credential. Register the
+	// connection only after the broker subscription succeeds, then always
+	// release exactly one reference when this stream exits.
+	if viewer.participantToken != "" {
+		if e = h.service.SetParticipantPresence(
+			r.Context(),
+			sessionID,
+			viewer.participantToken,
+			false,
+		); e != nil {
+			returnError(w, e)
 			return
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-		defer cancel()
-		_ = h.service.SetParticipantPresence(ctx, sessionID, viewer.participantToken, true)
-	}()
+		defer func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
+			_ = h.service.SetParticipantPresence(
+				ctx,
+				sessionID,
+				viewer.participantToken,
+				true,
+			)
+		}()
+	}
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache, no-store, no-transform")
 	w.Header().Set("Connection", "keep-alive")

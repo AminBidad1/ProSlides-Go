@@ -154,15 +154,19 @@ func (s *PostgresStore) Join(c context.Context, session, request, name, avatar s
 		return p, false, e
 	}
 	// Rejoin restore: within the same session, a participant whose last SSE
-	// stream closed (disconnected_at is set) can reclaim their existing record
+	// stream closed (disconnected_at is set and no active SSE connection remains)
+	// can reclaim their existing record
 	// and score by rejoining with the same display name, even with a new
 	// credential. The credential is rotated so the rejoined device remains
 	// authorized, and participant_count is unchanged because no new row commits.
 	// A display name still held by an actively connected participant is never
 	// taken over; that join falls through to the INSERT and conflicts on name.
 	e = tx.QueryRow(c, `UPDATE participants
-		SET request_id=$3, token_hash=$4, avatar=$5, disconnected_at=NULL
-		WHERE session_id=$1 AND display_name=$2 AND disconnected_at IS NOT NULL
+		SET request_id=$3, token_hash=$4, avatar=$5, disconnected_at=NULL, active_sse_connections=0
+		WHERE session_id=$1
+		  AND display_name=$2
+		  AND disconnected_at IS NOT NULL
+		  AND active_sse_connections=0
 		RETURNING id::text, display_name, COALESCE(avatar,'')`, session, name, request, hash, avatar).Scan(&p.ID, &p.DisplayName, &p.Avatar)
 	if e == nil {
 		if err := tx.Commit(c); err != nil {
@@ -191,7 +195,20 @@ func (s *PostgresStore) Join(c context.Context, session, request, name, avatar s
 	return p, false, nil
 }
 func (s *PostgresStore) SetParticipantPresence(c context.Context, session string, hash []byte, disconnected bool) error {
-	_, e := s.pool.Exec(c, `UPDATE participants SET disconnected_at=CASE WHEN $3 THEN clock_timestamp() ELSE NULL END WHERE session_id=$1 AND token_hash=$2`, session, hash, disconnected)
+	if disconnected {
+		_, e := s.pool.Exec(c, `UPDATE participants
+			SET active_sse_connections=GREATEST(active_sse_connections-1,0),
+				disconnected_at=CASE
+					WHEN active_sse_connections<=1 THEN clock_timestamp()
+					ELSE NULL
+				END
+			WHERE session_id=$1 AND token_hash=$2`, session, hash)
+		return e
+	}
+	_, e := s.pool.Exec(c, `UPDATE participants
+		SET active_sse_connections=active_sse_connections+1,
+			disconnected_at=NULL
+		WHERE session_id=$1 AND token_hash=$2`, session, hash)
 	return e
 }
 func (s *PostgresStore) ApplyAction(c context.Context, session, host, request string, expected int64, action, item string) (Session, bool, error) {
