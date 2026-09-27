@@ -270,6 +270,30 @@ test("register, create a presentation, and open its report @critical", async ({ 
     await expect(page.getByRole("button", { name: "اجرا", exact: true })).toBeVisible();
   });
 
+  await page.setViewportSize({ width: 1024, height: 700 });
+  await expectNoOverflow(page);
+  await expect(page.locator('[data-editor-region="item-rail"]')).toHaveCount(0);
+  const compactToolbarBounds = await page
+    .getByLabel("ابزارهای ویرایشگر")
+    .boundingBox();
+  expect(compactToolbarBounds).not.toBeNull();
+  expect(compactToolbarBounds.width).toBeGreaterThan(900);
+
+  await page.setViewportSize({ width: 1366, height: 640 });
+  await expectNoOverflow(page);
+  await expect(page.locator('[data-editor-region="item-rail"]')).toBeVisible();
+  const editorBounds = await page.locator('[data-editor-shell="v2"]').boundingBox();
+  expect(editorBounds).not.toBeNull();
+  expect(editorBounds.y).toBeGreaterThanOrEqual(0);
+  expect(editorBounds.height).toBeLessThanOrEqual(640);
+  await expect(page.getByRole("button", { name: "اجرا", exact: true })).toBeVisible();
+  await expect(
+    page
+      .locator('[data-editor-region="canvas"]')
+      .getByRole("button", { name: "اجرا", exact: true }),
+  ).toHaveCount(0);
+  await page.setViewportSize({ width: 1280, height: 800 });
+
   let createSlideRequestCount = 0;
   page.on("request", (request) => {
     if (

@@ -663,35 +663,21 @@ function QuestionEditor({
       />
     ) : null;
 
-  const topActions = (
-    <>
-      {activeSlide &&
-      activeRegistration ? (
-        <button
-          type="button"
-          onClick={handleTypeChangeClick}
-          className="pointer-events-auto rounded-lg bg-surface/90 px-3 py-2 text-sm font-semibold text-slate-600 shadow-sm backdrop-blur hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-        >
-          تغییر نوع آیتم
-        </button>
-      ) : (
-        <span />
-      )}
+  const topActions =
+    activeSlide && activeRegistration ? (
       <button
         type="button"
-        onClick={handlePresent}
-        disabled={!presentStatus.ready}
-        title={presentStatus.reason}
-        className="pointer-events-auto rounded-control bg-brand px-4 py-2.5 text-sm font-bold text-content-inverse shadow-lg transition hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-60"
+        onClick={handleTypeChangeClick}
+        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-brand-border bg-surface px-3 text-xs font-bold text-content-muted transition hover:bg-brand-soft hover:text-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
       >
-        اجرا
+        <Sparkles className="size-3.5" aria-hidden="true" />
+        تغییر نوع آیتم
       </button>
-    </>
-  );
+    ) : null;
 
   const mobileItemRail =
     isMobile && showSlidesPanel ? (
-      <div className="fixed inset-0 z-50 md:hidden">
+      <div className="fixed inset-0 z-50 xl:hidden">
         <button
           type="button"
           aria-label="بستن فهرست آیتم‌ها"
@@ -701,7 +687,7 @@ function QuestionEditor({
         <div
           className="absolute inset-x-0 bottom-0 overflow-y-auto rounded-t-2xl bg-white p-4 shadow-2xl"
           style={{
-            top: "calc(3.5rem + env(safe-area-inset-top))",
+            top: "calc(4rem + env(safe-area-inset-top))",
           }}
         >
           <div className="mb-3 flex items-center justify-between">
@@ -749,6 +735,9 @@ function QuestionEditor({
               quizRevision={quiz.revision}
               onNotify={showNotice}
               onBack={handleExitPanel}
+              onPresent={handlePresent}
+              presentDisabled={!presentStatus.ready}
+              presentReason={presentStatus.reason}
               onQuizUpdated={updateQuiz}
               onAccessCodeSaved={(accessCode: string) =>
                 updateQuiz({ ...quiz, access_code: accessCode })

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState, type CSSProperties } from "react";
 
+import { formatPersianNumber } from "../../../../shared/forms/numbers.ts";
 import { ConfirmDialog } from "../../../../shared/ui/primitives/ConfirmDialog.tsx";
 import type { EditorSlide } from "../../model/editor.ts";
 import { getEditorItemBehaviors } from "../../model/itemRegistry.ts";
@@ -125,7 +126,7 @@ export default function SlidesPanel({
             <div
               {...provided.droppableProps}
               ref={provided.innerRef}
-              className="space-y-4"
+              className="space-y-3"
             >
               {displaySlides.map((slide, index) => {
                 const slideBackground = getSlideBackground();
@@ -158,10 +159,10 @@ export default function SlidesPanel({
                         <div
                           {...provided.draggableProps}
                           ref={provided.innerRef}
-                          className={`relative mx-auto aspect-[16/9] w-full max-w-[360px] overflow-hidden rounded-lg border transition-all ${
+                          className={`group relative mx-auto aspect-[16/9] w-full max-w-[360px] overflow-hidden rounded-xl border bg-surface shadow-sm transition ${
                             isActive
-                              ? "border-slate-600 outline outline-2 outline-slate-500"
-                              : "border-border-subtle hover:shadow-md"
+                              ? "border-brand ring-2 ring-brand/20"
+                              : "border-border-subtle hover:border-brand-border hover:shadow-md"
                           } ${dragDisabled ? "opacity-90" : ""} ${
                             snapshot.isDragging ? "z-50" : "z-0"
                           }`}
@@ -172,7 +173,7 @@ export default function SlidesPanel({
                             onClick={() => onSelectSlide(slide.slide_id)}
                             aria-label={`انتخاب آیتم ${slideTitle}`}
                             aria-pressed={isActive}
-                            className="absolute inset-0 z-10 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
+                            className="absolute inset-0 z-10 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
                           >
                             <span className="sr-only">
                               انتخاب آیتم {slideTitle}
@@ -187,7 +188,7 @@ export default function SlidesPanel({
                               onMouseDown={(event) =>
                                 event.stopPropagation()
                               }
-                              className="absolute right-11 top-1 z-20 cursor-grab rounded-md bg-surface/95 p-1.5 shadow-sm hover:bg-surface active:cursor-grabbing focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+                              className="absolute right-11 top-2 z-20 cursor-grab rounded-lg border border-border-subtle bg-surface/95 p-1.5 shadow-sm transition hover:bg-surface active:cursor-grabbing focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100"
                             >
                               <GripVertical
                                 className="h-5 w-5 text-gray-700"
@@ -209,7 +210,7 @@ export default function SlidesPanel({
                                 ? "ابتدا تغییرات ذخیره‌نشده را ذخیره یا رها کنید."
                                 : undefined
                             }
-                            className="absolute right-2 top-1 z-20 rounded-md bg-surface/95 p-2 text-danger shadow-sm hover:bg-danger-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-50"
+                            className="absolute right-2 top-2 z-20 rounded-lg border border-border-subtle bg-surface/95 p-2 text-danger shadow-sm transition hover:bg-danger-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-50 xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100"
                           >
                             <Trash2
                               className="h-4 w-4"
@@ -217,12 +218,16 @@ export default function SlidesPanel({
                             />
                           </button>
 
+                          <span className="absolute left-2 top-2 z-20 inline-flex min-w-7 items-center justify-center rounded-lg border border-border-subtle bg-surface/95 px-1.5 py-1 text-[10px] font-black text-content-muted shadow-sm">
+                            {formatPersianNumber(index + 1)}
+                          </span>
+
                           {behaviors.length > 0 && (
-                            <div className="absolute left-2 top-1 z-20 flex max-w-[65%] flex-wrap justify-end gap-1">
+                            <div className="absolute left-10 top-2 z-20 flex max-w-[52%] flex-wrap justify-end gap-1">
                               {behaviors.map((behavior) => (
                                 <span
                                   key={behavior.id}
-                                  className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-semibold ${
+                                  className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-1 text-[9px] font-semibold ${
                                     behavior.tone === "warning"
                                       ? "border-warning-border bg-warning-soft text-warning-ink"
                                       : "border-info-border bg-info-soft text-info"
@@ -240,7 +245,7 @@ export default function SlidesPanel({
                           )}
 
                           <div
-                            className="absolute left-2 right-2 top-10 overflow-hidden rounded bg-white/80 p-2 text-center text-sm font-semibold leading-tight text-black/90"
+                            className="absolute left-2 right-2 top-10 overflow-hidden rounded-lg bg-white/90 p-2 text-center text-xs font-semibold leading-5 text-black/90 backdrop-blur-sm"
                             style={{
                               maxHeight: "110px",
                               wordBreak: "break-word",
@@ -253,7 +258,7 @@ export default function SlidesPanel({
                           </div>
 
                           <div className="absolute bottom-2 left-2 right-2 space-y-1 text-center text-xs">
-                            <div className="rounded bg-white/80 py-1 font-medium text-gray-700">
+                            <div className="rounded-md bg-white/90 py-1 font-medium text-gray-700 backdrop-blur-sm">
                               {typeLabel}
                             </div>
                           </div>
@@ -279,7 +284,7 @@ export default function SlidesPanel({
             ? "ابتدا تغییرات ذخیره‌نشده را ذخیره یا رها کنید."
             : undefined
         }
-        className="mx-auto mt-4 flex aspect-[16/9] w-full max-w-[360px] cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-border-subtle p-6 text-center text-content hover:border-success-border hover:bg-success-soft disabled:cursor-not-allowed disabled:opacity-50"
+        className="mx-auto mt-3 flex min-h-11 w-full max-w-[360px] cursor-pointer items-center justify-center rounded-xl border border-dashed border-brand-border bg-brand-soft/50 px-3 py-2.5 text-center text-sm font-bold text-brand-strong transition hover:border-brand hover:bg-brand-muted disabled:cursor-not-allowed disabled:opacity-50"
       >
         + افزودن آیتم
       </button>

@@ -6,7 +6,7 @@ export function useEditorViewport(overlayOpen: boolean) {
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
 
-    const media = window.matchMedia("(max-width: 767px), (max-height: 600px)");
+    const media = window.matchMedia("(max-width: 1279px)");
     const handleChange = () => setIsCompact(media.matches);
     handleChange();
 

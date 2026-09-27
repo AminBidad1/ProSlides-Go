@@ -79,8 +79,8 @@ test("F2 dashboard editor and share slice has no native alerts and owns directio
   assert.doesNotMatch(share, /error\?*\.response|error\.response/);
   assert.match(header, /error instanceof ApiError/);
   assert.match(share, /error instanceof ApiError/);
-  assert.match(toolbar, /border-e/);
-  assert.doesNotMatch(toolbar, /violet-|border-r/);
+  assert.match(toolbar, /border border-brand-border/);
+  assert.doesNotMatch(toolbar, /violet-|border-r|border-l/);
   assert.match(source("src/modules/presentations/dashboard/PresentationDashboard.tsx"), /dir="auto"/);
 });
 

@@ -119,7 +119,7 @@ export default function QuestionCanvas({
   return (
     <section
       aria-label="پیش‌نمایش سؤال"
-      className="relative flex h-full max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-[1.75rem] border border-[color:var(--live-border)] bg-cover bg-center text-[color:var(--live-fg)] shadow-2xl"
+      className="relative flex h-full max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-[color:var(--live-border)] bg-cover bg-center text-[color:var(--live-fg)] shadow-lg"
       style={theme.style}
     >
       <div

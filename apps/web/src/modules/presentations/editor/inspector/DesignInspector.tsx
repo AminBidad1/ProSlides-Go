@@ -246,7 +246,7 @@ export default function DesignInspector({
                 </p>
               </div>
 
-              <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="mt-3 grid grid-cols-2 gap-2">
                 {BACKGROUND_PRESETS.map((preset) => (
                   <button
                     key={preset.value}

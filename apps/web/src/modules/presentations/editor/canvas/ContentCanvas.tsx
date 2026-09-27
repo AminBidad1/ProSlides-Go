@@ -104,7 +104,7 @@ export default function ContentCanvas({
   return (
     <section
       aria-label="پیش‌نمایش اسلاید محتوا"
-      className="relative flex h-full max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-[1.75rem] border border-[color:var(--live-border)] bg-cover bg-center text-[color:var(--live-fg)] shadow-2xl"
+      className="relative flex h-full max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-[color:var(--live-border)] bg-cover bg-center text-[color:var(--live-fg)] shadow-lg"
       style={theme.style}
     >
       <div className="flex min-h-0 flex-1 flex-col p-5 sm:p-7">
