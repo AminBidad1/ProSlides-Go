@@ -21,7 +21,11 @@ export function ManagerContentSlide({
   onNext,
   onEndGame,
 }: ManagerContentSlideProps) {
-  const { isConnected, sendNavigation, sendEnd } = useLiveSession();
+  const {
+    isStreamConnected,
+    sendNavigation,
+    sendEnd,
+  } = useLiveSession();
   const [showQr, setShowQr] = useState(false);
 
   const definition = quiz.slides[currentSlide - 1];
@@ -53,7 +57,7 @@ export function ManagerContentSlide({
     >
       <ManagerTopBar
         accessCode={quiz.access_code}
-        isConnected={isConnected}
+        isConnected={isStreamConnected}
         qrOpen={showQr}
         onQrToggle={() => setShowQr((value) => !value)}
       />

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { motion as Motion } from "framer-motion";
 
 import type { LivePresentationModel } from "../../model/presentation.ts";
@@ -12,45 +12,83 @@ type ManagerFinalLeaderboardProps = {
   onExit: () => void;
 };
 
-const PODIUM = [
-  {
-    order: "md:order-2",
-    height: "h-56 md:h-72",
-    gradient: "from-amber-300 to-yellow-500",
-    icon: "👑",
-  },
-  {
-    order: "md:order-1",
-    height: "h-44 md:h-56",
-    gradient: "from-slate-200 to-slate-400",
-    icon: "🥈",
-  },
-  {
-    order: "md:order-3",
+const POSITION_ORDER = [
+  "md:order-2",
+  "md:order-1",
+  "md:order-3",
+] as const;
+
+const podiumStyleForRank = (rank: number) => {
+  if (rank === 1) {
+    return {
+      height: "h-56 md:h-72",
+      gradient: "from-amber-300 to-yellow-500",
+      icon: "👑",
+    };
+  }
+  if (rank === 2) {
+    return {
+      height: "h-44 md:h-56",
+      gradient: "from-slate-200 to-slate-400",
+      icon: "🥈",
+    };
+  }
+  return {
     height: "h-36 md:h-44",
     gradient: "from-orange-300 to-amber-600",
     icon: "🥉",
-  },
-] as const;
+  };
+};
 
 export function ManagerFinalLeaderboard({
   leaderboardData,
   quiz,
   onExit,
 }: ManagerFinalLeaderboardProps) {
-  const { isConnected, snapshot } = useLiveSession();
+  const {
+    isStreamConnected,
+    snapshot,
+    loadRoster,
+  } = useLiveSession();
+  const requestedFinalRoster = useRef(false);
   const hasScoring =
     snapshot?.role === "manager" ? snapshot.has_scoring : false;
-  const players = useMemo(
-    () =>
-      [...leaderboardData]
-        .sort(
-          (left, right) =>
-            Number(right.total_points || 0) - Number(left.total_points || 0),
-        )
-        .slice(0, 3),
-    [leaderboardData],
-  );
+
+  useEffect(() => {
+    if (
+      !hasScoring ||
+      leaderboardData.length > 0 ||
+      requestedFinalRoster.current
+    ) {
+      return;
+    }
+    requestedFinalRoster.current = true;
+    void loadRoster("score", false);
+  }, [hasScoring, leaderboardData.length, loadRoster]);
+
+  const players = useMemo(() => {
+    const sorted = [...leaderboardData].sort(
+      (left, right) =>
+        Number(right.total_points || 0) - Number(left.total_points || 0),
+    );
+    let previousScore: number | null = null;
+    let previousRank = 0;
+
+    return sorted.slice(0, 3).map((player, index) => {
+      const score = Number(player.total_points || 0);
+      const derivedRank =
+        previousScore !== null && score === previousScore
+          ? previousRank
+          : index + 1;
+      const rank =
+        player.rank != null && Number.isFinite(Number(player.rank))
+          ? Number(player.rank)
+          : derivedRank;
+      previousScore = score;
+      previousRank = rank;
+      return { player, rank };
+    });
+  }, [leaderboardData]);
   const theme = participantTheme(quiz);
 
   return (
@@ -70,11 +108,11 @@ export function ManagerFinalLeaderboard({
         >
           <span
             className={`h-2 w-2 rounded-full ${
-              isConnected ? "bg-success" : "bg-warning"
+              isStreamConnected ? "bg-success" : "bg-warning"
             }`}
             aria-hidden="true"
           />
-          {isConnected ? "متصل" : "در حال اتصال"}
+          {isStreamConnected ? "متصل" : "در حال اتصال"}
         </div>
       </header>
 
@@ -103,17 +141,17 @@ export function ManagerFinalLeaderboard({
           </div>
         ) : players.length > 0 ? (
           <div className="mt-10 flex w-full flex-col items-stretch justify-center gap-4 md:flex-row md:items-end">
-            {players.map((player, index) => {
-              const style = PODIUM[index];
-              const rank = index + 1;
+            {players.map(({ player, rank }, index) => {
+              const style = podiumStyleForRank(rank);
+              const order = POSITION_ORDER[index];
 
               return (
                 <Motion.article
                   key={player.user_id}
                   initial={{ opacity: 0, y: 40 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: rank * 0.18 }}
-                  className={`flex flex-1 flex-col items-center ${style.order}`}
+                  transition={{ delay: (index + 1) * 0.18 }}
+                  className={`flex flex-1 flex-col items-center ${order}`}
                 >
                   <div className="relative z-10 -mb-6 grid h-24 w-24 place-items-center rounded-full border-4 border-white/70 bg-slate-900 text-5xl shadow-2xl">
                     <span className="absolute -top-7 text-4xl" aria-hidden="true">
@@ -132,7 +170,10 @@ export function ManagerFinalLeaderboard({
                         {Math.round(player.total_points || 0).toLocaleString("fa-IR")} امتیاز
                       </p>
                     </div>
-                    <p className="text-5xl font-black opacity-30">
+                    <p
+                      className="text-5xl font-black opacity-30"
+                      aria-label={`رتبه ${rank.toLocaleString("fa-IR")}`}
+                    >
                       {rank.toLocaleString("fa-IR")}
                     </p>
                   </div>

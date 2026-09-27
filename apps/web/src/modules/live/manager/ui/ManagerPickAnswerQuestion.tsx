@@ -32,7 +32,7 @@ export function ManagerPickAnswerQuestion({
   onEndGame,
 }: ManagerQuestionProps) {
   const {
-    isConnected,
+    isStreamConnected,
     sendNavigation,
     sendEnd,
     snapshot,
@@ -230,7 +230,7 @@ export function ManagerPickAnswerQuestion({
     >
       <ManagerTopBar
         accessCode={quiz.access_code}
-        isConnected={isConnected}
+        isConnected={isStreamConnected}
         qrOpen={showQr}
         onQrToggle={() => setShowQr((value) => !value)}
       />

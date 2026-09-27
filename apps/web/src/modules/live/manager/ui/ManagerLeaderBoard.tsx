@@ -24,7 +24,7 @@ export function ManagerLeaderBoard({
   onEndGame,
 }: ManagerStageProps) {
   const {
-    isConnected,
+    isStreamConnected,
     sendNavigation,
     sendEnd,
     participantCount,
@@ -102,7 +102,7 @@ export function ManagerLeaderBoard({
     >
       <ManagerTopBar
         accessCode={quiz.access_code}
-        isConnected={isConnected}
+        isConnected={isStreamConnected}
         qrOpen={showQr}
         onQrToggle={() => setShowQr((value) => !value)}
       />

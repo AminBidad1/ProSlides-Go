@@ -153,6 +153,67 @@ describe("live React lifecycle resilience", () => {
     );
   });
 
+  test("cached manager ranking survives the transient empty roster at Session end", async () => {
+    const rankingContext = baseContext({
+      sessionId: "session-a",
+      snapshot: managerSnapshot("session-a", "overall_ranking"),
+      roster: [
+        {
+          participant_id: "participant-a",
+          display_name: "بازیکن اول",
+          avatar: "🙂",
+          score: 100,
+          rank: 1,
+          joined_at: "2026-09-27T10:00:00Z",
+        },
+      ],
+      rosterOrder: "score",
+      participantCount: 1,
+    });
+
+    const endedSnapshot = {
+      ...managerSnapshot("session-a", "item"),
+      session: {
+        ...managerSnapshot("session-a", "item").session,
+        state: "ended" as const,
+        state_version: 4,
+      },
+    } as LiveSnapshot;
+    const endedContext = baseContext({
+      sessionId: "session-a",
+      snapshot: endedSnapshot,
+      roster: [],
+      rosterOrder: "score",
+      participantCount: 1,
+    });
+
+    const view = render(
+      <LiveSessionContext.Provider value={rankingContext}>
+        <ServerDataProvider>
+          <LeaderboardProbe />
+        </ServerDataProvider>
+      </LiveSessionContext.Provider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("manager-last-leaderboard").textContent).toBe(
+        "بازیکن اول",
+      );
+    });
+
+    view.rerender(
+      <LiveSessionContext.Provider value={endedContext}>
+        <ServerDataProvider>
+          <LeaderboardProbe />
+        </ServerDataProvider>
+      </LiveSessionContext.Provider>,
+    );
+
+    expect(screen.getByTestId("manager-last-leaderboard").textContent).toBe(
+      "بازیکن اول",
+    );
+  });
+
   test("late Word Cloud response cannot mutate the next Activity", async () => {
     let resolveFirst: ((value: true) => void) | null = null;
     const submitAnswer = vi.fn(

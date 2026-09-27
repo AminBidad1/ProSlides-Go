@@ -67,7 +67,7 @@ export function ManagerBackstageDrawer({
   const [commandError, setCommandError] = useState("");
   const {
     snapshot,
-    isConnected,
+    isStreamConnected,
     connectionError,
     participantCount,
     sendNavigation,
@@ -338,8 +338,8 @@ export function ManagerBackstageDrawer({
               <dl className="mt-3 space-y-2 text-sm">
                 <div className="flex justify-between gap-3">
                   <dt className="text-white/55">اتصال</dt>
-                  <dd className={isConnected ? "text-success" : "text-warning"}>
-                    {isConnected ? "متصل" : "در حال بازیابی"}
+                  <dd className={isStreamConnected ? "text-success" : "text-warning"}>
+                    {isStreamConnected ? "متصل" : "در حال بازیابی"}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-3">

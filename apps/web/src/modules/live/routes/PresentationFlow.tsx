@@ -76,6 +76,7 @@ export function AppPresentation({
     currentQuestion,
     currentContent,
     leaderboardResults,
+    managerLastLeaderboard,
     modalLeaderboardResults,
     questionResults,
   } = useServerData();
@@ -125,6 +126,7 @@ export function AppPresentation({
           isRemoteReady={isRemoteReady}
           currentContent={currentContent}
           leaderboardResults={leaderboardResults}
+          managerLastLeaderboard={managerLastLeaderboard}
           modalLeaderboardResults={modalLeaderboardResults}
         />
       </PresentationErrorBoundary>

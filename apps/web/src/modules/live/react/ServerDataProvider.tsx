@@ -32,7 +32,7 @@ type ServerDataProviderProps = {
 export function ServerDataProvider({
   children,
 }: ServerDataProviderProps) {
-  const { snapshot, roster } = useLiveSession();
+  const { snapshot, roster, rosterOrder } = useLiveSession();
   const projection = useMemo(
     () => projectLiveSnapshot(snapshot, roster) ?? EMPTY_PROJECTION,
     [snapshot, roster],
@@ -43,15 +43,27 @@ export function ServerDataProvider({
     useState<{ sessionId: string; rows: LegacyLiveUser[] } | null>(null);
 
   useEffect(() => {
-    if (!managerSessionId || !projection.leaderboardResults) {
-      return;
-    }
+    if (!managerSessionId) return;
+
+    const rankedRows =
+      projection.leaderboardResults &&
+      projection.leaderboardResults.length > 0
+        ? projection.leaderboardResults
+        : rosterOrder === "score" && projection.users.length > 0
+          ? projection.users
+          : null;
+    if (!rankedRows) return;
 
     setManagerLeaderboardCache({
       sessionId: managerSessionId,
-      rows: projection.leaderboardResults,
+      rows: rankedRows,
     });
-  }, [managerSessionId, projection.leaderboardResults]);
+  }, [
+    managerSessionId,
+    projection.leaderboardResults,
+    projection.users,
+    rosterOrder,
+  ]);
 
   const managerLastLeaderboard =
     managerSessionId &&

@@ -22,6 +22,7 @@ export function ManagerJoinPage({
 }: ManagerJoinPageProps) {
   const {
     isConnected,
+    isStreamConnected,
     connectionError,
     sendNavigation,
     participantCount,
@@ -116,7 +117,7 @@ export function ManagerJoinPage({
     >
       <ManagerTopBar
         accessCode={quiz.access_code}
-        isConnected={isConnected}
+        isConnected={isStreamConnected}
         qrOpen={showQr}
         onQrToggle={() => setShowQr((value) => !value)}
       />

@@ -19,6 +19,7 @@ type ManagerViewProps = {
   isRemoteReady: boolean;
   currentContent: LegacyContentSlide | null;
   leaderboardResults: LegacyLiveUser[] | null;
+  managerLastLeaderboard: LegacyLiveUser[] | null;
   modalLeaderboardResults: LegacyLiveUser[] | null;
 };
 
@@ -29,6 +30,7 @@ export function ManagerPresentationView({
   isRemoteReady,
   currentContent,
   leaderboardResults,
+  managerLastLeaderboard,
   modalLeaderboardResults,
 }: ManagerViewProps) {
   const navigate = useNavigate();
@@ -93,14 +95,22 @@ export function ManagerPresentationView({
           content={currentContent}
         />,
       );
-    case "ManagerFinalLeaderboard":
+    case "ManagerFinalLeaderboard": {
+      const finalLeaderboard =
+        [
+          modalLeaderboardResults,
+          leaderboardResults,
+          managerLastLeaderboard,
+        ].find((rows) => rows != null && rows.length > 0) ?? [];
+
       return (
         <ManagerFinalLeaderboard
-          leaderboardData={modalLeaderboardResults ?? leaderboardResults ?? []}
+          leaderboardData={finalLeaderboard}
           quiz={quiz}
           onExit={() => navigate("/manager/panel")}
         />
       );
+    }
     default:
       return <Waiting message="" />;
   }
