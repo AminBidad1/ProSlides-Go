@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import { LiveAPIError } from "../src/modules/live/api/liveApi.ts";
 import { createLiveRuntime } from "../src/modules/live/runtime/LiveRuntime.ts";
 
 const managerSession = (
@@ -315,6 +316,151 @@ test("failed manager actions reuse the same request id on retry", async () => {
   assert.equal(actionRequestIds[0], actionRequestIds[1]);
   assert.equal(runtime.getState().snapshot.session.state, "presenting");
   assert.equal(runtime.getState().snapshot.session.activity_phase, "accepting");
+
+  runtime.destroy();
+});
+
+test("stale manager commands recover authoritative state before the next attempt", async () => {
+  let sequence = 0;
+  let snapshotReads = 0;
+  let current = managerSnapshot("session", {
+    eventId: 4,
+    stateVersion: 4,
+    state: "presenting",
+    activityPhase: "accepting",
+    activeItemId: "q1",
+  });
+  const commands = [];
+
+  const runtime = createLiveRuntime("manager", {
+    storage: null,
+    transport: {
+      createRequestId: () =>
+        `00000000-0000-4000-8000-${String(++sequence).padStart(12, "0")}`,
+      createLiveSession: async () => current.session,
+      getLiveSnapshot: async () => {
+        snapshotReads += 1;
+        return current;
+      },
+      getRosterPage: async (_id, order) => emptyRoster(order),
+      applyLiveAction: async (_id, input) => {
+        commands.push({ action: input.action, requestId: input.request_id });
+        if (commands.length === 1) {
+          current = managerSnapshot("session", {
+            eventId: 5,
+            stateVersion: 5,
+            state: "presenting",
+            activityPhase: "closed",
+            activeItemId: "q1",
+          });
+          throw new LiveAPIError(409, "conflict");
+        }
+        current = managerSnapshot("session", {
+          eventId: 6,
+          stateVersion: 6,
+          state: "presenting",
+          activityPhase: "revealed",
+          activeItemId: "q1",
+        });
+        return current.session;
+      },
+      streamLiveEvents: parkedStream,
+    },
+  });
+
+  assert.equal(await runtime.connect("presentation"), true);
+  const readsAfterConnect = snapshotReads;
+
+  assert.equal(await runtime.sendNavigation("next"), false);
+  assert.ok(snapshotReads > readsAfterConnect);
+  assert.equal(runtime.getState().snapshot.session.activity_phase, "closed");
+
+  assert.equal(await runtime.sendNavigation("next"), true);
+  assert.deepEqual(commands.map((entry) => entry.action), [
+    "close_activity",
+    "reveal_activity",
+  ]);
+  assert.notEqual(commands[0].requestId, commands[1].requestId);
+  assert.equal(runtime.getState().snapshot.session.activity_phase, "revealed");
+
+  runtime.destroy();
+});
+
+test("ranking transition clears joined roster before score refresh completes", async () => {
+  let snapshotReads = 0;
+  let resolveRankingSnapshot;
+  const rankedSnapshot = managerSnapshot("session", {
+    eventId: 8,
+    stateVersion: 4,
+    state: "presenting",
+    activityPhase: "revealed",
+    stageView: "overall_ranking",
+    activeItemId: "q1",
+  });
+
+  const runtime = createLiveRuntime("manager", {
+    storage: null,
+    transport: {
+      createRequestId: () => "00000000-0000-4000-8000-000000000041",
+      createLiveSession: async () =>
+        managerSession("session", "presenting", 3, {
+          activityPhase: "revealed",
+          activeItemId: "q1",
+        }),
+      getLiveSnapshot: async () => {
+        snapshotReads += 1;
+        if (snapshotReads === 1) {
+          return managerSnapshot("session", {
+            eventId: 7,
+            stateVersion: 3,
+            state: "presenting",
+            activityPhase: "revealed",
+            activeItemId: "q1",
+          });
+        }
+        return new Promise((resolve) => {
+          resolveRankingSnapshot = () => resolve(rankedSnapshot);
+        });
+      },
+      getRosterPage: async (_id, order) => ({
+        ...emptyRoster(order),
+        items:
+          order === "score"
+            ? [{
+                participant_id: "ranked",
+                display_name: "Ranked",
+                score: 100,
+                joined_at: new Date().toISOString(),
+              }]
+            : [{
+                participant_id: "joined-first",
+                display_name: "Joined first",
+                score: 1,
+                joined_at: new Date().toISOString(),
+              }],
+      }),
+      applyLiveAction: async () => rankedSnapshot.session,
+      streamLiveEvents: parkedStream,
+    },
+  });
+
+  assert.equal(await runtime.connect("presentation"), true);
+  assert.equal(runtime.getState().roster[0].participant_id, "joined-first");
+
+  const rankingRequest = runtime.sendManagerAction("show_overall_ranking");
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
+  assert.equal(
+    runtime.getState().snapshot.session.stage_view,
+    "overall_ranking",
+  );
+  assert.equal(runtime.getState().rosterOrder, "score");
+  assert.deepEqual(runtime.getState().roster, []);
+
+  resolveRankingSnapshot();
+  assert.equal(await rankingRequest, true);
+  assert.equal(runtime.getState().rosterOrder, "score");
+  assert.equal(runtime.getState().roster[0].participant_id, "ranked");
 
   runtime.destroy();
 });

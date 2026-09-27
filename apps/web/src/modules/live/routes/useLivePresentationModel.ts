@@ -48,6 +48,19 @@ export const toLivePresentationModel = (
   };
 };
 
+export const isLivePresentationDefinitionReady = ({
+  role,
+  remoteQuiz,
+  snapshot,
+}: {
+  role: LiveClientRole;
+  remoteQuiz: LivePresentationModel | null;
+  snapshot: LiveSnapshot | null;
+}): boolean =>
+  role === "player" ||
+  remoteQuiz !== null ||
+  (snapshot?.role === "manager" && Array.isArray(snapshot.items));
+
 export function useLivePresentationModel({
   roomId,
   role,
@@ -142,6 +155,10 @@ export function useLivePresentationModel({
   return {
     remoteQuiz,
     quiz,
-    isRemoteReady: role === "player" || remoteQuiz !== null,
+    isRemoteReady: isLivePresentationDefinitionReady({
+      role,
+      remoteQuiz,
+      snapshot,
+    }),
   };
 }

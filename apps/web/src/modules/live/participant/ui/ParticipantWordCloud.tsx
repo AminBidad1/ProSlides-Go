@@ -23,6 +23,12 @@ type SubmitState =
   | "rejected"
   | "expired";
 
+type PendingTextAttempt = {
+  scope: string;
+  requestId: string;
+  text: string;
+};
+
 const responseTerms = (value: string): string[] =>
   (
     value
@@ -62,10 +68,12 @@ export function ParticipantWordCloud({
   const [totalSeconds, setTotalSeconds] = useState(0);
   const questionRef = useRef(question);
   questionRef.current = question;
+  const activeScopeRef = useRef(timerScope);
+  activeScopeRef.current = timerScope;
   const timerRef = useRef({ anchorStartMs: Date.now(), totalSeconds: 0 });
   const remainingRef = useRef(0);
-  const pendingRef = useRef<{ requestId: string; text: string } | null>(null);
-  const inFlightRef = useRef(false);
+  const pendingRef = useRef<PendingTextAttempt | null>(null);
+  const inFlightAttemptRef = useRef<string | null>(null);
   const restoredPendingRef = useRef(false);
   const wasConnectedRef = useRef(isConnected);
 
@@ -99,10 +107,14 @@ export function ParticipantWordCloud({
     );
     pendingRef.current =
       restored?.request_id && "text" in restored.response
-        ? { requestId: restored.request_id, text: restored.response.text }
+        ? {
+            scope: timerScope,
+            requestId: restored.request_id,
+            text: restored.response.text,
+          }
         : null;
     restoredPendingRef.current = Boolean(restored);
-    inFlightRef.current = false;
+    inFlightAttemptRef.current = null;
   }, [roomId, timerScope]);
 
   useEffect(() => {
@@ -116,7 +128,7 @@ export function ParticipantWordCloud({
     clearPendingAnswer(roomId, timerScope);
     clearAnswerDraft(roomId, timerScope);
     restoredPendingRef.current = false;
-    inFlightRef.current = false;
+    inFlightAttemptRef.current = null;
     setSubmitState("sent");
     setSubmitMessage("پاسخ شما قبلاً ثبت شده است.");
   }, [identity, roomId, snapshot, timerScope]);
@@ -157,10 +169,18 @@ export function ParticipantWordCloud({
     !locked;
 
   const send = useCallback(
-    async (attempt: { requestId: string; text: string }) => {
-      if (inFlightRef.current || remainingRef.current <= 0) return;
+    async (attempt: PendingTextAttempt) => {
+      if (
+        attempt.scope !== activeScopeRef.current ||
+        inFlightAttemptRef.current !== null ||
+        remainingRef.current <= 0
+      ) {
+        return;
+      }
+
+      const attemptKey = attempt.scope + ":" + attempt.requestId;
       restoredPendingRef.current = false;
-      inFlightRef.current = true;
+      inFlightAttemptRef.current = attemptKey;
       setSubmitState("sending");
       setSubmitMessage("در حال ارسال پاسخ…");
       try {
@@ -169,16 +189,26 @@ export function ParticipantWordCloud({
           activity_item_id: identity,
           response: { text: attempt.text },
         });
+
+        if (activeScopeRef.current !== attempt.scope) {
+          // The presenter already advanced to another Activity while this HTTP
+          // request was in flight. Retire the old attempt without mutating the
+          // new Activity's UI state.
+          clearPendingAnswer(roomId, attempt.scope);
+          clearAnswerDraft(roomId, attempt.scope);
+          return;
+        }
+
         if (outcome === true) {
           pendingRef.current = null;
-          clearPendingAnswer(roomId, timerScope);
-          clearAnswerDraft(roomId, timerScope);
+          clearPendingAnswer(roomId, attempt.scope);
+          clearAnswerDraft(roomId, attempt.scope);
           setSubmitState("sent");
           setSubmitMessage("پاسخ شما ثبت شد.");
         } else if (outcome === "rejected") {
           pendingRef.current = null;
-          clearPendingAnswer(roomId, timerScope);
-          clearAnswerDraft(roomId, timerScope);
+          clearPendingAnswer(roomId, attempt.scope);
+          clearAnswerDraft(roomId, attempt.scope);
           setSubmitState("rejected");
           setSubmitMessage("پاسخ پذیرفته نشد؛ محدودیت پاسخ یا زمان را بررسی کنید.");
         } else {
@@ -187,15 +217,18 @@ export function ParticipantWordCloud({
           setSubmitMessage("ارسال کامل نشد. متن شما حفظ شده است؛ دوباره تلاش کنید.");
         }
       } finally {
-        inFlightRef.current = false;
+        if (inFlightAttemptRef.current === attemptKey) {
+          inFlightAttemptRef.current = null;
+        }
       }
     },
-    [identity, roomId, submitAnswer, timerScope],
+    [identity, roomId, submitAnswer],
   );
 
   const submit = async () => {
     if (!canSubmit) return;
-    const attempt = {
+    const attempt: PendingTextAttempt = {
+      scope: timerScope,
       requestId: createRequestId(),
       text: normalized,
     };
@@ -228,6 +261,7 @@ export function ParticipantWordCloud({
     if (
       submitState !== "retryable" ||
       !pendingRef.current ||
+      pendingRef.current.scope !== timerScope ||
       remainingRef.current <= 0 ||
       snapshot?.role !== "participant" ||
       snapshot.has_responded ||
@@ -241,7 +275,10 @@ export function ParticipantWordCloud({
   }, [identity, isConnected, send, snapshot, submitState]);
 
   useEffect(() => {
-    if (timeLeft > 0 || locked) return;
+    // The timer setup effect updates remainingRef before React commits the
+    // corresponding timeLeft state. Avoid expiring a freshly mounted or newly
+    // advanced Word Cloud during that one-render synchronization window.
+    if (timeLeft > 0 || remainingRef.current > 0 || locked) return;
     pendingRef.current = null;
     clearPendingAnswer(roomId, timerScope);
     clearAnswerDraft(roomId, timerScope);

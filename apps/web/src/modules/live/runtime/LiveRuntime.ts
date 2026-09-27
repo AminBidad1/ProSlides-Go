@@ -710,20 +710,53 @@ export class LiveRuntime {
       this.pendingActionIds.set(key, requestId);
     }
 
-    const result = await this.transport.applyLiveAction(id, {
-      request_id: requestId,
-      expected_state_version: current.session.state_version,
-      action,
-      ...(action === "present_item" && itemId ? { item_id: itemId } : {}),
-    });
+    let result: Awaited<ReturnType<typeof applyLiveAction>>;
+    try {
+      result = await this.transport.applyLiveAction(id, {
+        request_id: requestId,
+        expected_state_version: current.session.state_version,
+        action,
+        ...(action === "present_item" && itemId ? { item_id: itemId } : {}),
+      });
+    } catch (error) {
+      if (error instanceof LiveAPIError && error.status === 409) {
+        // A stale state_version never commits this request. Drop its idempotency
+        // key and recover the authoritative state so the user's next attempt
+        // is based on a fresh version and a fresh request ID.
+        this.pendingActionIds.delete(key);
+        try {
+          await this.refreshAuthoritative();
+        } catch (refreshError) {
+          this.publish({ connectionError: errorMessage(refreshError) });
+        }
+      }
+      throw error;
+    }
 
     const next: LiveSnapshot = {
       ...current,
       session: result,
     };
     this.snapshotValue = next;
-    this.publish({ snapshot: next });
     this.pendingActionIds.delete(key);
+
+    if (action === "show_overall_ranking" || action === "end") {
+      // Never project a joined-order roster as a ranking while the score-order
+      // refresh is still in flight. Also invalidate older roster requests.
+      this.rosterRequestVersion += 1;
+      this.rosterCursor = "";
+      this.rosterOrderValue = "score";
+      this.rosterValue = [];
+      this.publish({
+        snapshot: next,
+        roster: [],
+        rosterOrder: "score",
+        hasMoreRoster: false,
+        isRosterLoading: false,
+      });
+    } else {
+      this.publish({ snapshot: next });
+    }
     return true;
   };
 

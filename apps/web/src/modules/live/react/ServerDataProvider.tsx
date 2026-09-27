@@ -37,19 +37,27 @@ export function ServerDataProvider({
     () => projectLiveSnapshot(snapshot, roster) ?? EMPTY_PROJECTION,
     [snapshot, roster],
   );
-  const [managerLastLeaderboard, setManagerLastLeaderboard] =
-    useState<LegacyLiveUser[] | null>(null);
+  const managerSessionId =
+    snapshot?.role === "manager" ? snapshot.session.id : null;
+  const [managerLeaderboardCache, setManagerLeaderboardCache] =
+    useState<{ sessionId: string; rows: LegacyLiveUser[] } | null>(null);
 
   useEffect(() => {
-    if (
-      snapshot?.role !== "manager" ||
-      !projection.leaderboardResults
-    ) {
+    if (!managerSessionId || !projection.leaderboardResults) {
       return;
     }
 
-    setManagerLastLeaderboard(projection.leaderboardResults);
-  }, [projection.leaderboardResults, snapshot?.role]);
+    setManagerLeaderboardCache({
+      sessionId: managerSessionId,
+      rows: projection.leaderboardResults,
+    });
+  }, [managerSessionId, projection.leaderboardResults]);
+
+  const managerLastLeaderboard =
+    managerSessionId &&
+    managerLeaderboardCache?.sessionId === managerSessionId
+      ? managerLeaderboardCache.rows
+      : null;
 
   const serverData = useMemo<ServerDataFields>(
     () => ({
