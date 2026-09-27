@@ -733,9 +733,31 @@ export class LiveRuntime {
       throw error;
     }
 
+    const activeItemChanged =
+      String(current.session.active_item_id ?? "") !==
+      String(result.active_item_id ?? "");
+
     const next: LiveSnapshot = {
       ...current,
       session: result,
+      ...(activeItemChanged
+        ? {
+            active_item: undefined,
+            activity_result: undefined,
+            activity_top_performers: [],
+          }
+        : {}),
+    };
+
+    // A successful command is itself authoritative for state_version. Advance
+    // the local cursor immediately so an older GET that started before this
+    // command cannot overwrite the freshly committed Session state.
+    this.cursor = {
+      ...this.cursor,
+      stateVersion: Math.max(
+        this.cursor.stateVersion,
+        Number(result.state_version || 0),
+      ),
     };
     this.snapshotValue = next;
     this.pendingActionIds.delete(key);

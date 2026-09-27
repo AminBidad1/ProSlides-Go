@@ -320,6 +320,124 @@ test("failed manager actions reuse the same request id on retry", async () => {
   runtime.destroy();
 });
 
+test("a pre-command snapshot refresh cannot roll back a successful present_item", async () => {
+  let onEvent = null;
+  let resolveStaleRefresh = null;
+  let snapshotReads = 0;
+
+  const initial = {
+    ...managerSnapshot("session", {
+      eventId: 2,
+      stateVersion: 2,
+      state: "presenting",
+      activityPhase: "revealed",
+      activeItemId: "choice-1",
+    }),
+    active_item: {
+      id: "choice-1",
+      position: 0,
+      kind: "activity",
+      content: {
+        schema_version: 1,
+        activity_kind: "choice",
+        prompt: { title: "", text: "سؤال قبلی", image_url: "" },
+        response: { selection: "single", options: [] },
+        evaluation: { mode: "none" },
+        scoring: { mode: "none" },
+        timing: { duration_seconds: 30 },
+        results: { show_overall_leaderboard_after: false },
+      },
+    },
+  };
+  const fresh = managerSnapshot("session", {
+    eventId: 4,
+    stateVersion: 3,
+    state: "presenting",
+    activityPhase: "accepting",
+    activeItemId: "cloud-1",
+  });
+
+  const runtime = createLiveRuntime("manager", {
+    storage: null,
+    transport: {
+      createRequestId: () => "00000000-0000-4000-8000-000000000051",
+      createLiveSession: async () => initial.session,
+      getLiveSnapshot: async () => {
+        snapshotReads += 1;
+        if (snapshotReads === 1) return initial;
+        if (snapshotReads === 2) {
+          return new Promise((resolve) => {
+            resolveStaleRefresh = () =>
+              resolve(
+                managerSnapshot("session", {
+                  eventId: 3,
+                  stateVersion: 2,
+                  state: "presenting",
+                  activityPhase: "revealed",
+                  activeItemId: "choice-1",
+                }),
+              );
+          });
+        }
+        return fresh;
+      },
+      getRosterPage: async (_id, order) => emptyRoster(order),
+      applyLiveAction: async () => fresh.session,
+      streamLiveEvents: async (_id, _lastEventId, options) => {
+        onEvent = options.onEvent;
+        options.onOpen?.();
+        return parkedStream(_id, _lastEventId, options);
+      },
+    },
+  });
+
+  assert.equal(await runtime.connect("presentation"), true);
+  assert.equal(typeof onEvent, "function");
+
+  const observedVersions = [];
+  runtime.subscribe(() => {
+    const version = runtime.getState().snapshot?.session?.state_version;
+    if (version != null) observedVersions.push(version);
+  });
+
+  onEvent({
+    event_id: 3,
+    schema_version: 1,
+    session_id: "session",
+    state_version: 2,
+    name: "session.state_changed",
+    payload: {},
+    occurred_at: new Date().toISOString(),
+  });
+
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(typeof resolveStaleRefresh, "function");
+
+  const navigation = runtime.sendNavigation("next", {
+    slide: {
+      item_kind: "activity",
+      slide_id: "cloud-1",
+      question_time: 30,
+    },
+  });
+
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(runtime.getState().snapshot.session.state_version, 3);
+  assert.equal(runtime.getState().snapshot.session.active_item_id, "cloud-1");
+  assert.equal(runtime.getState().snapshot.active_item, undefined);
+
+  resolveStaleRefresh();
+  assert.equal(await navigation, true);
+
+  const committedIndex = observedVersions.indexOf(3);
+  assert.notEqual(committedIndex, -1);
+  assert.equal(observedVersions.slice(committedIndex + 1).includes(2), false);
+  assert.equal(runtime.getState().snapshot.session.state_version, 3);
+  assert.equal(runtime.getState().snapshot.session.active_item_id, "cloud-1");
+
+  runtime.destroy();
+});
+
 test("stale manager commands recover authoritative state before the next attempt", async () => {
   let sequence = 0;
   let snapshotReads = 0;
