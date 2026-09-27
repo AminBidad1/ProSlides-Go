@@ -38,7 +38,14 @@ func (s *PostgresStore) CreateSession(c context.Context, host, presentation, req
 	} else if !errors.Is(e, pgx.ErrNoRows) {
 		return out, false, e
 	}
-	e = scanSession(tx.QueryRow(c, `INSERT INTO live_sessions(presentation_id,host_id,join_code,state,request_id,presentation_title_snapshot) SELECT id,$1,COALESCE(access_code,$3),'draft',$4,title FROM presentations WHERE id=$2 AND owner_id=$1 RETURNING id::text,presentation_id::text,host_id::text,join_code,state,state_version,active_item_id::text,activity_phase,stage_view,ends_at`, host, presentation, code, request), &out)
+	e = scanSession(tx.QueryRow(c, `INSERT INTO live_sessions(
+			presentation_id,host_id,join_code,state,request_id,
+			presentation_title_snapshot,presentation_settings_snapshot
+		)
+		SELECT id,$1,COALESCE(access_code,$3),'draft',$4,title,settings
+		FROM presentations
+		WHERE id=$2 AND owner_id=$1
+		RETURNING id::text,presentation_id::text,host_id::text,join_code,state,state_version,active_item_id::text,activity_phase,stage_view,ends_at`, host, presentation, code, request), &out)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return out, false, ErrNotFound
 	}
@@ -99,11 +106,20 @@ func (s *PostgresStore) CreateSession(c context.Context, host, presentation, req
 }
 func (s *PostgresStore) ResolveSession(c context.Context, code string) (SessionLocator, error) {
 	var out SessionLocator
-	err := s.pool.QueryRow(c, `SELECT ls.id::text,ls.presentation_id::text,p.title,
-		CASE WHEN p.settings->>'background_color' ~ '^#[0-9A-Fa-f]{6}$' THEN p.settings->>'background_color' ELSE '#1e1e2e' END,
-		COALESCE(p.settings->>'background_image_url',''),
-		COALESCE(p.settings->>'music_url',''),
-		CASE WHEN p.settings->>'text_color' ~ '^#[0-9A-Fa-f]{6}$' THEN p.settings->>'text_color' ELSE '#ffffff' END
+	err := s.pool.QueryRow(c, `SELECT ls.id::text,ls.presentation_id::text,
+		COALESCE(ls.presentation_title_snapshot,p.title),
+		CASE
+			WHEN (COALESCE(ls.presentation_settings_snapshot,p.settings)->>'background_color') ~ '^#[0-9A-Fa-f]{6}$'
+			THEN COALESCE(ls.presentation_settings_snapshot,p.settings)->>'background_color'
+			ELSE '#1e1e2e'
+		END,
+		COALESCE(COALESCE(ls.presentation_settings_snapshot,p.settings)->>'background_image_url',''),
+		COALESCE(COALESCE(ls.presentation_settings_snapshot,p.settings)->>'music_url',''),
+		CASE
+			WHEN (COALESCE(ls.presentation_settings_snapshot,p.settings)->>'text_color') ~ '^#[0-9A-Fa-f]{6}$'
+			THEN COALESCE(ls.presentation_settings_snapshot,p.settings)->>'text_color'
+			ELSE '#ffffff'
+		END
 		FROM live_sessions ls JOIN presentations p ON p.id=ls.presentation_id
 		WHERE ls.join_code=$1 AND ls.state<>'ended' LIMIT 1`, code).Scan(
 		&out.SessionID, &out.PresentationID, &out.Presentation.Title,
@@ -614,21 +630,40 @@ func (s *PostgresStore) ManagerSnapshot(c context.Context, session, manager stri
 		return x, e
 	}
 
-	e = tx.QueryRow(c, `SELECT id::text,presentation_id::text,host_id::text,join_code,state,state_version,active_item_id::text,activity_phase,stage_view,ends_at,
-		CASE WHEN activity_phase='accepting' AND ends_at IS NOT NULL THEN GREATEST(0,ROUND(EXTRACT(EPOCH FROM ends_at-clock_timestamp())))::int ELSE NULL END,
-		(SELECT count(*)::int FROM participants WHERE session_id=live_sessions.id),
+	e = tx.QueryRow(c, `SELECT
+		l.id::text,l.presentation_id::text,l.host_id::text,l.join_code,l.state,l.state_version,l.active_item_id::text,l.activity_phase,l.stage_view,l.ends_at,
+		CASE WHEN l.activity_phase='accepting' AND l.ends_at IS NOT NULL THEN GREATEST(0,ROUND(EXTRACT(EPOCH FROM l.ends_at-clock_timestamp())))::int ELSE NULL END,
+		COALESCE(l.presentation_title_snapshot,p.title),
+		CASE
+			WHEN (COALESCE(l.presentation_settings_snapshot,p.settings)->>'background_color') ~ '^#[0-9A-Fa-f]{6}$'
+			THEN COALESCE(l.presentation_settings_snapshot,p.settings)->>'background_color'
+			ELSE '#1e1e2e'
+		END,
+		COALESCE(COALESCE(l.presentation_settings_snapshot,p.settings)->>'background_image_url',''),
+		COALESCE(COALESCE(l.presentation_settings_snapshot,p.settings)->>'music_url',''),
+		CASE
+			WHEN (COALESCE(l.presentation_settings_snapshot,p.settings)->>'text_color') ~ '^#[0-9A-Fa-f]{6}$'
+			THEN COALESCE(l.presentation_settings_snapshot,p.settings)->>'text_color'
+			ELSE '#ffffff'
+		END,
+		(SELECT count(*)::int FROM participants WHERE session_id=l.id),
 		EXISTS(
 			SELECT 1 FROM live_session_slides scored
-			WHERE scored.session_id=live_sessions.id
+			WHERE scored.session_id=l.id
 			  AND scored.kind='activity'
 			  AND scored.content->'scoring'->>'mode'='points'
 		),
-		COALESCE((SELECT max(event_id) FROM live_events WHERE session_id=live_sessions.id),0),
+		COALESCE((SELECT max(event_id) FROM live_events WHERE session_id=l.id),0),
 		(SELECT jsonb_build_object('id',slide_id,'position',position,'kind',kind,'content',content)
-		 FROM live_session_slides WHERE session_id=live_sessions.id AND slide_id=live_sessions.active_item_id)
-		FROM live_sessions WHERE id=$1 AND host_id=$2`, session, manager).Scan(
+		 FROM live_session_slides WHERE session_id=l.id AND slide_id=l.active_item_id)
+		FROM live_sessions l
+		JOIN presentations p ON p.id=l.presentation_id
+		WHERE l.id=$1 AND l.host_id=$2`, session, manager).Scan(
 		&x.Session.ID, &x.Session.PresentationID, &x.Session.HostID, &x.Session.JoinCode, &x.Session.State, &x.Session.StateVersion, &x.Session.ActiveItemID, &x.Session.ActivityPhase, &x.Session.StageView, &x.Session.EndsAt, &x.Session.RemainingSeconds,
-		&x.ParticipantCount, &x.HasScoring, &x.LastEventID, &x.ActiveItem,
+		&x.Presentation.Title, &x.Presentation.BackgroundColor,
+		&x.Presentation.BackgroundImageURL, &x.Presentation.MusicURL,
+		&x.Presentation.TextColor, &x.ParticipantCount, &x.HasScoring,
+		&x.LastEventID, &x.ActiveItem,
 	)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return x, ErrNotFound
@@ -731,11 +766,19 @@ func (s *PostgresStore) StageSnapshot(c context.Context, session, manager string
 		l.id::text,l.presentation_id::text,l.state,l.state_version,l.active_item_id::text,l.activity_phase,l.stage_view,l.ends_at,
 		CASE WHEN l.activity_phase='accepting' AND l.ends_at IS NOT NULL THEN GREATEST(0,ROUND(EXTRACT(EPOCH FROM l.ends_at-clock_timestamp())))::int ELSE NULL END,
 		l.join_code,
-		p.title,
-		CASE WHEN p.settings->>'background_color' ~ '^#[0-9A-Fa-f]{6}$' THEN p.settings->>'background_color' ELSE '#1e1e2e' END,
-		COALESCE(p.settings->>'background_image_url',''),
-		COALESCE(p.settings->>'music_url',''),
-		CASE WHEN p.settings->>'text_color' ~ '^#[0-9A-Fa-f]{6}$' THEN p.settings->>'text_color' ELSE '#ffffff' END,
+		COALESCE(l.presentation_title_snapshot,p.title),
+		CASE
+			WHEN (COALESCE(l.presentation_settings_snapshot,p.settings)->>'background_color') ~ '^#[0-9A-Fa-f]{6}$'
+			THEN COALESCE(l.presentation_settings_snapshot,p.settings)->>'background_color'
+			ELSE '#1e1e2e'
+		END,
+		COALESCE(COALESCE(l.presentation_settings_snapshot,p.settings)->>'background_image_url',''),
+		COALESCE(COALESCE(l.presentation_settings_snapshot,p.settings)->>'music_url',''),
+		CASE
+			WHEN (COALESCE(l.presentation_settings_snapshot,p.settings)->>'text_color') ~ '^#[0-9A-Fa-f]{6}$'
+			THEN COALESCE(l.presentation_settings_snapshot,p.settings)->>'text_color'
+			ELSE '#ffffff'
+		END,
 		(SELECT count(*)::int FROM participants counted WHERE counted.session_id=l.id),
 		EXISTS(
 			SELECT 1 FROM live_session_slides scored

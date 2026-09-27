@@ -1121,6 +1121,7 @@ export interface components {
             /** @enum {string} */
             role: "manager";
             session: components["schemas"]["LiveSession"];
+            presentation: components["schemas"]["PublicLivePresentation"];
             active_item?: {
                 [key: string]: unknown;
             };

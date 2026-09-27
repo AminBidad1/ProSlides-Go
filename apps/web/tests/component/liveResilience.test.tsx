@@ -55,6 +55,13 @@ const managerSnapshot = (
 ): LiveSnapshot =>
   ({
     role: "manager",
+    presentation: {
+      title: "ارائه آزمایشی",
+      background_color: "#1e1e2e",
+      background_image_url: "",
+      music_url: "",
+      text_color: "#ffffff",
+    },
     session: {
       id,
       presentation_id: "presentation-1",

@@ -225,6 +225,16 @@ try {
   $editableContent = @($afterSessionCreated.slides | Where-Object { $_.id -eq $contentID })[0]
   Invoke-API -Method PUT -Path "/api/v1/presentations/$createdID/slides/$contentID" -Client $loginClient -Headers @{ "X-CSRF-Token" = $loginCSRF; "If-Match" = [string]$editableContent.revision } -Body (@{ position = 0; kind = "content"; content = @{ text = "Changed after live snapshot"; image_url = "" } } | ConvertTo-Json -Compress) -ExpectedStatus 200 | Out-Null
 
+  $afterSessionEdits = (Invoke-API -Method GET -Path "/api/v1/presentations/$createdID" -Client $loginClient -ExpectedStatus 200).Content | ConvertFrom-Json
+  Invoke-API -Method PATCH -Path "/api/v1/presentations/$createdID" -Client $loginClient -Headers @{ "X-CSRF-Token" = $loginCSRF; "If-Match" = [string]$afterSessionEdits.revision } -Body (@{
+    title = "Changed after live snapshot"
+    settings = @{
+      background_color = "#445566"
+      text_color = "#000000"
+      music_url = "https://example.test/changed-after-session.mp3"
+    }
+  } | ConvertTo-Json -Compress) -ExpectedStatus 200 | Out-Null
+
   $participantHandler = [System.Net.Http.HttpClientHandler]::new()
   $participantHandler.UseProxy = $false
   $participantCookies = [System.Net.CookieContainer]::new()
@@ -286,6 +296,9 @@ try {
   $managerSnapshotPayload = $managerSnapshot.Content | ConvertFrom-Json
   if ($managerSnapshotPayload.role -ne "manager" -or $managerSnapshotPayload.participant_count -ne 17 -or $managerSnapshotPayload.last_event_id -lt $snapshotPayload.last_event_id) { throw "Manager snapshot did not contain aggregate state and a valid recovery cursor" }
   if ($managerSnapshotPayload.PSObject.Properties.Name -contains "participants" -or $managerSnapshotPayload.PSObject.Properties.Name -contains "scores") { throw "Manager snapshot returned an unbounded roster" }
+  if ($managerSnapshotPayload.presentation.title -ne "Updated through API" -or $managerSnapshotPayload.presentation.background_color -ne "#112233" -or $managerSnapshotPayload.presentation.text_color -ne "#ffffff" -or $managerSnapshotPayload.presentation.music_url -ne "") { throw "Manager snapshot observed mutable Presentation metadata instead of the frozen Session theme" }
+  $stageSnapshotPayload = (Invoke-API -Method GET -Path "/api/v1/live/sessions/$($liveSession.id)/stage" -Client $loginClient -ExpectedStatus 200).Content | ConvertFrom-Json
+  if ($stageSnapshotPayload.presentation.title -ne "Updated through API" -or $stageSnapshotPayload.presentation.background_color -ne "#112233" -or $stageSnapshotPayload.presentation.text_color -ne "#ffffff" -or $stageSnapshotPayload.presentation.music_url -ne "") { throw "Stage snapshot observed mutable Presentation metadata instead of the frozen Session theme" }
   $frozenItemIDs = @($managerSnapshotPayload.items | ForEach-Object { $_.id })
   if ($frozenItemIDs.Count -ne 2 -or $frozenItemIDs -contains $wordCloudID -or $frozenItemIDs -notcontains $contentID -or $frozenItemIDs -notcontains $questionID) { throw "Manager bootstrap did not preserve the frozen Session Item manifest" }
   $frozenContentItem = @($managerSnapshotPayload.items | Where-Object { $_.id -eq $contentID })[0]
@@ -293,7 +306,7 @@ try {
   $resolvedSession = Invoke-API -Method GET -Path "/api/v1/live/sessions/resolve?join_code=$($liveSession.join_code)" -Client $participantClient -ExpectedStatus 200
   $resolvedSessionPayload = $resolvedSession.Content | ConvertFrom-Json
   if ($resolvedSessionPayload.session_id -ne $liveSession.id -or $resolvedSessionPayload.presentation_id -ne $createdID) { throw "Join-code resolution did not return the active live session" }
-  if ($resolvedSessionPayload.presentation.title -ne "Updated through API" -or $resolvedSessionPayload.presentation.background_color -ne "#112233" -or $resolvedSessionPayload.presentation.text_color -ne "#ffffff") { throw "Join-code resolution did not return the display-safe presentation theme" }
+  if ($resolvedSessionPayload.presentation.title -ne "Updated through API" -or $resolvedSessionPayload.presentation.background_color -ne "#112233" -or $resolvedSessionPayload.presentation.text_color -ne "#ffffff" -or $resolvedSessionPayload.presentation.music_url -ne "") { throw "Join-code resolution observed mutable Presentation metadata instead of the frozen Session theme" }
   foreach ($forbiddenThemeField in @("slides", "owner_id", "settings")) {
     if ($resolvedSessionPayload.presentation.PSObject.Properties.Name -contains $forbiddenThemeField) { throw "Public presentation theme disclosed $forbiddenThemeField" }
   }

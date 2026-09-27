@@ -78,6 +78,7 @@ interface ActivityTopPerformer {
 interface ManagerSnapshot {
   role: "manager";
   session: ManagerLiveSession;
+  presentation: LiveSessionLocator["presentation"];
   active_item?: Record<string, unknown>;
   items?: PresentationSlide[];
   participant_count: number;

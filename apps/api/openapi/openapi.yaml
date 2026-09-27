@@ -1345,11 +1345,13 @@ components:
         rank: { type: integer, minimum: 1, description: Competition rank within the current scored Activity only. }
     ManagerLiveSnapshot:
       type: object
-      required: [role, session, participant_count, has_scoring, last_event_id, activity_top_performers]
+      required: [role, session, presentation, participant_count, has_scoring, last_event_id, activity_top_performers]
       additionalProperties: false
       properties:
         role: { type: string, enum: [manager] }
         session: { $ref: '#/components/schemas/LiveSession' }
+        presentation:
+          $ref: '#/components/schemas/PublicLivePresentation'
         active_item: { type: object, additionalProperties: true }
         items:
           type: array

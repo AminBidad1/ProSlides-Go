@@ -124,6 +124,7 @@ type ActivityTopPerformer struct {
 type ManagerSnapshot struct {
 	Role                  string                 `json:"role"`
 	Session               Session                `json:"session"`
+	Presentation          PublicLivePresentation `json:"presentation"`
 	ActiveItem            json.RawMessage        `json:"active_item,omitempty"`
 	Items                 *[]SessionItem         `json:"items,omitempty"`
 	ParticipantCount      int                    `json:"participant_count"`

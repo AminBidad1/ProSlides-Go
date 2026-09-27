@@ -99,9 +99,13 @@ shape.
 
 ### Session
 
-One execution of a frozen Presentation definition. The existing
-live_session_slides snapshot invariant remains: editor changes after session
-creation must not alter live behavior or historical reports.
+One execution of a frozen Presentation definition. The Session freezes both
+the ordered Item definitions and the presentation-level display/audio metadata
+used by Manager, Stage and participant entry. Editor changes after session
+creation must not alter the running Session or historical interpretation. The
+access code is intentionally separate: the product may rotate it during an
+active Session, and that changes only how participants enter, not what is being
+presented.
 
 v2.0 supports **presenter-paced** delivery only. Do not add a delivery-mode
 abstraction merely to represent unsupported modes. Add such a field when a

@@ -48,6 +48,29 @@ export const toLivePresentationModel = (
   };
 };
 
+export const projectManagerLivePresentation = (
+  baseQuiz: LivePresentationModel,
+  snapshot: Extract<LiveSnapshot, { role: "manager" }>,
+): LivePresentationModel => {
+  const frozenSlides = Array.isArray(snapshot.items)
+    ? snapshot.items.map(presentationSlideToLegacy)
+    : null;
+
+  return {
+    ...baseQuiz,
+    title: snapshot.presentation.title,
+    access_code: snapshot.session.join_code,
+    background: {
+      color: snapshot.presentation.background_color,
+      image: snapshot.presentation.background_image_url,
+      text_color: snapshot.presentation.text_color,
+    },
+    music_url: snapshot.presentation.music_url,
+    slides: frozenSlides ?? baseQuiz.slides,
+    text_color: snapshot.presentation.text_color,
+  };
+};
+
 export const isLivePresentationDefinitionReady = ({
   role,
   remoteQuiz,
@@ -77,6 +100,7 @@ export function useLivePresentationModel({
 
   useEffect(() => {
     if (role !== "manager" || !roomId) return;
+    if (snapshot?.role === "manager" && Array.isArray(snapshot.items)) return;
 
     let stopped = false;
     let activeController: AbortController | null = null;
@@ -135,21 +159,12 @@ export function useLivePresentationModel({
       if (retryTimer) window.clearTimeout(retryTimer);
       wakeRetry?.();
     };
-  }, [role, roomId]);
+  }, [role, roomId, snapshot]);
 
   const quiz = useMemo<LivePresentationModel>(() => {
     const baseQuiz = remoteQuiz ?? EMPTY_PRESENTATION;
     if (snapshot?.role !== "manager") return baseQuiz;
-
-    const frozenSlides = Array.isArray(snapshot.items)
-      ? snapshot.items.map(presentationSlideToLegacy)
-      : null;
-
-    return {
-      ...baseQuiz,
-      access_code: snapshot.session.join_code,
-      slides: frozenSlides ?? baseQuiz.slides,
-    };
+    return projectManagerLivePresentation(baseQuiz, snapshot);
   }, [remoteQuiz, snapshot]);
 
   return {

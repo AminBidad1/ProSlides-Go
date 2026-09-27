@@ -182,11 +182,16 @@ cursors. Joined order uses `(joined_at, id)`; score order uses
 `(score DESC, joined_at, id)`.
 
 The React live runtime mirrors this boundary with narrow TypeScript types. A
-public join code resolves directly to the active Go live-session ID; the client
-also receives only display-safe presentation title/background/image/text
-settings for participant theming—never slides, correctness, owner, or roster
-data. The client
-then joins over HTTP, applies the authoritative role-scoped snapshot, opens SSE
+public join code resolves directly to the active Go live-session ID. New
+Sessions freeze both the ordered Item manifest and display-safe Presentation
+metadata (title, background, image, music and text color) at creation time, so
+later authoring edits cannot change an in-progress run. The public resolver
+exposes only that frozen display metadata—never slides, correctness, owner, or
+roster data. Manager and Stage snapshots read the same frozen presentation
+metadata; legacy Sessions created before the settings snapshot migration fall
+back to the current Presentation because their historical settings were never
+persisted. The client then joins over HTTP, applies the authoritative
+role-scoped snapshot, opens SSE
 with `Last-Event-ID`, and refreshes snapshot state before reconnecting. JSON
 live requests are bounded so a broken network cannot leave the UI waiting
 forever. Participant answer drafts and in-flight submissions are retained only
