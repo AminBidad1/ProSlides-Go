@@ -99,6 +99,75 @@ test("disconnect resets the authoritative cursor before selecting another sessio
   runtime.destroy();
 });
 
+test("manager bootstrap loads frozen session items once and preserves them across refreshes", async () => {
+  const snapshotOptions = [];
+  let current = managerSnapshot("session", {
+    eventId: 7,
+    stateVersion: 3,
+    state: "presenting",
+    activityPhase: "accepting",
+    activeItemId: "cloud-1",
+  });
+  const frozenItems = [
+    {
+      id: "cloud-1",
+      revision: 2,
+      position: 0,
+      kind: "activity",
+      content: {
+        schema_version: 1,
+        activity_kind: "text",
+        prompt: { title: "", text: "ابر واژه", image_url: "" },
+        response: { max_length: 80, max_words: 3 },
+        evaluation: { mode: "none" },
+        scoring: { mode: "none" },
+        timing: { duration_seconds: 30 },
+        results: {
+          aggregation: "word_frequency",
+          show_overall_leaderboard_after: false,
+        },
+      },
+    },
+  ];
+
+  const runtime = createLiveRuntime("manager", {
+    storage: null,
+    transport: {
+      createRequestId: () => "00000000-0000-4000-8000-000000000031",
+      createLiveSession: async () => current.session,
+      getLiveSnapshot: async (_id, options) => {
+        snapshotOptions.push(options);
+        return options?.includeItems
+          ? { ...current, items: frozenItems }
+          : current;
+      },
+      getRosterPage: async (_id, order) => emptyRoster(order),
+      applyLiveAction: async (_id, input) => {
+        current = managerSnapshot("session", {
+          eventId: 8,
+          stateVersion: 4,
+          state: "presenting",
+          activityPhase:
+            input.action === "close_activity" ? "closed" : "accepting",
+          activeItemId: "cloud-1",
+        });
+        return current.session;
+      },
+      streamLiveEvents: parkedStream,
+    },
+  });
+
+  assert.equal(await runtime.connect("presentation"), true);
+  assert.deepEqual(snapshotOptions[0], { includeItems: true });
+  assert.equal(runtime.getState().snapshot.items[0].id, "cloud-1");
+
+  assert.equal(await runtime.sendManagerAction("close_activity"), true);
+  assert.equal(snapshotOptions.at(-1), undefined);
+  assert.equal(runtime.getState().snapshot.items[0].id, "cloud-1");
+
+  runtime.destroy();
+});
+
 test("runtime accepts monotonic Activity results and ignores stale SSE events", async () => {
   let onEvent = null;
   const runtime = createLiveRuntime("manager", {

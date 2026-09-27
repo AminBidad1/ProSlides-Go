@@ -205,6 +205,23 @@ try {
   Invoke-API -Method DELETE -Path "/api/v1/presentations/$createdID" -Client $loginClient -Headers @{ "X-CSRF-Token" = $loginCSRF } -ExpectedStatus 409 | Out-Null
 
   $afterSessionCreated = (Invoke-API -Method GET -Path "/api/v1/presentations/$createdID" -Client $loginClient -ExpectedStatus 200).Content | ConvertFrom-Json
+  $wordCloudDefinition = @{
+    position = $afterSessionCreated.slides.Count
+    kind = "activity"
+    content = @{
+      schema_version = 1
+      activity_kind = "text"
+      prompt = @{ title = ""; text = "Describe this session"; image_url = "" }
+      response = @{ max_length = 80; max_words = 3 }
+      evaluation = @{ mode = "none" }
+      scoring = @{ mode = "none" }
+      timing = @{ duration_seconds = 30 }
+      results = @{ aggregation = "word_frequency"; show_overall_leaderboard_after = $false }
+    }
+  } | ConvertTo-Json -Compress -Depth 8
+  $wordCloudResponse = Invoke-API -Method POST -Path "/api/v1/presentations/$createdID/slides" -Client $loginClient -Headers @{ "X-CSRF-Token" = $loginCSRF; "If-Match" = [string]$afterSessionCreated.revision } -Body $wordCloudDefinition -ExpectedStatus 201
+  $wordCloudID = ($wordCloudResponse.Content | ConvertFrom-Json).id
+
   $editableContent = @($afterSessionCreated.slides | Where-Object { $_.id -eq $contentID })[0]
   Invoke-API -Method PUT -Path "/api/v1/presentations/$createdID/slides/$contentID" -Client $loginClient -Headers @{ "X-CSRF-Token" = $loginCSRF; "If-Match" = [string]$editableContent.revision } -Body (@{ position = 0; kind = "content"; content = @{ text = "Changed after live snapshot"; image_url = "" } } | ConvertTo-Json -Compress) -ExpectedStatus 200 | Out-Null
 
@@ -265,10 +282,14 @@ try {
   if ($snapshot.Content -match 'is_correct|correct_option_ids|correct_answer') { throw "Participant snapshot disclosed Activity correctness metadata" }
   if ($snapshotPayload.participant_count -ne 17 -or $snapshotPayload.last_event_id -lt 1) { throw "Snapshot did not include its participant count and SSE recovery cursor" }
 
-  $managerSnapshot = Invoke-API -Method GET -Path "/api/v1/live/sessions/$($liveSession.id)/snapshot" -Client $loginClient -ExpectedStatus 200
+  $managerSnapshot = Invoke-API -Method GET -Path "/api/v1/live/sessions/$($liveSession.id)/snapshot?include_items=true" -Client $loginClient -ExpectedStatus 200
   $managerSnapshotPayload = $managerSnapshot.Content | ConvertFrom-Json
   if ($managerSnapshotPayload.role -ne "manager" -or $managerSnapshotPayload.participant_count -ne 17 -or $managerSnapshotPayload.last_event_id -lt $snapshotPayload.last_event_id) { throw "Manager snapshot did not contain aggregate state and a valid recovery cursor" }
   if ($managerSnapshotPayload.PSObject.Properties.Name -contains "participants" -or $managerSnapshotPayload.PSObject.Properties.Name -contains "scores") { throw "Manager snapshot returned an unbounded roster" }
+  $frozenItemIDs = @($managerSnapshotPayload.items | ForEach-Object { $_.id })
+  if ($frozenItemIDs.Count -ne 2 -or $frozenItemIDs -contains $wordCloudID -or $frozenItemIDs -notcontains $contentID -or $frozenItemIDs -notcontains $questionID) { throw "Manager bootstrap did not preserve the frozen Session Item manifest" }
+  $frozenContentItem = @($managerSnapshotPayload.items | Where-Object { $_.id -eq $contentID })[0]
+  if ($frozenContentItem.content.text -ne "Updated content") { throw "Manager bootstrap observed a post-Session editor mutation instead of the frozen Item definition" }
   $resolvedSession = Invoke-API -Method GET -Path "/api/v1/live/sessions/resolve?join_code=$($liveSession.join_code)" -Client $participantClient -ExpectedStatus 200
   $resolvedSessionPayload = $resolvedSession.Content | ConvertFrom-Json
   if ($resolvedSessionPayload.session_id -ne $liveSession.id -or $resolvedSessionPayload.presentation_id -ne $createdID) { throw "Join-code resolution did not return the active live session" }

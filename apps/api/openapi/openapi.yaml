@@ -588,8 +588,16 @@ paths:
         participant count, and the active Item. Correctness metadata is hidden
         until the Activity reaches the revealed phase. Managers receive Session
         state and aggregate count; full ranking rows are available only from
-        the paginated manager endpoint.
-      parameters: [{ $ref: '#/components/parameters/SessionId' }]
+        the paginated manager endpoint. Managers may request the immutable
+        Session Item manifest during bootstrap so presenter navigation uses the
+        same frozen definition as the live backend.
+      parameters:
+        - { $ref: '#/components/parameters/SessionId' }
+        - name: include_items
+          in: query
+          required: false
+          description: Manager-only bootstrap hint that includes the frozen Session Item manifest.
+          schema: { type: boolean, default: false }
       responses:
         '200':
           description: Current snapshot scoped to the authenticated viewer role.
@@ -1343,6 +1351,10 @@ components:
         role: { type: string, enum: [manager] }
         session: { $ref: '#/components/schemas/LiveSession' }
         active_item: { type: object, additionalProperties: true }
+        items:
+          type: array
+          description: Immutable ordered Item definitions captured when the Session was created. Returned only when a manager requests include_items=true.
+          items: { $ref: '#/components/schemas/Slide' }
         participant_count: { type: integer, minimum: 0 }
         has_scoring: { type: boolean, description: True when the frozen Session contains at least one scored Activity. }
         last_event_id: { type: integer, format: int64, minimum: 0 }

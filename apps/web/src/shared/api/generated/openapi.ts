@@ -571,7 +571,7 @@ export interface paths {
         };
         /**
          * Get an authoritative role-scoped session snapshot and SSE recovery cursor.
-         * @description Clients apply this snapshot first, then connect to events using last_event_id as Last-Event-ID. Participants receive only public session state, their own participant record and score, aggregate participant count, and the active Item. Correctness metadata is hidden until the Activity reaches the revealed phase. Managers receive Session state and aggregate count; full ranking rows are available only from the paginated manager endpoint.
+         * @description Clients apply this snapshot first, then connect to events using last_event_id as Last-Event-ID. Participants receive only public session state, their own participant record and score, aggregate participant count, and the active Item. Correctness metadata is hidden until the Activity reaches the revealed phase. Managers receive Session state and aggregate count; full ranking rows are available only from the paginated manager endpoint. Managers may request the immutable Session Item manifest during bootstrap so presenter navigation uses the same frozen definition as the live backend.
          */
         get: operations["getLiveSnapshot"];
         put?: never;
@@ -1124,6 +1124,8 @@ export interface components {
             active_item?: {
                 [key: string]: unknown;
             };
+            /** @description Immutable ordered Item definitions captured when the Session was created. Returned only when a manager requests include_items=true. */
+            items?: components["schemas"]["Slide"][];
             participant_count: number;
             /** @description True when the frozen Session contains at least one scored Activity. */
             has_scoring: boolean;
@@ -2414,7 +2416,10 @@ export interface operations {
     };
     getLiveSnapshot: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Manager-only bootstrap hint that includes the frozen Session Item manifest. */
+                include_items?: boolean;
+            };
             header?: never;
             path: {
                 sessionId: components["parameters"]["SessionId"];

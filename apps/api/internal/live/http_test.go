@@ -1,6 +1,7 @@
 package live
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -89,8 +90,19 @@ func (s *snapshotStore) ParticipantSnapshot(_ context.Context, session string, h
 		LastEventID:      42,
 	}, nil
 }
-func (s *snapshotStore) ManagerSnapshot(_ context.Context, session, manager string) (ManagerSnapshot, error) {
+func (s *snapshotStore) ManagerSnapshot(_ context.Context, session, manager string, includeItems bool) (ManagerSnapshot, error) {
 	accepting := ActivityAccepting
+	var items *[]SessionItem
+	if includeItems {
+		frozen := []SessionItem{{
+			ID:       testPresentationID,
+			Revision: 3,
+			Position: 0,
+			Kind:     "activity",
+			Content:  json.RawMessage(`{"schema_version":1,"activity_kind":"text","prompt":{"title":"","text":"ابر واژه","image_url":""},"response":{"max_length":80,"max_words":3},"evaluation":{"mode":"none"},"scoring":{"mode":"none"},"timing":{"duration_seconds":30},"results":{"aggregation":"word_frequency","show_overall_leaderboard_after":false}}`),
+		}}
+		items = &frozen
+	}
 	if (session != testSessionID && session != testPresentationID) || manager != testManagerID {
 		return ManagerSnapshot{}, ErrNotFound
 	}
@@ -99,6 +111,7 @@ func (s *snapshotStore) ManagerSnapshot(_ context.Context, session, manager stri
 		return ManagerSnapshot{
 			Role:             "manager",
 			Session:          Session{ID: session, PresentationID: testPresentationID, HostID: manager, JoinCode: "JOIN1", State: Presenting, StateVersion: 5, ActivityPhase: &accepting, StageView: StageItem, RemainingSeconds: &remaining},
+			Items:            items,
 			ParticipantCount: 10_000,
 			HasScoring:       true,
 			LastEventID:      42,
@@ -108,6 +121,7 @@ func (s *snapshotStore) ManagerSnapshot(_ context.Context, session, manager stri
 	return ManagerSnapshot{
 		Role:             "manager",
 		Session:          Session{ID: session, PresentationID: testPresentationID, HostID: manager, JoinCode: "JOIN1", State: Lobby, StateVersion: 2, StageView: StageItem},
+		Items:            items,
 		ParticipantCount: 10_000,
 		HasScoring:       true,
 		LastEventID:      42,
@@ -360,6 +374,25 @@ func TestSnapshotUsesManagerRoleAndFallsBackToParticipantRole(t *testing.T) {
 	handler.ServeHTTP(managerResponse, managerRequest)
 	if managerResponse.Code != http.StatusOK || !jsonFieldEquals(managerResponse.Body.Bytes(), "role", "manager") {
 		t.Fatalf("manager snapshot = %d %s", managerResponse.Code, managerResponse.Body.String())
+	}
+	if bytes.Contains(managerResponse.Body.Bytes(), []byte(`"items"`)) {
+		t.Fatalf("manager snapshot included frozen items without bootstrap hint: %s", managerResponse.Body.String())
+	}
+
+	itemsRequest := httptest.NewRequest(http.MethodGet, "/api/v1/live/sessions/"+testSessionID+"/snapshot?include_items=true", nil)
+	itemsRequest.AddCookie(&http.Cookie{Name: "proslides_session", Value: "manager-token"})
+	itemsResponse := httptest.NewRecorder()
+	handler.ServeHTTP(itemsResponse, itemsRequest)
+	if itemsResponse.Code != http.StatusOK || !bytes.Contains(itemsResponse.Body.Bytes(), []byte(`"activity_kind":"text"`)) {
+		t.Fatalf("manager frozen item bootstrap = %d %s", itemsResponse.Code, itemsResponse.Body.String())
+	}
+
+	invalidItemsRequest := httptest.NewRequest(http.MethodGet, "/api/v1/live/sessions/"+testSessionID+"/snapshot?include_items=definitely", nil)
+	invalidItemsRequest.AddCookie(&http.Cookie{Name: "proslides_session", Value: "manager-token"})
+	invalidItemsResponse := httptest.NewRecorder()
+	handler.ServeHTTP(invalidItemsResponse, invalidItemsRequest)
+	if invalidItemsResponse.Code != http.StatusBadRequest {
+		t.Fatalf("invalid include_items status = %d", invalidItemsResponse.Code)
 	}
 
 	participantRequest := httptest.NewRequest(http.MethodGet, "/api/v1/live/sessions/"+testSessionID+"/snapshot", nil)

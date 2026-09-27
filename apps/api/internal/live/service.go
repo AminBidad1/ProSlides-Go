@@ -104,11 +104,11 @@ func (s *Service) ParticipantSnapshot(c context.Context, session, participantTok
 	}
 	return s.store.ParticipantSnapshot(c, session, tokenHash(participantToken))
 }
-func (s *Service) ManagerSnapshot(c context.Context, session, manager string) (ManagerSnapshot, error) {
+func (s *Service) ManagerSnapshot(c context.Context, session, manager string, includeItems bool) (ManagerSnapshot, error) {
 	if !validUUID(session) || !validUUID(manager) {
 		return ManagerSnapshot{}, ErrUnauthorized
 	}
-	return s.store.ManagerSnapshot(c, session, manager)
+	return s.store.ManagerSnapshot(c, session, manager, includeItems)
 }
 func (s *Service) StageSnapshot(c context.Context, session, manager string) (StageSnapshot, error) {
 	if !validUUID(session) || !validUUID(manager) {

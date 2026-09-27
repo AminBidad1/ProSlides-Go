@@ -180,10 +180,19 @@ func (h *HTTP) snapshot(w http.ResponseWriter, r *http.Request) {
 	r, cancel := h.bounded(r)
 	defer cancel()
 	sessionID := r.PathValue("sessionId")
+	includeItems := false
+	if raw := r.URL.Query().Get("include_items"); raw != "" {
+		var parseErr error
+		includeItems, parseErr = strconv.ParseBool(raw)
+		if parseErr != nil {
+			returnError(w, ErrInvalid)
+			return
+		}
+	}
 	managerAuthenticated := false
 	if u, e := h.manager(r, false); e == nil {
 		managerAuthenticated = true
-		x, snapshotErr := h.service.ManagerSnapshot(r.Context(), sessionID, u.ID)
+		x, snapshotErr := h.service.ManagerSnapshot(r.Context(), sessionID, u.ID, includeItems)
 		if snapshotErr == nil {
 			writeJSON(w, http.StatusOK, x)
 			return

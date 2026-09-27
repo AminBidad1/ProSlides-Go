@@ -79,6 +79,7 @@ interface ManagerSnapshot {
   role: "manager";
   session: ManagerLiveSession;
   active_item?: Record<string, unknown>;
+  items?: PresentationSlide[];
   participant_count: number;
   has_scoring: boolean;
   last_event_id: number;

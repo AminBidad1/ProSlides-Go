@@ -11,7 +11,7 @@ import {
   projectLiveSnapshot,
   shouldApplyLiveEvent,
 } from "../src/modules/live/runtime/protocol.ts";
-import { resolveLiveSession, streamLiveEvents } from "../src/modules/live/api/liveApi.ts";
+import { getLiveSnapshot, resolveLiveSession, streamLiveEvents } from "../src/modules/live/api/liveApi.ts";
 
 const choiceItem = ({
   id = "activity-1",
@@ -485,6 +485,45 @@ test("missing server remaining_seconds falls back to ends_at", () => {
   });
   assert.ok(question.remaining_seconds > 0);
   assert.ok(question.remaining_seconds <= 7);
+});
+
+test("manager snapshot bootstrap can request the frozen Session Item manifest", async () => {
+  const originalFetch = globalThis.fetch;
+  let requestedURL = "";
+  globalThis.fetch = async (url) => {
+    requestedURL = String(url);
+    return new Response(JSON.stringify({
+      role: "manager",
+      session: {
+        id: "session",
+        presentation_id: "presentation",
+        host_id: "manager",
+        join_code: "JOIN1",
+        state: "lobby",
+        state_version: 2,
+        active_item_id: null,
+        activity_phase: null,
+        stage_view: "item",
+        ends_at: null,
+      },
+      items: [],
+      participant_count: 0,
+      has_scoring: false,
+      last_event_id: 1,
+      activity_top_performers: [],
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  };
+
+  try {
+    await getLiveSnapshot("session", { includeItems: true });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.match(requestedURL, /live\/sessions\/session\/snapshot\?include_items=true$/);
 });
 
 test("SSE starts after the snapshot cursor and parses event envelopes", async () => {

@@ -76,7 +76,15 @@ export const createRequestId = createSecureUUID;
 
 export const createLiveSession = (presentationId: string, requestId: string) => requestJSON<LiveSessionResult>("live/sessions", { method: "POST", body: JSON.stringify({ request_id: requestId, presentation_id: presentationId }) }, true);
 export const resolveLiveSession = (joinCode: string) => requestJSON<LiveSessionLocator>(`live/sessions/resolve?join_code=${encodeURIComponent(joinCode)}`);
-export const getLiveSnapshot = (id: string) => requestJSON<LiveSnapshot>(`live/sessions/${encodeURIComponent(id)}/snapshot`);
+export const getLiveSnapshot = (
+  id: string,
+  options: { includeItems?: boolean } = {},
+) => {
+  const query = options.includeItems ? "?include_items=true" : "";
+  return requestJSON<LiveSnapshot>(
+    `live/sessions/${encodeURIComponent(id)}/snapshot${query}`,
+  );
+};
 export const getLiveStageSnapshot = (id: string, signal?: AbortSignal) =>
   requestJSON<StageSnapshot>(`live/sessions/${encodeURIComponent(id)}/stage`, { signal });
 export const joinLiveSession = (id: string, input: { request_id: string; display_name: string; avatar?: string }) => requestJSON<ParticipantResult>(`live/sessions/${encodeURIComponent(id)}/join`, { method: "POST", body: JSON.stringify(input) });

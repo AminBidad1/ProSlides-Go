@@ -603,7 +603,7 @@ func (s *PostgresStore) ParticipantSnapshot(c context.Context, session string, h
 	return x, nil
 }
 
-func (s *PostgresStore) ManagerSnapshot(c context.Context, session, manager string) (ManagerSnapshot, error) {
+func (s *PostgresStore) ManagerSnapshot(c context.Context, session, manager string, includeItems bool) (ManagerSnapshot, error) {
 	var x ManagerSnapshot
 	tx, e := s.pool.BeginTx(c, pgx.TxOptions{IsoLevel: pgx.RepeatableRead})
 	if e != nil {
@@ -639,6 +639,30 @@ func (s *PostgresStore) ManagerSnapshot(c context.Context, session, manager stri
 
 	x.Role = "manager"
 	x.ActivityTopPerformers = []ActivityTopPerformer{}
+	if includeItems {
+		items := make([]SessionItem, 0)
+		rows, rowsErr := tx.Query(c, `SELECT slide_id::text,revision,position,kind,content::text
+			FROM live_session_slides
+			WHERE session_id=$1
+			ORDER BY position,slide_id`, session)
+		if rowsErr != nil {
+			return x, rowsErr
+		}
+		for rows.Next() {
+			var item SessionItem
+			if scanErr := rows.Scan(&item.ID, &item.Revision, &item.Position, &item.Kind, &item.Content); scanErr != nil {
+				rows.Close()
+				return x, scanErr
+			}
+			items = append(items, item)
+		}
+		if rowsErr = rows.Err(); rowsErr != nil {
+			rows.Close()
+			return x, rowsErr
+		}
+		rows.Close()
+		x.Items = &items
+	}
 	if x.Session.ActiveItemID != nil && x.Session.ActivityPhase != nil &&
 		(*x.Session.ActivityPhase == ActivityClosed || *x.Session.ActivityPhase == ActivityRevealed) {
 		result, resultErr := activityResult(c, tx, session, *x.Session.ActiveItemID)

@@ -126,12 +126,17 @@ export function useLivePresentationModel({
 
   const quiz = useMemo<LivePresentationModel>(() => {
     const baseQuiz = remoteQuiz ?? EMPTY_PRESENTATION;
-    return snapshot?.role === "manager"
-      ? {
-          ...baseQuiz,
-          access_code: snapshot.session.join_code,
-        }
-      : baseQuiz;
+    if (snapshot?.role !== "manager") return baseQuiz;
+
+    const frozenSlides = Array.isArray(snapshot.items)
+      ? snapshot.items.map(presentationSlideToLegacy)
+      : null;
+
+    return {
+      ...baseQuiz,
+      access_code: snapshot.session.join_code,
+      slides: frozenSlides ?? baseQuiz.slides,
+    };
   }, [remoteQuiz, snapshot]);
 
   return {

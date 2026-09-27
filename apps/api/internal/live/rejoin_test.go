@@ -59,7 +59,7 @@ func (s *rejoinStore) SubmitAnswer(context.Context, string, []byte, string, stri
 func (s *rejoinStore) ParticipantSnapshot(context.Context, string, []byte) (ParticipantSnapshot, error) {
 	return ParticipantSnapshot{}, errors.New("unexpected ParticipantSnapshot")
 }
-func (s *rejoinStore) ManagerSnapshot(context.Context, string, string) (ManagerSnapshot, error) {
+func (s *rejoinStore) ManagerSnapshot(context.Context, string, string, bool) (ManagerSnapshot, error) {
 	return ManagerSnapshot{}, errors.New("unexpected ManagerSnapshot")
 }
 func (s *rejoinStore) StageSnapshot(context.Context, string, string) (StageSnapshot, error) {

@@ -306,7 +306,17 @@ export class LiveRuntime {
   };
 
   private storeSnapshot = (next: LiveSnapshot) => {
-    const incoming = liveCursorFromSnapshot(next);
+    const preservedItems =
+      next.role === "manager" &&
+      next.items === undefined &&
+      this.snapshotValue?.role === "manager"
+        ? this.snapshotValue.items
+        : undefined;
+    const normalized =
+      next.role === "manager" && preservedItems !== undefined
+        ? { ...next, items: preservedItems }
+        : next;
+    const incoming = liveCursorFromSnapshot(normalized);
     if (
       incoming.eventId < this.cursor.eventId ||
       incoming.stateVersion < this.cursor.stateVersion
@@ -314,10 +324,10 @@ export class LiveRuntime {
       return false;
     }
 
-    this.snapshotValue = next;
+    this.snapshotValue = normalized;
     this.cursor = incoming;
     this.publish({
-      snapshot: next,
+      snapshot: normalized,
       sessionId: this.selectedSessionId,
     });
     return true;
@@ -604,7 +614,9 @@ export class LiveRuntime {
       this.selectSession(created.id);
       selectedId = created.id;
       lifecycleVersion = this.lifecycleVersion;
-      let next = await this.transport.getLiveSnapshot(created.id);
+      let next = await this.transport.getLiveSnapshot(created.id, {
+        includeItems: true,
+      });
       if (!isCurrent()) return false;
 
       if (next.session.state === "ended") {
@@ -615,7 +627,9 @@ export class LiveRuntime {
         this.selectSession(created.id);
         selectedId = created.id;
         lifecycleVersion = this.lifecycleVersion;
-        next = await this.transport.getLiveSnapshot(created.id);
+        next = await this.transport.getLiveSnapshot(created.id, {
+          includeItems: true,
+        });
         if (!isCurrent()) return false;
       }
 
@@ -638,7 +652,9 @@ export class LiveRuntime {
           }
         }
         if (!isCurrent()) return false;
-        next = await this.transport.getLiveSnapshot(next.session.id);
+        next = await this.transport.getLiveSnapshot(next.session.id, {
+          includeItems: true,
+        });
         if (!isCurrent()) return false;
         if (next.session.state === "draft") {
           throw new Error("Live session could not enter the lobby");

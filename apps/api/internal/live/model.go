@@ -68,6 +68,14 @@ type PublicLivePresentation struct {
 	TextColor          string `json:"text_color"`
 }
 
+type SessionItem struct {
+	ID       string          `json:"id"`
+	Revision int64           `json:"revision"`
+	Position int             `json:"position"`
+	Kind     string          `json:"kind"`
+	Content  json.RawMessage `json:"content"`
+}
+
 type ActivityResponsePayload = json.RawMessage
 
 type AnswerResult struct {
@@ -117,6 +125,7 @@ type ManagerSnapshot struct {
 	Role                  string                 `json:"role"`
 	Session               Session                `json:"session"`
 	ActiveItem            json.RawMessage        `json:"active_item,omitempty"`
+	Items                 *[]SessionItem         `json:"items,omitempty"`
 	ParticipantCount      int                    `json:"participant_count"`
 	HasScoring            bool                   `json:"has_scoring"`
 	LastEventID           int64                  `json:"last_event_id"`
@@ -189,7 +198,7 @@ type Store interface {
 	ApplyAction(context.Context, string, string, string, int64, string, string) (Session, bool, error)
 	SubmitAnswer(context.Context, string, []byte, string, string, ActivityResponsePayload, ScoringPolicy) (AnswerResult, error)
 	ParticipantSnapshot(context.Context, string, []byte) (ParticipantSnapshot, error)
-	ManagerSnapshot(context.Context, string, string) (ManagerSnapshot, error)
+	ManagerSnapshot(context.Context, string, string, bool) (ManagerSnapshot, error)
 	StageSnapshot(context.Context, string, string) (StageSnapshot, error)
 	Roster(context.Context, string, string, RosterQuery) (RosterPage, error)
 	Events(context.Context, string, int64, int) ([]Event, error)
