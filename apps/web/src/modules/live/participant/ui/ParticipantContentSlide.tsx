@@ -12,13 +12,13 @@ export function ParticipantContentSlide({
   quiz,
   content,
 }: ParticipantContentSlideProps) {
-  const { isStreamConnected } = useLiveSession();
+  const { isConnected, isStreamConnected, connectionError } = useLiveSession();
   const title = content.title || "مطلب بعدی";
   const text = content.content_text || "";
   const image = content.content_image_url || "";
 
   return (
-    <ParticipantShell quiz={quiz} connected={isStreamConnected} showConnection>
+    <ParticipantShell quiz={quiz}>
       <article className="flex flex-1 flex-col justify-center py-5 text-center">
         <div className="rounded-[2rem] border border-[color:var(--live-border)] bg-[color:var(--live-surface)] p-5 shadow-2xl backdrop-blur-xl sm:p-9">
           <p className="mb-3 text-sm font-bold text-[color:var(--live-muted)]">
@@ -49,11 +49,23 @@ export function ParticipantContentSlide({
           ) : null}
 
           <div
-            className="mx-auto mt-7 inline-flex rounded-full border border-[color:var(--live-border)] bg-white/10 px-4 py-2 text-sm font-bold"
+            className="mx-auto mt-7 inline-flex max-w-xl rounded-2xl border border-[color:var(--live-border)] bg-white/10 px-4 py-2 text-sm font-bold leading-6"
             role="status"
           >
             منتظر مرحله بعدی ارائه‌دهنده بمانید
           </div>
+
+          {!isStreamConnected && connectionError ? (
+            <p
+              className="mx-auto mt-3 max-w-xl rounded-xl border border-warning/30 bg-warning/10 px-4 py-2 text-sm leading-6 text-[color:var(--live-muted)]"
+              role="status"
+              aria-live="polite"
+            >
+              {isConnected
+                ? "به‌روزرسانی زنده در حال بازیابی است؛ همین اسلاید معتبر است."
+                : "ارتباط زنده در حال بازیابی است؛ همین اسلاید روی صفحه حفظ می‌شود."}
+            </p>
+          ) : null}
         </div>
       </article>
     </ParticipantShell>

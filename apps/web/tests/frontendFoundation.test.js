@@ -267,6 +267,7 @@ test("participant live UI is Persian, theme-driven, and disclosure-safe", () => 
   const theme = source("src/modules/live/participant/theme.ts");
   const sharedTheme = source("src/shared/styles/presentationTheme.ts");
   const question = source("src/modules/live/participant/ui/ParticipantQuestion.tsx");
+  const content = source("src/modules/live/participant/ui/ParticipantContentSlide.tsx");
   const closed = source("src/modules/live/participant/ui/ParticipantActivityClosed.tsx");
   const playerView = source("src/modules/live/routes/PlayerPresentationView.tsx");
   const leaderboard = source("src/modules/live/participant/ui/ParticipantLeaderboard.tsx");
@@ -281,6 +282,9 @@ test("participant live UI is Persian, theme-driven, and disclosure-safe", () => 
   assert.match(sharedTheme, /--live-bg/);
   assert.match(question, /ثبت پاسخ/);
   assert.match(question, /پاسخ‌گویی پایان یافت/);
+  assert.match(content, /isConnected, isStreamConnected/);
+  assert.match(content, /همین اسلاید معتبر است/);
+  assert.doesNotMatch(content, /showConnection/);
   assert.match(closed, /پاسخ‌گویی پایان یافت/);
   assert.match(closed, /نتیجه هنوز نمایش داده نشده است/);
   assert.match(playerView, /activity_phase === "closed"/);

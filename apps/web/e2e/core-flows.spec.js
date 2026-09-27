@@ -564,6 +564,24 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
         },
       });
 
+      const afterActivity = await api(`/presentations/${presentation.id}`);
+      const contentSlide = await api(
+        `/presentations/${presentation.id}/slides`,
+        {
+          method: "POST",
+          headers: { "If-Match": String(afterActivity.revision) },
+          body: {
+            position: 1,
+            kind: "content",
+            content: {
+              title: "نکته بین دو سؤال",
+              text: "این متن باید بدون ورود دوباره به حالت اتصال نمایش داده شود.",
+              image_url: "",
+            },
+          },
+        },
+      );
+
       await api(`/presentations/${presentation.id}/access-code`, {
         method: "PUT",
         body: { access_code: accessCode },
@@ -572,6 +590,7 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
       return {
         presentationId: presentation.id,
         slideId: slide.id,
+        contentSlideId: contentSlide.id,
         accessCode,
       };
     }, { accessCode, activityContent });
@@ -855,6 +874,48 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
     });
     await expect(participant.getByText("امتیاز شما")).toBeVisible();
 
+    await backstage
+      .getByRole("button", { name: "بستن پشت‌صحنه" })
+      .click();
+    await expect(backstage).toBeHidden();
+
+    await manager.getByRole("button", { name: "آیتم بعدی" }).click();
+    await expect(
+      participant.getByRole("heading", { name: "نکته بین دو سؤال" }),
+    ).toBeVisible({ timeout: 15000 });
+    await expect(
+      participant.getByText(
+        "این متن باید بدون ورود دوباره به حالت اتصال نمایش داده شود.",
+        { exact: true },
+      ),
+    ).toBeVisible();
+    await expect(
+      participant.getByText("منتظر مرحله بعدی ارائه‌دهنده بمانید", {
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      participant.getByText("در حال بازیابی ارتباط", { exact: true }),
+    ).toBeHidden();
+    await expect(
+      participant.getByText("در حال اتصال", { exact: true }),
+    ).toBeHidden();
+    await expect(
+      stage.getByRole("heading", { name: "نکته بین دو سؤال" }),
+    ).toBeVisible({ timeout: 15000 });
+    await expectAccessible(participant, "participant live content");
+    await expectNoOverflow(participant);
+
+    await participant.reload();
+    await expect(
+      participant.getByRole("heading", { name: "نکته بین دو سؤال" }),
+    ).toBeVisible({ timeout: 15000 });
+    await expect(
+      participant.getByText("در حال بازیابی ارتباط", { exact: true }),
+    ).toBeHidden();
+
+    await backstageTrigger.click();
+    await expect(backstage).toBeVisible();
     await backstage.getByRole("button", { name: "پایان جلسه", exact: true }).click();
     const endDialog = manager.getByRole("alertdialog");
     await expect(endDialog).toBeVisible();

@@ -543,15 +543,15 @@ export class LiveRuntime {
               return;
             }
 
+            const terminalStreamFailure =
+              error instanceof LiveAPIError &&
+              [401, 404].includes(error.status);
             this.publish({
-              isConnected: false,
+              ...(terminalStreamFailure ? { isConnected: false } : {}),
               isStreamConnected: false,
               connectionError: errorMessage(error),
             });
-            if (
-              error instanceof LiveAPIError &&
-              [401, 404].includes(error.status)
-            ) {
+            if (terminalStreamFailure) {
               return;
             }
 

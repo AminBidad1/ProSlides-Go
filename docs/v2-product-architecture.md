@@ -183,6 +183,10 @@ Rules:
 - Manager commands remain idempotent and version-checked.
 - Snapshot-first SSE, durable replay and role-scoped projection remain
   non-negotiable.
+- Session readiness and SSE health are distinct runtime states. A transient
+  event-stream reconnect must not invalidate an already-authoritative
+  participant snapshot or replace a valid Content item with a generic
+  reconnect/loading surface.
 - Legacy question/leaderboard Session states are not part of the current
   external/domain model.
 
@@ -368,7 +372,10 @@ Mobile-first personal interaction surface:
   correctness or results before presenter reveal;
 - personal result/score/rank after reveal;
 - waiting/recovery state only for genuine loading/recovery, not normal
-  Activity lifecycle transitions.
+  Activity lifecycle transitions;
+- Content items remain visible and authoritative during transient SSE recovery;
+  degraded live-update status may be shown in context, but the participant must
+  not be sent back to an entry/connecting state.
 
 Manager-only correctness or complete roster/score-map data must never leak into
 participant snapshots.

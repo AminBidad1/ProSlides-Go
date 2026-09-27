@@ -794,10 +794,15 @@ test("participant answer HTTP remains available while SSE is reconnecting", asyn
     true,
   );
 
-  for (let index = 0; index < 20 && runtime.getState().isConnected; index += 1) {
+  for (
+    let index = 0;
+    index < 20 && runtime.getState().isStreamConnected;
+    index += 1
+  ) {
     await new Promise((resolve) => setTimeout(resolve, 0));
   }
-  assert.equal(runtime.getState().isConnected, false);
+  assert.equal(runtime.getState().isConnected, true);
+  assert.equal(runtime.getState().isStreamConnected, false);
   assert.equal(
     runtime.getState().connectionError,
     "sse temporarily unavailable",
@@ -812,7 +817,8 @@ test("participant answer HTTP remains available while SSE is reconnecting", asyn
     true,
   );
   assert.equal(submissions, 1);
-  assert.equal(runtime.getState().isConnected, false);
+  assert.equal(runtime.getState().isConnected, true);
+  assert.equal(runtime.getState().isStreamConnected, false);
   assert.equal(
     runtime.getState().connectionError,
     "sse temporarily unavailable",
