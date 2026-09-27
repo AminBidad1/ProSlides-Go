@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { getColorForUser } from "../../../../shared/lib/playerColor.ts";
-import { isQuestionSlide } from "../../model/presentationFlow.ts";
+import {
+  findSlideIndexById,
+  isQuestionSlide,
+} from "../../model/presentationFlow.ts";
 import { resolveQuestionTimer } from "../../model/questionTimer.ts";
 import type { LegacyQuestionSlide } from "../../model/serverData.ts";
 import { participantTheme } from "../../participant/theme.ts";
@@ -49,9 +52,26 @@ export function ManagerPickAnswerQuestion({
   const [showQr, setShowQr] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
 
-  const slide = quiz.slides[currentSlide - 1];
+  const activeItemId = snapshot?.session.active_item_id ?? null;
+  const activeSlideIndex = findSlideIndexById(quiz.slides, activeItemId);
+  const resolvedSlideNumber =
+    activeSlideIndex >= 0 ? activeSlideIndex + 1 : currentSlide;
+  const definitionSlide =
+    activeSlideIndex >= 0
+      ? quiz.slides[activeSlideIndex]
+      : quiz.slides[currentSlide - 1];
+  const definitionQuestion: LegacyQuestionSlide | null =
+    isRemoteReady && isQuestionSlide(definitionSlide)
+      ? definitionSlide
+      : null;
+  const liveMatchesActiveItem =
+    activeItemId != null &&
+    liveCurrentQuestion?.question_id != null &&
+    String(liveCurrentQuestion.question_id) === String(activeItemId);
   const currentQuestion: LegacyQuestionSlide | null =
-    isRemoteReady && isQuestionSlide(slide) ? slide : null;
+    liveMatchesActiveItem
+      ? liveCurrentQuestion
+      : definitionQuestion;
 
   const liveMatchesDefinition =
     currentQuestion?.question_id != null &&
@@ -195,7 +215,7 @@ export function ManagerPickAnswerQuestion({
       return;
     }
 
-    const nextSlide = quiz.slides[currentSlide];
+    const nextSlide = quiz.slides[resolvedSlideNumber];
 
     if (currentQuestion.show_leaderboard_after) {
       await sendNavigation("next");
@@ -256,7 +276,7 @@ export function ManagerPickAnswerQuestion({
           <section className="mx-auto flex w-full max-w-7xl flex-1 flex-col">
             <div className="shrink-0 pt-4 text-center">
               <p className="text-sm text-[color:var(--live-muted)]">
-                سؤال {currentSlide.toLocaleString("fa-IR")} از{" "}
+                سؤال {resolvedSlideNumber.toLocaleString("fa-IR")} از{" "}
                 {totalSlides.toLocaleString("fa-IR")}
               </p>
               <h1
@@ -412,7 +432,7 @@ export function ManagerPickAnswerQuestion({
       </main>
 
       <ManagerControls
-        currentSlide={currentSlide}
+        currentSlide={resolvedSlideNumber}
         totalSlides={totalSlides}
         onNext={currentQuestion ? handleNext : undefined}
         onEnd={handleEnd}

@@ -94,6 +94,15 @@ export function useManagerPresentationController({
   ]);
 
   useEffect(() => {
+    if (!enabled || !activeItemId || quiz.slides.length === 0) return;
+
+    const index = findSlideIndexById(quiz.slides, activeItemId);
+    if (index >= 0) {
+      setCurrentSlide(index + 1);
+    }
+  }, [enabled, activeItemId, quiz.slides]);
+
+  useEffect(() => {
     if (!enabled || !currentQuestion || quiz.slides.length === 0) return;
 
     const index = findQuestionSlideIndex(

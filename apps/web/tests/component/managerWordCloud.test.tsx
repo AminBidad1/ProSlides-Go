@@ -39,7 +39,29 @@ const quiz: LivePresentationModel = {
     text_color: "#ffffff",
   },
   music_url: "",
-  slides: [question],
+  slides: [
+    {
+      item_kind: "activity",
+      slide_id: "choice-1",
+      question_id: "choice-1",
+      activity_kind: "choice",
+      question_text: "سؤال قبلی",
+      question_type: "single",
+      has_correct_answer: true,
+      options: [
+        { option_id: 0, option_text: "الف", answer: true },
+        { option_id: 1, option_text: "ب", answer: false },
+      ],
+    },
+    {
+      item_kind: "content",
+      slide_id: "content-1",
+      title: "اسلاید محتوایی",
+      content_text: "",
+      content_image_url: "",
+    },
+    question,
+  ],
   text_color: "#ffffff",
 };
 
@@ -139,8 +161,8 @@ test("manager primary surface renders revealed Word Cloud terms", async () => {
           <ServerDataProvider>
             <ManagerPickAnswerQuestion
               roomId="presentation-1"
-              currentSlide={1}
-              totalSlides={1}
+              currentSlide={2}
+              totalSlides={3}
               quiz={quiz}
               isRemoteReady
               onNext={vi.fn()}
@@ -157,6 +179,10 @@ test("manager primary surface renders revealed Word Cloud terms", async () => {
       name: "جلسه را با چند واژه توصیف کنید",
     }),
   ).not.toBeNull();
+  expect(
+    screen.queryByText("در حال آماده‌سازی سؤال…"),
+  ).toBeNull();
+  expect(screen.getByText("سؤال ۳ از ۳")).not.toBeNull();
   expect(screen.getByLabelText("نتیجه ابر واژه")).not.toBeNull();
   expect(screen.getByText("۳ پاسخ ثبت‌شده")).not.toBeNull();
   expect(screen.getByText("خلاق")).not.toBeNull();
