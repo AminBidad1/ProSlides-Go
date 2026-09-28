@@ -230,7 +230,7 @@ export default function LandingProductJourney() {
             aria-pressed={active === id}
             onClick={() => setActive(id)}
             className={[
-              "flex min-h-12 items-center justify-center gap-2 rounded-xl px-2 py-2 text-xs font-black transition",
+              "flex min-h-12 items-center justify-center gap-2 rounded-xl px-2 py-2 text-xs font-black",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus sm:text-sm",
               active === id
                 ? "bg-content text-content-inverse"

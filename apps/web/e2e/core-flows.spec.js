@@ -526,7 +526,7 @@ test("mobile participant entry uses the public quiz theme", async ({ page }) => 
   });
 
   await page.goto("/THEME1");
-  await expect(page.getByRole("heading", { name: "به کوئیز بپیوندید" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "نامتان را وارد کنید" })).toBeVisible();
   await expect(page.getByText("مسابقه رنگ‌ها")).toBeVisible();
   expect(await page.locator(".participant-live-shell").evaluate((element) => getComputedStyle(element).backgroundColor)).toBe("rgb(15, 118, 110)");
   await expectNoOverflow(page);
@@ -715,11 +715,11 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
     await expectNoOverflow(stage);
 
     await participant.goto(`/${fixture.accessCode}`);
-    await expect(participant.getByRole("heading", { name: "به کوئیز بپیوندید" })).toBeVisible();
+    await expect(participant.getByRole("heading", { name: "نامتان را وارد کنید" })).toBeVisible();
     await expectAccessible(participant, "participant live join");
     await expectNoOverflow(participant);
     await participant.getByLabel("نام نمایشی").fill("شرکت‌کننده تست");
-    await participant.getByRole("button", { name: "ورود به کوئیز" }).click();
+    await participant.getByRole("button", { name: "پیوستن به جلسه" }).click();
     await expect(participant.getByRole("heading", { name: "شرکت‌کننده تست" })).toBeVisible();
     await expect(
       manager.getByRole("button", { name: "پنهان کردن نام شرکت‌کننده تست" }),

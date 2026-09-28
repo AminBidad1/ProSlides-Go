@@ -591,7 +591,7 @@ export interface paths {
         };
         /**
          * Get the read-only audience Stage projection for a manager-owned Session.
-         * @description Returns only data intended for the public Stage surface. Manager identity, the full roster and participant identifiers are excluded. Activity correctness is omitted until reveal. Cumulative ranking is bounded to the top five and is present only when the Stage is showing overall ranking or the scored Session has ended.
+         * @description Returns only data intended for the public Stage surface. Manager identity, the full roster and participant identifiers are excluded. During lobby state, a bounded list of the 36 most recently joined display names/avatars is exposed for the public arrival composition. Activity correctness is omitted until reveal. Cumulative ranking is bounded to the top five and is present only when the Stage is showing overall ranking or the scored Session has ended.
          */
         get: operations["getLiveStageSnapshot"];
         put?: never;
@@ -1093,6 +1093,10 @@ export interface components {
             /** @description Competition rank in the cumulative Session ranking. */
             rank: number;
         };
+        StageLobbyParticipant: {
+            display_name: string;
+            avatar?: string;
+        };
         StageLiveSnapshot: {
             /** @enum {string} */
             role: "stage";
@@ -1110,6 +1114,8 @@ export interface components {
             /** Format: int64 */
             last_event_id: number;
             activity_result?: components["schemas"]["ActivityResultPayload"];
+            /** @description Most recently joined participants for the public lobby composition; empty outside the lobby. */
+            lobby_participants: components["schemas"]["StageLobbyParticipant"][];
             ranking: components["schemas"]["StageRankingEntry"][];
         };
         ActivityTopPerformer: {

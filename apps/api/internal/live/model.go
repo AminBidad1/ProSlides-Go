@@ -143,6 +143,11 @@ type StageRankingEntry struct {
 	Rank        int    `json:"rank"`
 }
 
+type StageLobbyParticipant struct {
+	DisplayName string `json:"display_name"`
+	Avatar      string `json:"avatar,omitempty"`
+}
+
 type StageSnapshot struct {
 	Role             string                 `json:"role"`
 	Session          PublicSession          `json:"session"`
@@ -153,8 +158,9 @@ type StageSnapshot struct {
 	ActiveParticipantCount int              `json:"active_participant_count"`
 	HasScoring       bool                   `json:"has_scoring"`
 	LastEventID      int64                  `json:"last_event_id"`
-	ActivityResult   *ActivityResult        `json:"activity_result,omitempty"`
-	Ranking          []StageRankingEntry    `json:"ranking"`
+	ActivityResult   *ActivityResult          `json:"activity_result,omitempty"`
+	LobbyParticipants []StageLobbyParticipant `json:"lobby_participants"`
+	Ranking          []StageRankingEntry      `json:"ranking"`
 }
 
 type ActivityResult struct {

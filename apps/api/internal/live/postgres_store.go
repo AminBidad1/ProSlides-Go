@@ -896,6 +896,29 @@ func (s *PostgresStore) StageSnapshot(c context.Context, session, manager string
 		}
 	}
 
+	x.LobbyParticipants = []StageLobbyParticipant{}
+	if x.Session.State == Lobby {
+		rows, rowsErr := tx.Query(c, `SELECT display_name,COALESCE(avatar,'')
+			FROM participants
+			WHERE session_id=$1
+			ORDER BY joined_at DESC,id DESC
+			LIMIT 36`, session)
+		if rowsErr != nil {
+			return x, rowsErr
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var participant StageLobbyParticipant
+			if e = rows.Scan(&participant.DisplayName, &participant.Avatar); e != nil {
+				return x, e
+			}
+			x.LobbyParticipants = append(x.LobbyParticipants, participant)
+		}
+		if e = rows.Err(); e != nil {
+			return x, e
+		}
+	}
+
 	x.Ranking = []StageRankingEntry{}
 	if x.HasScoring && (x.Session.StageView == StageOverallRanking || x.Session.State == Ended) {
 		rows, rowsErr := tx.Query(c, `WITH ranked AS (

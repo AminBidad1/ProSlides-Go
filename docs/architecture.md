@@ -182,7 +182,11 @@ of inferring it from whichever cookies happen to be present. This allows a
 manager to test the participant experience in the same browser without
 accidentally receiving a manager projection. Stage has its own read-only
 projection; its SSE stream is authorized by manager ownership but filters
-manager-private activity result events until reveal. Participants receive
+manager-private activity result events until reveal. During the lobby only,
+Stage receives at most the 36 most recently joined display names/avatars so the
+public arrival composition can feel live without exposing participant IDs or
+loading the complete roster. The existing `(session_id, joined_at, id)` index
+serves that bounded recent-participant read in reverse order. Participants receive
 public Session state, the active Item, their own
 participant/score, aggregate count, and the event cursor. While an Activity is
 not yet revealed, the participant snapshot may expose only the boolean
@@ -207,7 +211,10 @@ role-scoped snapshot, opens SSE
 with `Last-Event-ID`, and refreshes snapshot state before reconnecting. SSE
 reconnects honor server `Retry-After` in addition to bounded exponential
 backoff, and Stage snapshot refreshes are coalesced so clustered state/ranking
-events do not create redundant concurrent reads. JSON live requests are bounded
+events do not create redundant concurrent reads. Lobby presence changes keep
+aggregate counts in-memory immediately and trigger a 350 ms bounded Stage
+refresh for the recent-arrival composition rather than one roster read per
+participant. JSON live requests are bounded
 so a broken network cannot leave the UI waiting
 forever. Participant answer drafts and in-flight submissions are retained only
 in same-tab `sessionStorage`; refresh restores the draft, while an in-flight

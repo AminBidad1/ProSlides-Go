@@ -141,10 +141,11 @@ func (s *snapshotStore) StageSnapshot(_ context.Context, session, manager string
 		JoinCode:     "JOIN1",
 		Presentation: PublicLivePresentation{Title: "آزمون نمونه", BackgroundColor: "#123456", BackgroundImageURL: "", MusicURL: "https://example.test/theme.mp3", TextColor: "#ffffff"},
 		ActiveItem:   json.RawMessage(`{"id":"item-1","kind":"activity","content":{"evaluation":{"mode":"correctness"},"response":{"options":[{"id":"a","text":"الف"}]}}}`),
-		ParticipantCount: 10_000,
-		HasScoring:       true,
-		LastEventID:      42,
-		Ranking:          []StageRankingEntry{},
+		ParticipantCount:   10_000,
+		HasScoring:         true,
+		LastEventID:        42,
+		LobbyParticipants: []StageLobbyParticipant{},
+		Ranking:            []StageRankingEntry{},
 	}, nil
 }
 func (s *snapshotStore) Roster(_ context.Context, session, manager string, query RosterQuery) (RosterPage, error) {
@@ -530,6 +531,10 @@ func TestStageSnapshotIsManagerOnlyAndProjectionScoped(t *testing.T) {
 	}
 	if _, exists := payload["participant"]; exists {
 		t.Fatalf("stage projection disclosed participant identity")
+	}
+	lobbyParticipants, ok := payload["lobby_participants"].([]any)
+	if !ok || len(lobbyParticipants) != 0 {
+		t.Fatalf("unexpected bounded lobby projection: %#v", payload["lobby_participants"])
 	}
 	session := payload["session"].(map[string]any)
 	if _, exists := session["host_id"]; exists {

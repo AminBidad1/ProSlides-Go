@@ -632,10 +632,11 @@ paths:
       summary: Get the read-only audience Stage projection for a manager-owned Session.
       description: >-
         Returns only data intended for the public Stage surface. Manager identity,
-        the full roster and participant identifiers are excluded. Activity
-        correctness is omitted until reveal. Cumulative ranking is bounded to the
-        top five and is present only when the Stage is showing overall ranking or
-        the scored Session has ended.
+        the full roster and participant identifiers are excluded. During lobby state,
+        a bounded list of the 36 most recently joined display names/avatars is exposed
+        for the public arrival composition. Activity correctness is omitted until
+        reveal. Cumulative ranking is bounded to the top five and is present only when
+        the Stage is showing overall ranking or the scored Session has ended.
       parameters: [{ $ref: '#/components/parameters/SessionId' }]
       responses:
         '200':
@@ -1330,9 +1331,16 @@ components:
         avatar: { type: string }
         score: { type: integer, minimum: 0 }
         rank: { type: integer, minimum: 1, description: Competition rank in the cumulative Session ranking. }
+    StageLobbyParticipant:
+      type: object
+      required: [display_name]
+      additionalProperties: false
+      properties:
+        display_name: { type: string }
+        avatar: { type: string }
     StageLiveSnapshot:
       type: object
-      required: [role, session, join_code, presentation, participant_count, active_participant_count, has_scoring, last_event_id, ranking]
+      required: [role, session, join_code, presentation, participant_count, active_participant_count, has_scoring, last_event_id, lobby_participants, ranking]
       additionalProperties: false
       properties:
         role: { type: string, enum: [stage] }
@@ -1348,6 +1356,11 @@ components:
         has_scoring: { type: boolean }
         last_event_id: { type: integer, format: int64, minimum: 0 }
         activity_result: { $ref: '#/components/schemas/ActivityResultPayload' }
+        lobby_participants:
+          type: array
+          maxItems: 36
+          description: Most recently joined participants for the public lobby composition; empty outside the lobby.
+          items: { $ref: '#/components/schemas/StageLobbyParticipant' }
         ranking:
           type: array
           maxItems: 5

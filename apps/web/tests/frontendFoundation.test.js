@@ -421,6 +421,10 @@ test("audience Stage owns a read-only projection boundary", () => {
   assert.doesNotMatch(route, /useLiveSession|useServerData|ManagerControls/);
   assert.match(hook, /getLiveStageSnapshot/);
   assert.match(hook, /streamLiveEvents/);
+  assert.match(hook, /scheduleLobbyRefresh/);
+  assert.match(hook, /350/);
+  assert.match(route, /lobby_participants/);
+  assert.match(route, /stage-lobby-arrive/);
   assert.doesNotMatch(
     hook,
     /getRosterPage|applyLiveAction|submitLiveAnswer|sendNavigation|sendEnd/,
@@ -662,7 +666,9 @@ test("participant interaction controllers own join retries and answer attempts",
   assert.match(join, /joinParticipant/);
   assert.match(join, /scheduleRetry/);
   assert.match(join, /retryNow/);
-  assert.match(join, /Math\.min\(1000 \* 2 \*\* attempt, 10_000\)/);
+  assert.match(join, /Math\.min\(750 \* 2 \*\* attempt, 10_000\)/);
+  assert.match(join, /0\.75 \+ Math\.random\(\) \* 0\.5/);
+  assert.match(join, /scheduleRetry\(1500\)/);
   assert.match(answer, /createRequestId/);
   assert.match(answer, /pendingRef/);
   assert.match(answer, /activeIdentityRef/);

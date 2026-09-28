@@ -113,6 +113,7 @@ export function useStageProjection(sessionId: string | undefined) {
 
     let refreshPromise: Promise<StageSnapshot> | null = null;
     let refreshDirty = false;
+    let lobbyRefreshTimer = 0;
     const refresh = async (): Promise<StageSnapshot> => {
       if (refreshPromise) {
         refreshDirty = true;
@@ -135,6 +136,18 @@ export function useStageProjection(sessionId: string | undefined) {
       } finally {
         if (refreshPromise === task) refreshPromise = null;
       }
+    };
+
+    const scheduleLobbyRefresh = () => {
+      if (lobbyRefreshTimer || controller.signal.aborted) return;
+      lobbyRefreshTimer = window.setTimeout(() => {
+        lobbyRefreshTimer = 0;
+        void refresh().catch((error) => {
+          if (!controller.signal.aborted) {
+            setState((value) => ({ ...value, error: errorText(error) }));
+          }
+        });
+      }, 350);
     };
 
     const handleEvent = (event: LiveEvent) => {
@@ -166,6 +179,9 @@ export function useStageProjection(sessionId: string | undefined) {
           };
           snapshotRef.current = next;
           setState((value) => ({ ...value, snapshot: next }));
+          if (current.session.state === "lobby" && participantDelta !== 0) {
+            scheduleLobbyRefresh();
+          }
         }
         return;
       }
@@ -259,7 +275,10 @@ export function useStageProjection(sessionId: string | undefined) {
       }
     })();
 
-    return () => controller.abort();
+    return () => {
+      if (lobbyRefreshTimer) window.clearTimeout(lobbyRefreshTimer);
+      controller.abort();
+    };
   }, [applySnapshot, sessionId]);
 
   return state;

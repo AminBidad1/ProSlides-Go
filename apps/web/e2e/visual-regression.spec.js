@@ -113,7 +113,7 @@ test("participant join mobile visual baseline", async ({ page }) => {
 
   await page.goto("/VISUAL1");
   await expect(
-    page.getByRole("heading", { name: "به کوئیز بپیوندید" }),
+    page.getByRole("heading", { name: "نامتان را وارد کنید" }),
   ).toBeVisible();
   await settleVisualSurface(page);
 

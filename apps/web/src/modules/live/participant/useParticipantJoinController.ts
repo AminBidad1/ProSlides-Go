@@ -62,10 +62,16 @@ export function useParticipantJoinController(
 
   useEffect(() => () => clearRetry(), [clearRetry]);
 
-  const scheduleRetry = useCallback(() => {
+  const scheduleRetry = useCallback((minimumDelay = 0) => {
     if (retryBlockedRef.current) return;
     retryBlockedRef.current = true;
-    const delay = Math.min(1000 * 2 ** attempt, 10_000);
+
+    // Spread reconnects across a window so a brief outage does not turn a large
+    // audience into a synchronized retry burst.
+    const baseDelay = Math.min(750 * 2 ** attempt, 10_000);
+    const jitteredDelay = Math.round(baseDelay * (0.75 + Math.random() * 0.5));
+    const delay = Math.max(minimumDelay, jitteredDelay);
+
     retryTimerRef.current = window.setTimeout(() => {
       retryBlockedRef.current = false;
       setAttempt((value) => value + 1);
@@ -89,6 +95,11 @@ export function useParticipantJoinController(
     if (isEditing || !isJoining || !roomId || isConnected) return;
 
     if (retryBlockedRef.current) return;
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      scheduleRetry(1500);
+      return;
+    }
+
     let cancelled = false;
     void connect(roomId).then((ok) => {
       if (!cancelled && !ok) scheduleRetry();
@@ -133,13 +144,28 @@ export function useParticipantJoinController(
         return;
       }
       joinSentRef.current = false;
+      if (outcome === "name_taken") {
+        clearRetry();
+        setJoinError("این نام همین حالا در جلسه استفاده می‌شود. نام دیگری انتخاب کنید.");
+        setIsEditing(true);
+        setIsJoining(false);
+        return;
+      }
       if (outcome === "rejected") {
         clearRetry();
         setJoinError(
-          "ورود به این جلسه پذیرفته نشد. نام یا آواتار را بررسی کنید و دوباره تلاش کنید.",
+          "ورود به این جلسه پذیرفته نشد. نام را بررسی کنید و دوباره تلاش کنید.",
         );
         setIsEditing(true);
         setIsJoining(false);
+        return;
+      }
+      if (
+        typeof outcome === "object" &&
+        outcome?.status === "rate_limited"
+      ) {
+        setJoinError("تعداد ورودها در این لحظه زیاد است؛ ورود شما خودکار دوباره امتحان می‌شود.");
+        scheduleRetry(outcome.retryAfterMs);
         return;
       }
       scheduleRetry();

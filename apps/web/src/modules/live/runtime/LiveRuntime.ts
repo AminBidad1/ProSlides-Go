@@ -211,6 +211,8 @@ export class LiveRuntime {
   private pendingActionIds = new Map<string, string>();
   private lifecycleVersion = 0;
   private rosterRequestVersion = 0;
+  private rosterRefreshTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
+  private pendingRosterRefreshOrder: RosterOrder | null = null;
   private destroyed = false;
 
   constructor(role: LiveClientRole, dependencies: LiveRuntimeDependencies = {}) {
@@ -263,6 +265,11 @@ export class LiveRuntime {
   private resetInternals = () => {
     this.lifecycleVersion += 1;
     this.rosterRequestVersion += 1;
+    if (this.rosterRefreshTimer !== null) {
+      globalThis.clearTimeout(this.rosterRefreshTimer);
+      this.rosterRefreshTimer = null;
+    }
+    this.pendingRosterRefreshOrder = null;
     this.streamAbort?.abort();
     this.streamAbort = null;
     this.selectedSessionId = null;
@@ -281,6 +288,11 @@ export class LiveRuntime {
     if (this.selectedSessionId === sessionId) return;
     this.lifecycleVersion += 1;
     this.rosterRequestVersion += 1;
+    if (this.rosterRefreshTimer !== null) {
+      globalThis.clearTimeout(this.rosterRefreshTimer);
+      this.rosterRefreshTimer = null;
+    }
+    this.pendingRosterRefreshOrder = null;
     this.streamAbort?.abort();
     this.streamAbort = null;
     this.selectedSessionId = sessionId;
@@ -394,6 +406,18 @@ export class LiveRuntime {
 
   loadMoreRoster = () => this.loadRoster(this.rosterOrderValue, true);
 
+  private scheduleRosterRefresh = (order: RosterOrder) => {
+    this.pendingRosterRefreshOrder = order;
+    if (this.rosterRefreshTimer !== null || this.destroyed) return;
+
+    this.rosterRefreshTimer = globalThis.setTimeout(() => {
+      this.rosterRefreshTimer = null;
+      const pendingOrder = this.pendingRosterRefreshOrder;
+      this.pendingRosterRefreshOrder = null;
+      if (pendingOrder) void this.loadRoster(pendingOrder, false);
+    }, 250);
+  };
+
   private refreshAuthoritative = async (): Promise<LiveSnapshot> => {
     const id = this.selectedSessionId;
     if (!id) throw new Error("Live session is not selected");
@@ -500,7 +524,7 @@ export class LiveRuntime {
             snapshot.session.state === "ended")
             ? "score"
             : "joined";
-        void this.loadRoster(order, false);
+        this.scheduleRosterRefresh(order);
       }
       return;
     }
@@ -942,11 +966,19 @@ export class LiveRuntime {
       return true;
     } catch (error) {
       this.publish({ connectionError: errorMessage(error) });
-      if (
-        error instanceof LiveAPIError &&
-        [400, 409].includes(error.status)
-      ) {
-        return "rejected" as const;
+      if (error instanceof LiveAPIError) {
+        if (error.status === 409 && error.code === "display_name_taken") {
+          return "name_taken" as const;
+        }
+        if ([400, 409].includes(error.status)) {
+          return "rejected" as const;
+        }
+        if (error.status === 429) {
+          return {
+            status: "rate_limited" as const,
+            retryAfterMs: Math.max(1500, error.retryAfterMs ?? 0),
+          };
+        }
       }
       this.publish({ isConnected: false });
       return false;

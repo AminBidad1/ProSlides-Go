@@ -317,6 +317,15 @@ jobs:
           remaining="$(docker compose exec -T postgres psql -U proslides -d proslides -Atqc "SELECT count(*) FROM live_events WHERE session_id='$session_id'::uuid")"
           test "$remaining" = "0"
 
+      - name: Upload browser failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: browser-e2e-failure
+          path: apps/web/test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Print stack logs on failure
         if: failure()
         run: docker compose logs --no-color --tail=200 api postgres redis

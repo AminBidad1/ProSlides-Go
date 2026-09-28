@@ -1229,3 +1229,94 @@ test("participant answer HTTP remains available while SSE is reconnecting", asyn
 
   runtime.destroy();
 });
+
+
+test("participant join exposes precise retry outcomes for name conflicts and rate limits", async () => {
+  const runtime = createLiveRuntime("player", {
+    storage: null,
+    transport: {
+      createRequestId: () => "00000000-0000-4000-8000-000000000101",
+      joinLiveSession: async () => {
+        throw new LiveAPIError(409, "display_name_taken");
+      },
+    },
+  });
+
+  assert.equal(await runtime.connect("session"), true);
+  assert.equal(
+    await runtime.joinParticipant({
+      name: "Duplicate",
+      avatar: "🙂",
+      clientUserId: "00000000-0000-4000-8000-000000000102",
+    }),
+    "name_taken",
+  );
+
+  runtime.destroy();
+
+  const limitedRuntime = createLiveRuntime("player", {
+    storage: null,
+    transport: {
+      createRequestId: () => "00000000-0000-4000-8000-000000000103",
+      joinLiveSession: async () => {
+        throw new LiveAPIError(429, "rate_limited", 2_000);
+      },
+    },
+  });
+
+  assert.equal(await limitedRuntime.connect("session"), true);
+  assert.deepEqual(
+    await limitedRuntime.joinParticipant({
+      name: "Player",
+      avatar: "🙂",
+      clientUserId: "00000000-0000-4000-8000-000000000104",
+    }),
+    { status: "rate_limited", retryAfterMs: 2_000 },
+  );
+
+  limitedRuntime.destroy();
+});
+
+test("manager coalesces presence bursts before refreshing the bounded roster", async () => {
+  let onEvent = null;
+  let rosterReads = 0;
+  const runtime = createLiveRuntime("manager", {
+    storage: null,
+    transport: {
+      createRequestId: () => "00000000-0000-4000-8000-000000000105",
+      createLiveSession: async () => managerSession("session"),
+      getLiveSnapshot: async () =>
+        managerSnapshot("session", { eventId: 10, stateVersion: 1 }),
+      getRosterPage: async (_id, order) => {
+        rosterReads += 1;
+        return emptyRoster(order);
+      },
+      streamLiveEvents: async (_id, _lastEventId, options) => {
+        onEvent = options.onEvent;
+        return parkedStream(_id, _lastEventId, options);
+      },
+    },
+  });
+
+  assert.equal(await runtime.connect("presentation"), true);
+  assert.equal(rosterReads, 1);
+
+  for (let index = 0; index < 25; index += 1) {
+    onEvent({
+      event_id: 11 + index,
+      schema_version: 1,
+      session_id: "session",
+      state_version: 1,
+      name: "presence.updated",
+      payload: { participant_delta: 1, active_participant_delta: 1 },
+      occurred_at: new Date().toISOString(),
+    });
+  }
+
+  assert.equal(rosterReads, 1);
+  await new Promise((resolve) => setTimeout(resolve, 325));
+  assert.equal(rosterReads, 2);
+  assert.equal(runtime.getState().snapshot.participant_count, 25);
+
+  runtime.destroy();
+});

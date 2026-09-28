@@ -101,16 +101,19 @@ export function ParticipantJoinPage({
 
   return (
     <ParticipantShell quiz={quiz}>
-      <section className="flex flex-1 items-center justify-center py-5">
+      <section className="flex flex-1 items-center justify-center py-4 sm:py-6">
         <form
           onSubmit={submit}
-          className="w-full rounded-[2rem] border border-[color:var(--live-border)] bg-[color:var(--live-surface)] p-5 shadow-2xl backdrop-blur-xl sm:p-8"
+          className="w-full max-w-lg rounded-[2rem] border border-[color:var(--live-border)] bg-[color:var(--live-surface)] p-5 shadow-2xl backdrop-blur-xl sm:p-8"
         >
-          <div className="mb-7 text-center">
-            <p className="text-sm text-[color:var(--live-muted)]">
-              ورود شرکت‌کننده
+          <div className="mb-6 text-center">
+            <p className="text-sm font-bold text-[color:var(--live-muted)]">
+              آمادهٔ پیوستن هستید
             </p>
-            <h1 className="mt-2 text-3xl font-black">به کوئیز بپیوندید</h1>
+            <h1 className="mt-2 text-3xl font-black">نامتان را وارد کنید</h1>
+            <p className="mt-2 text-sm leading-6 text-[color:var(--live-muted)]">
+              همین نام هنگام پاسخ‌گویی و رتبه‌بندی نمایش داده می‌شود.
+            </p>
           </div>
 
           <label
@@ -123,13 +126,14 @@ export function ParticipantJoinPage({
             id="participant-name"
             autoComplete="nickname"
             autoFocus
+            enterKeyHint="go"
             maxLength={100}
             value={controller.name}
             onChange={(event) => controller.setName(event.target.value)}
             placeholder="مثلاً سارا"
             aria-invalid={Boolean(controller.validation)}
             aria-describedby={
-              controller.validation ? "participant-name-error" : undefined
+              controller.validation ? "participant-name-error" : "participant-name-hint"
             }
             className="min-h-14 w-full rounded-2xl border border-[color:var(--live-border)] bg-white/95 px-4 text-center text-lg font-bold text-slate-950 outline-none placeholder:text-slate-500 focus-visible:ring-4 focus-visible:ring-white/30"
           />
@@ -141,65 +145,77 @@ export function ParticipantJoinPage({
             >
               {controller.validation}
             </p>
-          ) : null}
+          ) : (
+            <p
+              id="participant-name-hint"
+              className="mt-2 text-xs leading-6 text-[color:var(--live-muted)]"
+            >
+              کوتاه و قابل تشخیص انتخابش کنید؛ مخصوصاً در جلسه‌های شلوغ.
+            </p>
+          )}
 
-          <fieldset className="mt-7">
-            <legend className="text-sm font-bold">آواتار شما</legend>
+          <div className="mt-5 flex items-center justify-between gap-4 rounded-2xl border border-[color:var(--live-border)] bg-white/5 p-3">
+            <div className="min-w-0">
+              <p className="text-sm font-bold">آواتار</p>
+              <p className="mt-1 text-xs text-[color:var(--live-muted)]">
+                اختیاری است و می‌توانید همین انتخاب را نگه دارید.
+              </p>
+            </div>
             <button
               type="button"
               onClick={() => setShowPicker((value) => !value)}
               aria-expanded={showPicker}
               aria-controls="participant-avatar-picker"
-              className="mt-3 flex min-h-24 w-full items-center justify-center gap-4 rounded-2xl border border-[color:var(--live-border)] bg-white/10 px-4 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
+              aria-label="تغییر آواتار"
+              className="grid min-h-14 min-w-14 shrink-0 place-items-center rounded-2xl border border-[color:var(--live-border)] bg-white/10 text-3xl hover:bg-white/15 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
             >
-              <span className="text-6xl" aria-hidden="true">
-                {controller.avatar}
-              </span>
-              <span className="text-sm font-bold">
-                برای تغییر آواتار بزنید
-              </span>
+              <span aria-hidden="true">{controller.avatar}</span>
             </button>
-            {showPicker ? (
-              <div
-                id="participant-avatar-picker"
-                className="mt-3 overflow-hidden rounded-2xl"
-                dir="ltr"
+          </div>
+
+          {showPicker ? (
+            <div
+              id="participant-avatar-picker"
+              className="mt-3 overflow-hidden rounded-2xl"
+              dir="ltr"
+            >
+              <Suspense
+                fallback={
+                  <div
+                    className="grid h-80 place-items-center bg-slate-950 text-sm text-white/70"
+                    role="status"
+                  >
+                    در حال آماده‌سازی انتخاب آواتار…
+                  </div>
+                }
               >
-                <Suspense
-                  fallback={
-                    <div
-                      className="grid h-80 place-items-center bg-slate-950 text-sm text-white/70"
-                      role="status"
-                    >
-                      در حال آماده‌سازی انتخاب آواتار…
-                    </div>
-                  }
-                >
-                  <ParticipantAvatarPicker
-                    onSelect={(emoji) => {
-                      controller.setAvatar(emoji);
-                      setShowPicker(false);
-                    }}
-                  />
-                </Suspense>
-              </div>
-            ) : null}
-          </fieldset>
+                <ParticipantAvatarPicker
+                  onSelect={(emoji) => {
+                    controller.setAvatar(emoji);
+                    setShowPicker(false);
+                  }}
+                />
+              </Suspense>
+            </div>
+          ) : null}
 
           {controller.joinError ? (
-            <p role="alert" className="mt-4 text-sm font-medium">
+            <p
+              role="alert"
+              className="mt-4 rounded-xl border border-amber-300/25 bg-amber-950/20 px-3 py-2 text-sm font-medium leading-6"
+            >
               {controller.joinError}
             </p>
           ) : null}
 
           <button
             type="submit"
-            className="mt-7 min-h-14 w-full rounded-2xl bg-white px-6 text-lg font-black text-slate-950 shadow-xl transition-transform hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40 motion-reduce:transform-none"
+            className="mt-6 min-h-14 w-full rounded-2xl bg-white px-6 text-lg font-black text-slate-950 shadow-xl transition-transform hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40 motion-reduce:transform-none"
           >
-            ورود به کوئیز
+            پیوستن به جلسه
           </button>
           <p className="mt-4 text-center text-xs leading-6 text-[color:var(--live-muted)]">
-            پاسخ‌ها فقط برای همین جلسه ثبت می‌شوند.
+            نیازی به ساخت حساب نیست.
           </p>
         </form>
       </section>

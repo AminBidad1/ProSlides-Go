@@ -97,6 +97,11 @@ export interface StageRankingEntry {
   rank: number;
 }
 
+export interface StageLobbyParticipant {
+  display_name: string;
+  avatar?: string;
+}
+
 export interface StageSnapshot {
   role: "stage";
   session: PublicLiveSession;
@@ -108,6 +113,7 @@ export interface StageSnapshot {
   has_scoring: boolean;
   last_event_id: number;
   activity_result?: ActivityResult;
+  lobby_participants: StageLobbyParticipant[];
   ranking: StageRankingEntry[];
 }
 
