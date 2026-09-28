@@ -1,6 +1,6 @@
 # Current project status
 
-Last reviewed: 2026-09-26
+Last reviewed: 2026-09-28
 
 This is the only mutable project-status document. Durable architecture belongs
 in architecture/ADR documents; operational procedures belong in runbooks;
@@ -24,9 +24,12 @@ The current product/domain model is the ProSlides v2 model documented in
 Items, presenter-paced Sessions, separate Activity results and cumulative
 ranking, Stage/Backstage/Participant projections, and Session-first reports.
 
-The V2.1-V2.8 repository delivery program is complete through PR #137.
-The completed execution plan is archived in
-`../archive/v2-delivery-plan-2026-09.md`.
+The planned V2.1-V2.8 repository delivery program is complete. Repository
+hardening continued with targeted Live resilience work through PR #167,
+including participant/Stage recovery, replay-cursor safety, pending-answer
+retry, manager roster recovery/order consistency, duplicate presenter-command
+guards, and post-merge validation on `main`. The completed execution plan is
+archived in `../archive/v2-delivery-plan-2026-09.md`.
 
 ## Verified repository baseline
 
@@ -43,7 +46,12 @@ commit/run identifiers; this document intentionally does not copy them.
   settings;
 - PostgreSQL backup/restore and ended-Session replay-retention drills run in CI;
 - the final-v2 k6 scenario and SQL reconciliation harness use canonical Activity
-  lifecycle/result/ranking semantics.
+  lifecycle/result/ranking semantics;
+- Live runtime recovery distinguishes HTTP/session reachability from SSE
+  liveness, replays only from fully applied cursors, explicitly resynchronizes
+  after browser/network recovery, retries pending participant answers with
+  stable idempotency keys, and prevents stale participant/manager projections
+  during terminal or ranking transitions.
 
 Repository-level migration/hardening boundaries are not currently blocking
 release readiness.

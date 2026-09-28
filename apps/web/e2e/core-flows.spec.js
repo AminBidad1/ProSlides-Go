@@ -143,8 +143,9 @@ function watchRuntime(page) {
     }
   });
   page.on("requestfailed", (request) => {
+    const url = new URL(request.url());
     if (
-      request.url().includes("/api/v1/") &&
+      url.origin === "http://127.0.0.1:4173" &&
       request.failure()?.errorText !== "net::ERR_ABORTED"
     ) {
       failures.push(
@@ -153,7 +154,11 @@ function watchRuntime(page) {
     }
   });
   page.on("response", (response) => {
-    if (response.url().includes("/api/v1/") && response.status() >= 500) {
+    const url = new URL(response.url());
+    if (
+      url.origin === "http://127.0.0.1:4173" &&
+      response.status() >= 500
+    ) {
       failures.push(`response: ${response.status()} ${response.url()}`);
     }
   });
