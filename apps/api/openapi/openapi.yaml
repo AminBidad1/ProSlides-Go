@@ -1375,6 +1375,14 @@ components:
         avatar: { type: string }
         score_delta: { type: integer, minimum: 0 }
         rank: { type: integer, minimum: 1, description: Competition rank within the current scored Activity only. }
+    ManagerLobbyParticipant:
+      type: object
+      required: [participant_id, display_name]
+      additionalProperties: false
+      properties:
+        participant_id: { type: string, format: uuid }
+        display_name: { type: string }
+        avatar: { type: string }
     ManagerLiveSnapshot:
       type: object
       required: [role, session, presentation, participant_count, active_participant_count, has_scoring, last_event_id, activity_top_performers]
@@ -1394,6 +1402,11 @@ components:
         has_scoring: { type: boolean, description: True when the frozen Session contains at least one scored Activity. }
         last_event_id: { type: integer, format: int64, minimum: 0 }
         activity_result: { $ref: '#/components/schemas/ActivityResultPayload' }
+        lobby_participants:
+          type: array
+          maxItems: 36
+          description: Most recently joined participants for the manager lobby composition; empty outside the lobby.
+          items: { $ref: '#/components/schemas/ManagerLobbyParticipant' }
         activity_top_performers:
           type: array
           maxItems: 5

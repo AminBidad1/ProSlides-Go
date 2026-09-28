@@ -1127,6 +1127,12 @@ export interface components {
             /** @description Competition rank within the current scored Activity only. */
             rank: number;
         };
+        ManagerLobbyParticipant: {
+            /** Format: uuid */
+            participant_id: string;
+            display_name: string;
+            avatar?: string;
+        };
         ManagerLiveSnapshot: {
             /** @enum {string} */
             role: "manager";
@@ -1145,6 +1151,8 @@ export interface components {
             /** Format: int64 */
             last_event_id: number;
             activity_result?: components["schemas"]["ActivityResultPayload"];
+            /** @description Most recently joined participants for the manager lobby composition; empty outside the lobby. */
+            lobby_participants?: components["schemas"]["ManagerLobbyParticipant"][];
             /** @description Top performers for the current scored Activity only; separate from cumulative Session ranking. */
             activity_top_performers: components["schemas"]["ActivityTopPerformer"][];
         };

@@ -76,6 +76,12 @@ interface ActivityTopPerformer {
   rank: number;
 }
 
+interface ManagerLobbyParticipant {
+  participant_id: string;
+  display_name: string;
+  avatar?: string;
+}
+
 interface ManagerSnapshot {
   role: "manager";
   session: ManagerLiveSession;
@@ -87,6 +93,7 @@ interface ManagerSnapshot {
   has_scoring: boolean;
   last_event_id: number;
   activity_result?: ActivityResult;
+  lobby_participants?: ManagerLobbyParticipant[];
   activity_top_performers: ActivityTopPerformer[];
 }
 
@@ -97,7 +104,7 @@ export interface StageRankingEntry {
   rank: number;
 }
 
-export interface StageLobbyParticipant {
+interface StageLobbyParticipant {
   display_name: string;
   avatar?: string;
 }

@@ -1277,16 +1277,36 @@ test("participant join exposes precise retry outcomes for name conflicts and rat
   limitedRuntime.destroy();
 });
 
-test("manager coalesces presence bursts before refreshing the bounded roster", async () => {
+test("manager coalesces lobby presence bursts into a bounded recent-arrivals snapshot", async () => {
   let onEvent = null;
   let rosterReads = 0;
+  let snapshotReads = 0;
   const runtime = createLiveRuntime("manager", {
     storage: null,
     transport: {
       createRequestId: () => "00000000-0000-4000-8000-000000000105",
       createLiveSession: async () => managerSession("session"),
-      getLiveSnapshot: async () =>
-        managerSnapshot("session", { eventId: 10, stateVersion: 1 }),
+      getLiveSnapshot: async () => {
+        snapshotReads += 1;
+        const snapshot = managerSnapshot("session", {
+          eventId: snapshotReads === 1 ? 10 : 35,
+          stateVersion: 1,
+        });
+        return {
+          ...snapshot,
+          participant_count: snapshotReads === 1 ? 0 : 25,
+          lobby_participants:
+            snapshotReads === 1
+              ? []
+              : [
+                  {
+                    participant_id: "00000000-0000-4000-8000-000000000106",
+                    display_name: "تازه‌وارد",
+                    avatar: "🙂",
+                  },
+                ],
+        };
+      },
       getRosterPage: async (_id, order) => {
         rosterReads += 1;
         return emptyRoster(order);
@@ -1300,6 +1320,7 @@ test("manager coalesces presence bursts before refreshing the bounded roster", a
 
   assert.equal(await runtime.connect("presentation"), true);
   assert.equal(rosterReads, 1);
+  assert.equal(snapshotReads, 1);
 
   for (let index = 0; index < 25; index += 1) {
     onEvent({
@@ -1314,9 +1335,15 @@ test("manager coalesces presence bursts before refreshing the bounded roster", a
   }
 
   assert.equal(rosterReads, 1);
-  await new Promise((resolve) => setTimeout(resolve, 325));
-  assert.equal(rosterReads, 2);
+  assert.equal(snapshotReads, 1);
+  await new Promise((resolve) => setTimeout(resolve, 425));
+  assert.equal(rosterReads, 1);
+  assert.equal(snapshotReads, 2);
   assert.equal(runtime.getState().snapshot.participant_count, 25);
+  assert.equal(
+    runtime.getState().snapshot.lobby_participants[0].display_name,
+    "تازه‌وارد",
+  );
 
   runtime.destroy();
 });

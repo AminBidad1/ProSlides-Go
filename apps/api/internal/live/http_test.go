@@ -125,6 +125,11 @@ func (s *snapshotStore) ManagerSnapshot(_ context.Context, session, manager stri
 		ParticipantCount: 10_000,
 		HasScoring:       true,
 		LastEventID:      42,
+		LobbyParticipants: []ManagerLobbyParticipant{{
+			ParticipantID: "77777777-7777-4777-8777-777777777777",
+			DisplayName:   "تازه‌وارد",
+			Avatar:        "🙂",
+		}},
 		ActivityTopPerformers: []ActivityTopPerformer{},
 	}, nil
 }
@@ -378,6 +383,9 @@ func TestSnapshotUsesManagerRoleAndFallsBackToParticipantRole(t *testing.T) {
 	}
 	if bytes.Contains(managerResponse.Body.Bytes(), []byte(`"items"`)) {
 		t.Fatalf("manager snapshot included frozen items without bootstrap hint: %s", managerResponse.Body.String())
+	}
+	if !bytes.Contains(managerResponse.Body.Bytes(), []byte(`"display_name":"تازه‌وارد"`)) {
+		t.Fatalf("manager lobby snapshot omitted bounded recent arrivals: %s", managerResponse.Body.String())
 	}
 
 	itemsRequest := httptest.NewRequest(http.MethodGet, "/api/v1/live/sessions/"+testSessionID+"/snapshot?include_items=true", nil)

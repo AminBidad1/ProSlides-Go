@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 
 import Notice from "../../../../shared/ui/Notice.tsx";
 import { getColorForUser } from "../../../../shared/lib/playerColor.ts";
+import { LiveLobbyCrowd } from "../../ui/LiveLobbyCrowd.tsx";
 import {
   findLiveActivityStartIssue,
   type LiveActivityStartIssue,
@@ -29,9 +30,6 @@ export function ManagerJoinPage({
     connectionError,
     sendNavigation,
     participantCount,
-    hasMoreRoster,
-    isRosterLoading,
-    loadMoreRoster,
     snapshot,
   } = useLiveSession();
   const { users, currentQuestion, currentContent, leaderboardResults } =
@@ -52,6 +50,30 @@ export function ManagerJoinPage({
     () => findLiveActivityStartIssue(quiz.slides),
     [quiz.slides],
   );
+
+  const lobbyParticipants = useMemo(() => {
+    if (
+      snapshot?.role === "manager" &&
+      (snapshot.lobby_participants?.length ?? 0) > 0
+    ) {
+      return snapshot.lobby_participants!.map((participant) => ({
+        id: participant.participant_id,
+        name: participant.display_name,
+        avatar: participant.avatar,
+        color: getColorForUser(participant.participant_id),
+      }));
+    }
+
+    return users
+      .slice(-36)
+      .reverse()
+      .map((user) => ({
+        id: user.user_id,
+        name: user.name,
+        avatar: user.character,
+        color: getColorForUser(user.user_id),
+      }));
+  }, [snapshot, users]);
 
   const startIssueMessage = (issue: LiveActivityStartIssue): string => {
     switch (issue) {
@@ -140,66 +162,25 @@ export function ManagerJoinPage({
               اتاق انتظار ارائه
             </h1>
             <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-[color:var(--live-muted)] sm:text-base">
-              شرکت‌کنندگان از لینک یا QR وارد می‌شوند. فهرست زیر مستقیماً از
-              roster محدودشدهٔ جلسه خوانده می‌شود.
+              شرکت‌کنندگان از لینک یا QR وارد می‌شوند و هر ورود تازه به‌صورت
+              زنده روی لابی ظاهر می‌شود.
             </p>
           </div>
 
-          <div className="mt-8 min-h-64">
-            {users.length === 0 ? (
-              <div
-                className="grid min-h-64 place-items-center rounded-3xl border border-dashed border-white/15 bg-white/5 text-center text-[color:var(--live-muted)]"
-                role="status"
-              >
-                در انتظار ورود شرکت‌کنندگان…
-              </div>
-            ) : (
-              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                {users.map((user) => {
-                  const hidden = hiddenUserIds.has(user.user_id);
-                  const color = getColorForUser(user.user_id);
-
-                  return (
-                    <li key={user.user_id}>
-                      <button
-                        type="button"
-                        onClick={() => toggleName(user.user_id)}
-                        className="flex min-h-24 w-full flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/5 p-3 text-center transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-                        aria-pressed={hidden}
-                        aria-label={
-                          hidden
-                            ? `نمایش نام ${user.name}`
-                            : `پنهان کردن نام ${user.name}`
-                        }
-                      >
-                        <span className="text-3xl" aria-hidden="true">
-                          {user.character || "🙂"}
-                        </span>
-                        <span
-                          className="mt-2 max-w-full truncate font-black"
-                          style={{ color }}
-                          dir="auto"
-                        >
-                          {hidden ? "••••" : user.name}
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-
-            {hasMoreRoster ? (
-              <div className="mt-5 flex justify-center">
-                <button
-                  type="button"
-                  onClick={() => void loadMoreRoster()}
-                  disabled={isRosterLoading}
-                  className="min-h-11 rounded-xl border border-white/20 bg-white/5 px-4 text-sm font-bold hover:bg-white/10 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-                >
-                  {isRosterLoading ? "در حال بارگذاری…" : "نمایش شرکت‌کنندگان بیشتر"}
-                </button>
-              </div>
+          <div className="mt-7">
+            <LiveLobbyCrowd
+              participants={lobbyParticipants}
+              total={Number(participantCount || 0)}
+              hiddenIds={hiddenUserIds}
+              onToggleHidden={toggleName}
+              className="min-h-[30rem] sm:min-h-[38rem]"
+              emptyTitle="در انتظار ورود شرکت‌کنندگان…"
+              emptyDescription="هر شرکت‌کننده با ورود به جلسه، به‌صورت زنده روی این فضا ظاهر می‌شود."
+            />
+            {lobbyParticipants.length > 0 ? (
+              <p className="mt-3 text-center text-xs leading-6 text-[color:var(--live-muted)]">
+                برای پنهان‌کردن یک نام از نمای ارائه‌دهنده، روی همان نام بزنید.
+              </p>
             ) : null}
           </div>
 

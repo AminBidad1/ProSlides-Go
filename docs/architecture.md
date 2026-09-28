@@ -185,8 +185,11 @@ projection; its SSE stream is authorized by manager ownership but filters
 manager-private activity result events until reveal. During the lobby only,
 Stage receives at most the 36 most recently joined display names/avatars so the
 public arrival composition can feel live without exposing participant IDs or
-loading the complete roster. The existing `(session_id, joined_at, id)` index
-serves that bounded recent-participant read in reverse order. Participants receive
+loading the complete roster. The manager snapshot exposes the same bounded
+recent-arrival window with participant IDs so the presenter lobby can share the
+organic composition while retaining name-moderation controls. The existing
+`(session_id, joined_at, id)` index serves both bounded recent-participant reads
+in reverse order. Participants receive
 public Session state, the active Item, their own
 participant/score, aggregate count, and the event cursor. While an Activity is
 not yet revealed, the participant snapshot may expose only the boolean
@@ -212,9 +215,11 @@ with `Last-Event-ID`, and refreshes snapshot state before reconnecting. SSE
 reconnects honor server `Retry-After` in addition to bounded exponential
 backoff, and Stage snapshot refreshes are coalesced so clustered state/ranking
 events do not create redundant concurrent reads. Lobby presence changes keep
-aggregate counts in-memory immediately and trigger a 350 ms bounded Stage
-refresh for the recent-arrival composition rather than one roster read per
-participant. JSON live requests are bounded
+aggregate counts in-memory immediately and trigger coalesced 350 ms bounded
+snapshot refreshes for the Stage and presenter recent-arrival compositions.
+The manager runtime avoids refreshing its paginated roster on every lobby join;
+the roster is refreshed authoritatively when the Session advances. JSON live
+requests are bounded
 so a broken network cannot leave the UI waiting
 forever. Participant answer drafts and in-flight submissions are retained only
 in same-tab `sessionStorage`; refresh restores the draft, while an in-flight

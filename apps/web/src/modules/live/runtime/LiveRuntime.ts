@@ -213,6 +213,7 @@ export class LiveRuntime {
   private rosterRequestVersion = 0;
   private rosterRefreshTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
   private pendingRosterRefreshOrder: RosterOrder | null = null;
+  private lobbySnapshotRefreshTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
   private destroyed = false;
 
   constructor(role: LiveClientRole, dependencies: LiveRuntimeDependencies = {}) {
@@ -269,6 +270,10 @@ export class LiveRuntime {
       globalThis.clearTimeout(this.rosterRefreshTimer);
       this.rosterRefreshTimer = null;
     }
+    if (this.lobbySnapshotRefreshTimer !== null) {
+      globalThis.clearTimeout(this.lobbySnapshotRefreshTimer);
+      this.lobbySnapshotRefreshTimer = null;
+    }
     this.pendingRosterRefreshOrder = null;
     this.streamAbort?.abort();
     this.streamAbort = null;
@@ -291,6 +296,10 @@ export class LiveRuntime {
     if (this.rosterRefreshTimer !== null) {
       globalThis.clearTimeout(this.rosterRefreshTimer);
       this.rosterRefreshTimer = null;
+    }
+    if (this.lobbySnapshotRefreshTimer !== null) {
+      globalThis.clearTimeout(this.lobbySnapshotRefreshTimer);
+      this.lobbySnapshotRefreshTimer = null;
     }
     this.pendingRosterRefreshOrder = null;
     this.streamAbort?.abort();
@@ -418,6 +427,48 @@ export class LiveRuntime {
     }, 250);
   };
 
+  private scheduleLobbySnapshotRefresh = () => {
+    if (this.lobbySnapshotRefreshTimer !== null || this.destroyed) return;
+
+    const id = this.selectedSessionId;
+    const lifecycleVersion = this.lifecycleVersion;
+    if (!id || this.role !== "manager") return;
+
+    this.lobbySnapshotRefreshTimer = globalThis.setTimeout(() => {
+      this.lobbySnapshotRefreshTimer = null;
+      const current = this.snapshotValue;
+      if (
+        this.destroyed ||
+        id !== this.selectedSessionId ||
+        lifecycleVersion !== this.lifecycleVersion ||
+        current?.role !== "manager" ||
+        current.session.state !== "lobby"
+      ) {
+        return;
+      }
+
+      void this.transport
+        .getLiveSnapshot(id, { viewer: "manager" })
+        .then((next) => {
+          if (
+            id === this.selectedSessionId &&
+            lifecycleVersion === this.lifecycleVersion &&
+            next.role === "manager"
+          ) {
+            this.storeSnapshot(next);
+          }
+        })
+        .catch((error) => {
+          if (
+            id === this.selectedSessionId &&
+            lifecycleVersion === this.lifecycleVersion
+          ) {
+            this.publish({ connectionError: errorMessage(error) });
+          }
+        });
+    }, 350);
+  };
+
   private refreshAuthoritative = async (): Promise<LiveSnapshot> => {
     const id = this.selectedSessionId;
     if (!id) throw new Error("Live session is not selected");
@@ -518,13 +569,17 @@ export class LiveRuntime {
       }
       if (this.role === "manager" && participantDelta !== 0) {
         const snapshot = this.snapshotValue;
-        const order: RosterOrder =
-          snapshot &&
-          (snapshot.session.stage_view === "overall_ranking" ||
-            snapshot.session.state === "ended")
-            ? "score"
-            : "joined";
-        this.scheduleRosterRefresh(order);
+        if (snapshot?.role === "manager" && snapshot.session.state === "lobby") {
+          this.scheduleLobbySnapshotRefresh();
+        } else {
+          const order: RosterOrder =
+            snapshot &&
+            (snapshot.session.stage_view === "overall_ranking" ||
+              snapshot.session.state === "ended")
+              ? "score"
+              : "joined";
+          this.scheduleRosterRefresh(order);
+        }
       }
       return;
     }

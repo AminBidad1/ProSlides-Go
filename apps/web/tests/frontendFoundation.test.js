@@ -415,6 +415,7 @@ test("audience Stage owns a read-only projection boundary", () => {
   const hook = source("src/modules/live/stage/useStageProjection.ts");
   const api = source("src/modules/live/api/liveApi.ts");
   const router = source("src/app/router/router.tsx");
+  const lobbyCrowd = source("src/modules/live/ui/LiveLobbyCrowd.tsx");
 
   assert.match(router, /manager\/stage\/:roomId/);
   assert.match(route, /useStageProjection/);
@@ -424,7 +425,8 @@ test("audience Stage owns a read-only projection boundary", () => {
   assert.match(hook, /scheduleLobbyRefresh/);
   assert.match(hook, /350/);
   assert.match(route, /lobby_participants/);
-  assert.match(route, /stage-lobby-arrive/);
+  assert.match(route, /LiveLobbyCrowd/);
+  assert.match(lobbyCrowd, /live-lobby-arrive/);
   assert.doesNotMatch(
     hook,
     /getRosterPage|applyLiveAction|submitLiveAnswer|sendNavigation|sendEnd/,
@@ -866,7 +868,8 @@ test("manager live UI is module-owned, typed, Persian and contract-driven", () =
   const qr = source("src/modules/live/manager/ui/ManagerQrPanel.tsx");
   const nativeDialogLifecycle = source("src/shared/ui/useNativeDialogLifecycle.ts");
   const controls = source("src/modules/live/manager/ui/ManagerControls.tsx");
-  const combined = [leaderboard, question, join, dialog, qr, controls].join("\n");
+  const lobbyCrowd = source("src/modules/live/ui/LiveLobbyCrowd.tsx");
+  const combined = [leaderboard, question, join, dialog, qr, controls, lobbyCrowd].join("\n");
 
   assert.match(leaderboard, /جدول امتیازات/);
   assert.match(leaderboard, /شرکت‌کننده/);
@@ -881,6 +884,13 @@ test("manager live UI is module-owned, typed, Persian and contract-driven", () =
     /\[currentQuestion,\s*liveCurrentQuestion,\s*liveMatchesDefinition\]/,
   );
   assert.match(join, /در انتظار ورود شرکت‌کنندگان/);
+  assert.match(join, /LiveLobbyCrowd/);
+  assert.match(join, /lobby_participants/);
+  assert.doesNotMatch(join, /grid-cols-2 gap-3/);
+  assert.match(lobbyCrowd, /MAX_VISIBLE = 36/);
+  assert.match(lobbyCrowd, /radicalInverse/);
+  assert.match(lobbyCrowd, /prefers-reduced-motion/);
+  assert.match(lobbyCrowd, /پنهان کردن نام/);
   assert.match(dialog, /aria-label="بستن جدول امتیازات"/);
   assert.match(dialog, /useNativeDialogLifecycle/);
   assert.match(qr, /QRCode\.toDataURL/);

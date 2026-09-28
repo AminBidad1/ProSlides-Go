@@ -5,7 +5,6 @@ import QRCode from "qrcode";
 import { getColorForUser } from "../../../shared/lib/playerColor.ts";
 import { presentationTheme } from "../../../shared/styles/presentationTheme.ts";
 import type {
-  StageLobbyParticipant,
   StageRankingEntry,
   StageSnapshot,
 } from "../api/types.ts";
@@ -15,6 +14,7 @@ import type {
 } from "../model/serverData.ts";
 import { normalizeLiveSlide } from "../runtime/protocol.ts";
 import { useStageProjection } from "../stage/useStageProjection.ts";
+import { LiveLobbyCrowd } from "../ui/LiveLobbyCrowd.tsx";
 import Waiting from "../ui/WaitingScreen.tsx";
 
 const statusText = (snapshot: StageSnapshot) => {
@@ -61,136 +61,6 @@ function StageHeader({
         </span>
       </div>
     </header>
-  );
-}
-
-const lobbyHash = (value: string) => {
-  let hash = 2166136261;
-  for (const char of value) {
-    hash ^= char.codePointAt(0) ?? 0;
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-};
-
-function StageLobbyCrowd({
-  participants,
-  total,
-}: {
-  participants: StageLobbyParticipant[];
-  total: number;
-}) {
-  const visible = participants.slice(0, 36);
-  const placed = useMemo(() => {
-    const occupied = new Set<number>();
-
-    return visible.map((participant) => {
-      const seed = lobbyHash(participant.display_name);
-      let slot = seed % 36;
-      while (occupied.has(slot)) slot = (slot + 1) % 36;
-      occupied.add(slot);
-
-      const column = slot % 6;
-      const row = Math.floor(slot / 6);
-      const jitterX =
-        (lobbyHash(participant.display_name + ":jx") % 7) - 3;
-      const jitterY =
-        (lobbyHash(participant.display_name + ":jy") % 7) - 3;
-
-      return {
-        participant,
-        left: 9 + column * 16.4 + jitterX,
-        top: 10 + row * 15.8 + jitterY,
-        rotate:
-          (lobbyHash(participant.display_name + ":r") % 11) - 5,
-        delay:
-          lobbyHash(participant.display_name + ":d") % 140,
-      };
-    });
-  }, [visible]);
-
-  return (
-    <section
-      className="relative min-h-[24rem] overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/[0.045] shadow-2xl backdrop-blur sm:min-h-[32rem] lg:min-h-[calc(100dvh-9rem)]"
-      aria-label="شرکت‌کنندگان حاضر در لابی"
-    >
-      <style>{`
-        @keyframes stage-lobby-arrive {
-          0% { opacity: 0; scale: .72; filter: blur(7px); }
-          72% { opacity: 1; scale: 1.06; filter: blur(0); }
-          100% { opacity: 1; scale: 1; filter: blur(0); }
-        }
-        .stage-lobby-person { animation: stage-lobby-arrive 560ms cubic-bezier(.2,.9,.25,1.15) both; }
-        @media (prefers-reduced-motion: reduce) {
-          .stage-lobby-person { animation: none !important; }
-        }
-      `}</style>
-
-      <div
-        className="absolute -start-16 top-[18%] h-52 w-52 rounded-full bg-white/[0.035] blur-2xl"
-        aria-hidden="true"
-      />
-      <div
-        className="absolute -end-20 bottom-[12%] h-64 w-64 rounded-full bg-white/[0.05] blur-3xl"
-        aria-hidden="true"
-      />
-
-      {visible.length === 0 ? (
-        <div className="absolute inset-0 grid place-items-center px-8 text-center">
-          <div>
-            <p className="text-5xl" aria-hidden="true">👋</p>
-            <p className="mt-5 text-2xl font-black">منتظر اولین نفر هستیم</p>
-            <p className="mt-2 text-sm text-[color:var(--live-muted)]">
-              با ورود شرکت‌کنندگان، نام و آواتارشان اینجا ظاهر می‌شود.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div role="list">
-          {placed.map(
-            ({ participant, left, top, rotate, delay }, index) => (
-              <div
-                key={participant.display_name}
-                role="listitem"
-                className="absolute"
-                style={{
-                  left: `${left}%`,
-                  top: `${top}%`,
-                  transform: `translate(-50%, -50%) rotate(${rotate}deg)`,
-                  zIndex: placed.length - index,
-                }}
-              >
-                <div
-                  className="stage-lobby-person flex max-w-48 items-center gap-2.5 rounded-2xl border border-white/15 bg-black/35 px-3 py-2.5 shadow-xl backdrop-blur-md"
-                  style={{ animationDelay: `${delay}ms` }}
-                >
-                  <span
-                    className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10 text-2xl"
-                    aria-hidden="true"
-                  >
-                    {participant.avatar || "🙂"}
-                  </span>
-                  <span
-                    className="truncate text-sm font-black sm:text-base"
-                    dir="auto"
-                  >
-                    {participant.display_name}
-                  </span>
-                </div>
-              </div>
-            ),
-          )}
-        </div>
-      )}
-
-      <div className="absolute inset-x-4 bottom-4 flex justify-center">
-        <p className="rounded-full border border-white/10 bg-black/35 px-4 py-2 text-xs font-bold text-white/75 backdrop-blur">
-          {total <= visible.length
-            ? `${total.toLocaleString("fa-IR")} نفر وارد شده‌اند`
-            : `آخرین ${visible.length.toLocaleString("fa-IR")} نفر از ${total.toLocaleString("fa-IR")} شرکت‌کننده`}
-        </p>
-      </div>
-    </section>
   );
 }
 
@@ -269,9 +139,16 @@ function StageLobby({ snapshot }: { snapshot: StageSnapshot }) {
           </div>
         </section>
 
-        <StageLobbyCrowd
-          participants={snapshot.lobby_participants ?? []}
+        <LiveLobbyCrowd
+          participants={(snapshot.lobby_participants ?? []).map(
+            (participant) => ({
+              id: participant.display_name,
+              name: participant.display_name,
+              avatar: participant.avatar,
+            }),
+          )}
           total={snapshot.participant_count}
+          className="lg:min-h-[calc(100dvh-9rem)]"
         />
       </div>
     </main>

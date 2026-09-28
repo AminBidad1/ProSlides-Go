@@ -748,6 +748,34 @@ func (s *PostgresStore) ManagerSnapshot(c context.Context, session, manager stri
 	}
 
 	x.Role = "manager"
+	x.LobbyParticipants = []ManagerLobbyParticipant{}
+	if x.Session.State == Lobby {
+		rows, rowsErr := tx.Query(c, `SELECT id::text,display_name,COALESCE(avatar,'')
+			FROM participants
+			WHERE session_id=$1
+			ORDER BY joined_at DESC,id DESC
+			LIMIT 36`, session)
+		if rowsErr != nil {
+			return x, rowsErr
+		}
+		for rows.Next() {
+			var participant ManagerLobbyParticipant
+			if scanErr := rows.Scan(
+				&participant.ParticipantID,
+				&participant.DisplayName,
+				&participant.Avatar,
+			); scanErr != nil {
+				rows.Close()
+				return x, scanErr
+			}
+			x.LobbyParticipants = append(x.LobbyParticipants, participant)
+		}
+		if rowsErr = rows.Err(); rowsErr != nil {
+			rows.Close()
+			return x, rowsErr
+		}
+		rows.Close()
+	}
 	x.ActivityTopPerformers = []ActivityTopPerformer{}
 	if includeItems {
 		items := make([]SessionItem, 0)

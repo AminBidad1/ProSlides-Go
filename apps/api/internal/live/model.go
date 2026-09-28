@@ -122,6 +122,12 @@ type ActivityTopPerformer struct {
 	Rank          int    `json:"rank"`
 }
 
+type ManagerLobbyParticipant struct {
+	ParticipantID string `json:"participant_id"`
+	DisplayName   string `json:"display_name"`
+	Avatar        string `json:"avatar,omitempty"`
+}
+
 type ManagerSnapshot struct {
 	Role                  string                 `json:"role"`
 	Session               Session                `json:"session"`
@@ -132,8 +138,9 @@ type ManagerSnapshot struct {
 	ActiveParticipantCount int                  `json:"active_participant_count"`
 	HasScoring            bool                   `json:"has_scoring"`
 	LastEventID           int64                  `json:"last_event_id"`
-	ActivityResult        *ActivityResult        `json:"activity_result,omitempty"`
-	ActivityTopPerformers []ActivityTopPerformer `json:"activity_top_performers"`
+	ActivityResult        *ActivityResult            `json:"activity_result,omitempty"`
+	LobbyParticipants     []ManagerLobbyParticipant `json:"lobby_participants"`
+	ActivityTopPerformers []ActivityTopPerformer     `json:"activity_top_performers"`
 }
 
 type StageRankingEntry struct {
