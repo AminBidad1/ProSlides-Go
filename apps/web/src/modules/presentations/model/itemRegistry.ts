@@ -180,7 +180,7 @@ export const editorTypeChoices: readonly EditorTypeChoice[] = [
     registrationKey: "text",
     label: "ابر واژه",
     description:
-      "شرکت‌کنندگان چند واژه می‌فرستند و نتیجه بر اساس فراوانی واژه‌ها شکل می‌گیرد.",
+      "شرکت‌کنندگان چند واژه یا عبارت کوتاه می‌فرستند و نتیجه بر اساس فراوانی عبارت‌ها شکل می‌گیرد.",
   },
   {
     id: "choice-single",

@@ -81,6 +81,32 @@ test("reports derive Word Cloud from the frozen Text aggregation policy", () => 
   assert.deepEqual(choiceOptions(wordCloudActivity), []);
 });
 
+
+test("entry Word Cloud reports preserve authored phrases", () => {
+  const entryActivity = {
+    ...wordCloudActivity,
+    definition: {
+      ...wordCloudActivity.definition,
+      response: { max_entry_length: 30, max_entries: 3 },
+      results: {
+        aggregation: "entry_frequency",
+        show_overall_leaderboard_after: false,
+      },
+    },
+  };
+
+  assert.equal(isWordCloudActivity(entryActivity), true);
+  assert.deepEqual(
+    responseLabels(entryActivity, {
+      response: {
+        entries: ["هوش مصنوعی", "کار تیمی"],
+        terms: ["هوش مصنوعی", "کار تیمی"],
+      },
+    }),
+    ["هوش مصنوعی", "کار تیمی"],
+  );
+});
+
 test("Word Cloud responses and result terms preserve frozen text", () => {
   assert.deepEqual(
     responseLabels(wordCloudActivity, {

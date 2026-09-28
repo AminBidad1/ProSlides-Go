@@ -50,8 +50,16 @@ export const createWordCloudDraft = (
     title: slide.text_activity.title || "",
     prompt: slide.text_activity.text || "",
     imageUrl: slide.text_activity.image_url || "",
-    maxLength: Number(slide.text_activity.max_length || 80),
-    maxWords: Number(slide.text_activity.max_words || 3),
+    maxLength: Number(
+      slide.text_activity.aggregation === "entry_frequency"
+        ? slide.text_activity.max_entry_length || 30
+        : Math.min(slide.text_activity.max_length || 40, 40),
+    ),
+    maxWords: Number(
+      slide.text_activity.aggregation === "entry_frequency"
+        ? slide.text_activity.max_entries || 3
+        : Math.min(slide.text_activity.max_words || 3, 5),
+    ),
     durationSeconds: Number(slide.text_activity.time_limit || 30),
   };
 };
@@ -108,10 +116,10 @@ export const validateWordCloudDraft = (
     title: draft.title,
     text: draft.prompt,
     image_url: draft.imageUrl,
-    max_length: draft.maxLength,
-    max_words: draft.maxWords,
+    max_entry_length: draft.maxLength,
+    max_entries: draft.maxWords,
     time_limit: draft.durationSeconds,
-    aggregation: "word_frequency",
+    aggregation: "entry_frequency",
   });
 
 export const wordCloudDraftToEditorSlide = (
@@ -135,10 +143,10 @@ export const wordCloudDraftToEditorSlide = (
       title: draft.title,
       text: draft.prompt,
       image_url: draft.imageUrl.trim(),
-      max_length: draft.maxLength,
-      max_words: draft.maxWords,
+      max_entry_length: draft.maxLength,
+      max_entries: draft.maxWords,
       time_limit: draft.durationSeconds,
-      aggregation: "word_frequency",
+      aggregation: "entry_frequency",
     },
   };
 };

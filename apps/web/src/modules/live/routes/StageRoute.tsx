@@ -4,6 +4,7 @@ import QRCode from "qrcode";
 
 import { getColorForUser } from "../../../shared/lib/playerColor.ts";
 import { presentationTheme } from "../../../shared/styles/presentationTheme.ts";
+import { WordCloudView } from "../../../shared/ui/WordCloudView.tsx";
 import type {
   StageRankingEntry,
   StageSnapshot,
@@ -240,10 +241,6 @@ function StageActivity({
     result?.activity_kind === "text" && "terms" in result.payload
       ? result.payload.terms
       : [];
-  const maxTermCount = Math.max(
-    1,
-    ...wordTerms.map((term) => Math.max(0, Number(term.count))),
-  );
   const total = Number(result?.response_count ?? 0);
   const options = question.options ?? [];
   const isPoll =
@@ -270,11 +267,19 @@ function StageActivity({
                     ? "نظرسنجی"
                     : "فعالیت"}
           </p>
+          {question.question_title ? (
+            <p
+              className="mx-auto mt-2 max-w-4xl text-sm font-bold text-[color:var(--live-muted)]"
+              dir="auto"
+            >
+              {question.question_title}
+            </p>
+          ) : null}
           <h1
             className="mx-auto mt-2 max-w-5xl text-3xl font-black leading-tight sm:text-5xl"
             dir="auto"
           >
-            {question.question_text || question.question_title || "فعالیت"}
+            {question.question_text || "فعالیت"}
           </h1>
           {!revealed &&
           !closed &&
@@ -292,39 +297,30 @@ function StageActivity({
         </div>
 
         {isWordCloud ? (
-          <div
-            className="mt-8 flex min-h-[18rem] flex-1 flex-wrap items-center justify-center gap-x-7 gap-y-5 rounded-[2.5rem] border border-white/10 bg-white/5 p-7 shadow-2xl"
-            aria-label={revealed ? "ابر واژه نتیجه" : "در انتظار پاسخ‌های ابر واژه"}
-          >
+          <div className="mt-8 flex min-h-[18rem] flex-1 flex-col rounded-[2.5rem] border border-white/10 bg-white/5 p-5 shadow-2xl">
+            {question.image_url ? (
+              <img
+                src={question.image_url}
+                alt=""
+                className="mx-auto mb-3 max-h-44 max-w-full rounded-2xl object-contain"
+              />
+            ) : null}
             {!revealed ? (
-              <p className="max-w-2xl text-center text-lg font-bold leading-8 text-[color:var(--live-muted)]">
-                پاسخ‌ها در حال جمع‌آوری هستند. ابر واژه پس از نمایش نتیجه روی
-                Stage ظاهر می‌شود.
-              </p>
-            ) : wordTerms.length === 0 ? (
-              <p className="text-center text-lg text-[color:var(--live-muted)]">
-                هنوز واژه‌ای برای نمایش وجود ندارد.
-              </p>
+              <div
+                className="grid min-h-[18rem] flex-1 place-items-center"
+                aria-label="در انتظار پاسخ‌های ابر واژه"
+              >
+                <p className="max-w-2xl text-center text-lg font-bold leading-8 text-[color:var(--live-muted)]">
+                  پاسخ‌ها در حال جمع‌آوری هستند. ابر واژه پس از نمایش نتیجه روی
+                  Stage ظاهر می‌شود.
+                </p>
+              </div>
             ) : (
-              wordTerms.map((term) => {
-                const ratio = Math.max(0.3, term.count / maxTermCount);
-                return (
-                  <span
-                    key={term.text}
-                    dir="auto"
-                    className="font-black leading-none"
-                    style={{ fontSize: 22 + Math.round(ratio * 48) }}
-                    aria-label={
-                      term.text +
-                      "، " +
-                      term.count.toLocaleString("fa-IR") +
-                      " بار"
-                    }
-                  >
-                    {term.text}
-                  </span>
-                );
-              })
+              <WordCloudView
+                terms={wordTerms}
+                className="min-h-[18rem] flex-1"
+                emptyLabel="هنوز عبارتی برای نمایش وجود ندارد."
+              />
             )}
           </div>
         ) : (

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { getColorForUser } from "../../../../shared/lib/playerColor.ts";
+import { WordCloudView } from "../../../../shared/ui/WordCloudView.tsx";
 import {
   findSlideIndexById,
   isQuestionSlide,
@@ -171,10 +172,6 @@ export function ManagerPickAnswerQuestion({
     () => (resultMatches ? questionResults?.wordTerms ?? [] : []),
     [questionResults, resultMatches],
   );
-  const maxWordCount = Math.max(
-    1,
-    ...wordTerms.map((term) => Math.max(0, Number(term.count))),
-  );
   const responseCount = resultMatches
     ? Number(questionResults?.response_count ?? 0)
     : 0;
@@ -279,6 +276,14 @@ export function ManagerPickAnswerQuestion({
                 سؤال {resolvedSlideNumber.toLocaleString("fa-IR")} از{" "}
                 {totalSlides.toLocaleString("fa-IR")}
               </p>
+              {currentQuestion.question_title ? (
+                <p
+                  className="mx-auto mt-2 max-w-4xl text-sm font-bold text-[color:var(--live-muted)]"
+                  dir="auto"
+                >
+                  {currentQuestion.question_title}
+                </p>
+              ) : null}
               <h1
                 className="mx-auto mt-2 max-w-5xl text-3xl font-black leading-tight sm:text-5xl"
                 dir="auto"
@@ -312,48 +317,31 @@ export function ManagerPickAnswerQuestion({
                     {responseCount.toLocaleString("fa-IR")} پاسخ ثبت‌شده
                   </p>
                 ) : null}
-                <div
-                  className="flex min-h-[20rem] flex-1 flex-wrap items-center justify-center gap-x-8 gap-y-6 overflow-y-auto rounded-[2.5rem] border border-white/10 bg-white/5 p-7 shadow-2xl"
-                  aria-label={
-                    showResults
-                      ? "نتیجه ابر واژه"
-                      : "در انتظار پاسخ‌های ابر واژه"
-                  }
-                >
+                <div className="flex min-h-[20rem] flex-1 flex-col rounded-[2.5rem] border border-white/10 bg-white/5 p-5 shadow-2xl">
+                  {currentQuestion.image_url ? (
+                    <img
+                      src={currentQuestion.image_url}
+                      alt=""
+                      className="mx-auto mb-3 max-h-40 max-w-full rounded-2xl object-contain"
+                    />
+                  ) : null}
                   {!showResults ? (
-                    <p className="max-w-2xl text-center text-lg font-bold leading-8 text-[color:var(--live-muted)]">
-                      پاسخ‌ها در حال جمع‌آوری هستند. ابر واژه پس از نمایش نتیجه
-                      در همین صفحه ظاهر می‌شود.
-                    </p>
-                  ) : wordTerms.length === 0 ? (
-                    <p className="text-center text-lg text-[color:var(--live-muted)]">
-                      هنوز واژه‌ای برای نمایش وجود ندارد.
-                    </p>
+                    <div
+                      className="grid min-h-[18rem] flex-1 place-items-center"
+                      aria-label="در انتظار پاسخ‌های ابر واژه"
+                    >
+                      <p className="max-w-2xl text-center text-lg font-bold leading-8 text-[color:var(--live-muted)]">
+                        پاسخ‌ها در حال جمع‌آوری هستند. ابر واژه پس از نمایش نتیجه
+                        در همین صفحه ظاهر می‌شود.
+                      </p>
+                    </div>
                   ) : (
-                    wordTerms.map((term) => {
-                      const ratio = Math.max(
-                        0.3,
-                        Number(term.count) / maxWordCount,
-                      );
-                      return (
-                        <span
-                          key={term.text}
-                          dir="auto"
-                          className="font-black leading-none"
-                          style={{
-                            fontSize: 22 + Math.round(ratio * 46),
-                          }}
-                          aria-label={
-                            term.text +
-                            "، " +
-                            Number(term.count).toLocaleString("fa-IR") +
-                            " بار"
-                          }
-                        >
-                          {term.text}
-                        </span>
-                      );
-                    })
+                    <WordCloudView
+                      terms={wordTerms}
+                      className="min-h-[18rem] flex-1"
+                      emptyLabel="هنوز عبارتی برای نمایش وجود ندارد."
+                      ariaLabel="نتیجه ابر واژه"
+                    />
                   )}
                 </div>
               </div>

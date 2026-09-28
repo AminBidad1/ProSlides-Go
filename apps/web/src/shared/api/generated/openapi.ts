@@ -778,9 +778,15 @@ export interface components {
             timing: components["schemas"]["ActivityTimingPolicy"];
             results: components["schemas"]["TextResultPolicy"];
         };
-        TextResponsePolicy: {
+        /** @description Legacy Word Clouds use word limits; entry-based Word Clouds preserve short phrases as independent entries. */
+        TextResponsePolicy: components["schemas"]["LegacyTextResponsePolicy"] | components["schemas"]["EntryTextResponsePolicy"];
+        LegacyTextResponsePolicy: {
             max_length: number;
             max_words: number;
+        };
+        EntryTextResponsePolicy: {
+            max_entry_length: number;
+            max_entries: number;
         };
         TextEvaluationPolicy: {
             /** @enum {string} */
@@ -792,7 +798,7 @@ export interface components {
         };
         TextResultPolicy: {
             /** @enum {string} */
-            aggregation: "word_frequency";
+            aggregation: "word_frequency" | "entry_frequency";
             /** @enum {boolean} */
             show_overall_leaderboard_after: false;
         };
@@ -848,11 +854,20 @@ export interface components {
         ChoiceActivityResponse: {
             selected_option_indexes: number[];
         };
-        TextActivityResponse: {
+        TextActivityResponse: components["schemas"]["LegacyTextActivityResponse"] | components["schemas"]["EntryTextActivityResponse"];
+        LegacyTextActivityResponse: {
             text: string;
         };
-        StoredTextActivityResponse: {
+        EntryTextActivityResponse: {
+            entries: string[];
+        };
+        StoredTextActivityResponse: components["schemas"]["StoredLegacyTextActivityResponse"] | components["schemas"]["StoredEntryTextActivityResponse"];
+        StoredLegacyTextActivityResponse: {
             text: string;
+            terms: string[];
+        };
+        StoredEntryTextActivityResponse: {
+            entries: string[];
             terms: string[];
         };
         CreateLiveSessionRequest: {

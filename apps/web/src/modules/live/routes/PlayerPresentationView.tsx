@@ -1,3 +1,5 @@
+import { lazy, Suspense } from "react";
+
 import type { PlayerLastActive } from "../model/presentationFlow.ts";
 import { resolveQuestionTimer } from "../model/questionTimer.ts";
 import type { LivePresentationModel } from "../model/presentation.ts";
@@ -13,7 +15,12 @@ import { ParticipantFinalResult } from "../participant/ui/ParticipantFinalResult
 import { ParticipantJoinPage } from "../participant/ui/ParticipantJoinPage.tsx";
 import { ParticipantLeaderboard } from "../participant/ui/ParticipantLeaderboard.tsx";
 import { ParticipantQuestion } from "../participant/ui/ParticipantQuestion.tsx";
-import { ParticipantWordCloud } from "../participant/ui/ParticipantWordCloud.tsx";
+const ParticipantWordCloud = lazy(() =>
+  import("../participant/ui/ParticipantWordCloud.tsx").then((module) => ({
+    default: module.ParticipantWordCloud,
+  })),
+);
+
 import { ParticipantWaiting } from "../participant/ui/ParticipantWaiting.tsx";
 import { normalizeLiveSlide } from "../runtime/protocol.ts";
 import type { LiveSnapshot } from "../api/types.ts";
@@ -100,11 +107,13 @@ export function PlayerPresentationView({
 
   if (currentQuestion) {
     return currentQuestion.activity_kind === "text" ? (
-      <ParticipantWordCloud
-        roomId={roomId}
-        question={currentQuestion}
-        quiz={quiz}
-      />
+      <Suspense fallback={<ParticipantWaiting quiz={quiz} />}>
+        <ParticipantWordCloud
+          roomId={roomId}
+          question={currentQuestion}
+          quiz={quiz}
+        />
+      </Suspense>
     ) : (
       <ParticipantQuestion
         roomId={roomId}
@@ -150,11 +159,13 @@ export function PlayerPresentationView({
       fallbackTimer.remainingSeconds > 0
     ) {
       return fallbackQuestion.activity_kind === "text" ? (
-        <ParticipantWordCloud
-          roomId={roomId}
-          question={fallbackQuestion}
-          quiz={quiz}
-        />
+        <Suspense fallback={<ParticipantWaiting quiz={quiz} />}>
+          <ParticipantWordCloud
+            roomId={roomId}
+            question={fallbackQuestion}
+            quiz={quiz}
+          />
+        </Suspense>
       ) : (
         <ParticipantQuestion
           roomId={roomId}

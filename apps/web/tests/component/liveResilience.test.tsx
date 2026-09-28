@@ -320,6 +320,58 @@ describe("live React lifecycle resilience", () => {
     );
   });
 
+  test("entry Word Cloud submits phrases as independent entries", async () => {
+    const submitAnswer = vi.fn(async () => true);
+    const question: LegacyQuestionSlide = {
+      item_kind: "activity",
+      slide_id: "cloud-entry",
+      question_id: "cloud-entry",
+      run_id: 7,
+      activity_kind: "text",
+      question_title: "نظر جمع",
+      question_text: "دو عبارت کوتاه بنویسید",
+      image_url: "https://example.test/cloud.png",
+      question_time: 60,
+      remaining_seconds: 60,
+      response_aggregation: "entry_frequency",
+      response_max_entry_length: 30,
+      response_max_entries: 3,
+    };
+
+    render(
+      <LiveSessionContext.Provider value={baseContext({ submitAnswer })}>
+        <ParticipantWordCloud
+          roomId="session-a"
+          question={question}
+          quiz={quiz}
+        />
+      </LiveSessionContext.Provider>,
+    );
+
+    expect(await screen.findByText("نظر جمع")).not.toBeNull();
+    expect(
+      document.querySelector('img[src="https://example.test/cloud.png"]'),
+    ).not.toBeNull();
+
+    fireEvent.change(screen.getByRole("textbox", { name: "عبارت ۱" }), {
+      target: { value: "هوش مصنوعی" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "عبارت ۲" }), {
+      target: { value: "کار تیمی" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "ثبت پاسخ" }));
+
+    await waitFor(() => expect(submitAnswer).toHaveBeenCalledTimes(1));
+    expect(submitAnswer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        activity_item_id: "cloud-entry",
+        response: {
+          entries: ["هوش مصنوعی", "کار تیمی"],
+        },
+      }),
+    );
+  });
+
   test("pending Word Cloud answer retries when the live stream recovers", async () => {
     const submitAnswer = vi
       .fn()

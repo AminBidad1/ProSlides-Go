@@ -22,7 +22,8 @@ const (
 	ScoringModeNone   = "none"
 	ScoringModePoints = "points"
 
-	TextAggregationWordFrequency = "word_frequency"
+	TextAggregationWordFrequency  = "word_frequency"
+	TextAggregationEntryFrequency = "entry_frequency"
 )
 
 type ActivityPrompt struct {
@@ -39,13 +40,16 @@ type ChoiceOptionDefinition struct {
 }
 
 // ActivityResponsePolicy is intentionally concrete rather than a free-form bag.
-// Choice uses selection/options. Text uses max_length/max_words. Validation
-// rejects fields that do not belong to the selected Activity kind.
+// Choice uses selection/options. Legacy Text Word Clouds use max_length/max_words;
+// entry-based Word Clouds use max_entry_length/max_entries. Validation rejects
+// fields that do not belong to the selected Activity kind/aggregation.
 type ActivityResponsePolicy struct {
-	Selection string                   `json:"selection,omitempty"`
-	Options   []ChoiceOptionDefinition `json:"options,omitempty"`
-	MaxLength int                      `json:"max_length,omitempty"`
-	MaxWords  int                      `json:"max_words,omitempty"`
+	Selection      string                   `json:"selection,omitempty"`
+	Options        []ChoiceOptionDefinition `json:"options,omitempty"`
+	MaxLength      int                      `json:"max_length,omitempty"`
+	MaxWords       int                      `json:"max_words,omitempty"`
+	MaxEntryLength int                      `json:"max_entry_length,omitempty"`
+	MaxEntries     int                      `json:"max_entries,omitempty"`
 }
 
 type ActivityEvaluationPolicy struct {
@@ -144,8 +148,10 @@ func (value ActivityDefinition) MarshalJSON() ([]byte, error) {
 
 	case ActivityKindText:
 		type textResponse struct {
-			MaxLength int `json:"max_length"`
-			MaxWords  int `json:"max_words"`
+			MaxLength      int `json:"max_length,omitempty"`
+			MaxWords       int `json:"max_words,omitempty"`
+			MaxEntryLength int `json:"max_entry_length,omitempty"`
+			MaxEntries     int `json:"max_entries,omitempty"`
 		}
 		type modeOnly struct {
 			Mode string `json:"mode"`
@@ -168,8 +174,10 @@ func (value ActivityDefinition) MarshalJSON() ([]byte, error) {
 				Timing:        value.Timing,
 			},
 			Response: textResponse{
-				MaxLength: value.Response.MaxLength,
-				MaxWords:  value.Response.MaxWords,
+				MaxLength:      value.Response.MaxLength,
+				MaxWords:       value.Response.MaxWords,
+				MaxEntryLength: value.Response.MaxEntryLength,
+				MaxEntries:     value.Response.MaxEntries,
 			},
 			Evaluation: modeOnly{Mode: value.Evaluation.Mode},
 			Scoring:    modeOnly{Mode: value.Scoring.Mode},
@@ -228,6 +236,8 @@ func validateActivityDefinition(value ActivityDefinition) error {
 func validateChoiceActivityDefinition(value ActivityDefinition) error {
 	if value.Response.MaxLength != 0 ||
 		value.Response.MaxWords != 0 ||
+		value.Response.MaxEntryLength != 0 ||
+		value.Response.MaxEntries != 0 ||
 		value.Results.Aggregation != "" {
 		return errInvalidSlideDefinition
 	}
@@ -318,11 +328,7 @@ func validateChoiceActivityDefinition(value ActivityDefinition) error {
 
 func validateTextActivityDefinition(value ActivityDefinition) error {
 	if value.Response.Selection != "" ||
-		len(value.Response.Options) != 0 ||
-		value.Response.MaxLength < 1 ||
-		value.Response.MaxLength > 500 ||
-		value.Response.MaxWords < 1 ||
-		value.Response.MaxWords > 10 {
+		len(value.Response.Options) != 0 {
 		return errInvalidSlideDefinition
 	}
 	if value.Evaluation.Mode != EvaluationModeNone ||
@@ -336,8 +342,30 @@ func validateTextActivityDefinition(value ActivityDefinition) error {
 		value.Scoring.PartialCredit {
 		return errInvalidSlideDefinition
 	}
-	if value.Results.Aggregation != TextAggregationWordFrequency ||
-		value.Results.ShowOverallLeaderboardAfter {
+	if value.Results.ShowOverallLeaderboardAfter {
+		return errInvalidSlideDefinition
+	}
+
+	switch value.Results.Aggregation {
+	case TextAggregationWordFrequency:
+		if value.Response.MaxLength < 1 ||
+			value.Response.MaxLength > 500 ||
+			value.Response.MaxWords < 1 ||
+			value.Response.MaxWords > 10 ||
+			value.Response.MaxEntryLength != 0 ||
+			value.Response.MaxEntries != 0 {
+			return errInvalidSlideDefinition
+		}
+	case TextAggregationEntryFrequency:
+		if value.Response.MaxLength != 0 ||
+			value.Response.MaxWords != 0 ||
+			value.Response.MaxEntryLength < 1 ||
+			value.Response.MaxEntryLength > 40 ||
+			value.Response.MaxEntries < 1 ||
+			value.Response.MaxEntries > 5 {
+			return errInvalidSlideDefinition
+		}
+	default:
 		return errInvalidSlideDefinition
 	}
 	return nil

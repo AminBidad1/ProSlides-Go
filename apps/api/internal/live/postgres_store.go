@@ -1207,7 +1207,7 @@ func activityResult(c context.Context, tx pgx.Tx, session, item string) (Activit
 			Count int    `json:"count"`
 		}
 		terms := make([]termCount, 0, 100)
-		rows, queryErr := tx.Query(c, `SELECT term.value,count(*)::int
+		query := `SELECT term.value,count(*)::int
 			FROM answers a
 			CROSS JOIN LATERAL jsonb_array_elements_text(
 				COALESCE(a.answer->'terms','[]'::jsonb)
@@ -1215,7 +1215,39 @@ func activityResult(c context.Context, tx pgx.Tx, session, item string) (Activit
 			WHERE a.session_id=$1 AND a.question_slide_id=$2
 			GROUP BY term.value
 			ORDER BY count(*) DESC,term.value
-			LIMIT 100`, session, item)
+			LIMIT 100`
+		if definition.Results.Aggregation == presentations.TextAggregationEntryFrequency {
+			query = `WITH expanded AS (
+				SELECT
+					term.value AS aggregation_key,
+					a.answer->'entries'->>(term.ordinality-1) AS display_value,
+					a.submitted_at,
+					a.id
+				FROM answers a
+				CROSS JOIN LATERAL jsonb_array_elements_text(
+					COALESCE(a.answer->'terms','[]'::jsonb)
+				) WITH ORDINALITY term(value, ordinality)
+				WHERE a.session_id=$1 AND a.question_slide_id=$2
+			),
+			counts AS (
+				SELECT aggregation_key,count(*)::int AS count
+				FROM expanded
+				GROUP BY aggregation_key
+			),
+			labels AS (
+				SELECT DISTINCT ON (aggregation_key)
+					aggregation_key,display_value
+				FROM expanded
+				WHERE display_value IS NOT NULL AND display_value<>''
+				ORDER BY aggregation_key,submitted_at,id
+			)
+			SELECT COALESCE(labels.display_value,counts.aggregation_key),counts.count
+			FROM counts
+			LEFT JOIN labels USING (aggregation_key)
+			ORDER BY counts.count DESC,counts.aggregation_key
+			LIMIT 100`
+		}
+		rows, queryErr := tx.Query(c, query, session, item)
 		if queryErr != nil {
 			return ActivityResult{}, queryErr
 		}

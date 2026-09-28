@@ -2,6 +2,7 @@ import { CheckCircle2, CircleX, Medal, UsersRound } from "lucide-react";
 
 import { formatPersianNumber } from "../../../shared/forms/numbers.ts";
 import Notice from "../../../shared/ui/Notice.tsx";
+import { WordCloudView } from "../../../shared/ui/WordCloudView.tsx";
 import { Button } from "../../../shared/ui/primitives/Button.tsx";
 import type {
   ReportActivityPage,
@@ -47,9 +48,7 @@ export function ActivityReportPanel({
   const terms = first ? wordCloudTerms(first) : [];
   const maxCount = Math.max(
     1,
-    ...(isWordCloud
-      ? terms.map((term) => term.count)
-      : options.map((option) => counts[option.id] ?? 0)),
+    ...options.map((option) => counts[option.id] ?? 0),
   );
 
   if (isLoading) {
@@ -114,41 +113,16 @@ export function ActivityReportPanel({
           </h3>
           <p className="mt-1 text-xs text-content-muted">
             {isWordCloud
-              ? "فراوانی واژه‌ها از پاسخ‌های ثبت‌شده همین فعالیت محاسبه شده است."
+              ? "فراوانی عبارت‌ها از پاسخ‌های ثبت‌شده همین فعالیت محاسبه شده است."
               : "توزیع پاسخ‌ها فقط برای این فعالیت است و با رتبه‌بندی کلی جلسه ترکیب نمی‌شود."}
           </p>
 
           {isWordCloud ? (
-            <div
-              className="mt-4 flex min-h-48 flex-wrap items-center justify-center gap-x-5 gap-y-3 rounded-panel border border-border-subtle bg-canvas p-5"
-              aria-label="ابر واژه گزارش"
-            >
-              {terms.length === 0 ? (
-                <p className="text-sm text-content-muted">
-                  هنوز واژه‌ای برای نمایش وجود ندارد.
-                </p>
-              ) : (
-                terms.map((term) => {
-                  const ratio = Math.max(0.35, term.count / maxCount);
-                  return (
-                    <span
-                      key={term.text}
-                      dir="auto"
-                      className="font-black leading-none"
-                      style={{ fontSize: 14 + Math.round(ratio * 26) }}
-                      aria-label={
-                        term.text +
-                        "، " +
-                        formatPersianNumber(term.count) +
-                        " بار"
-                      }
-                    >
-                      {term.text}
-                    </span>
-                  );
-                })
-              )}
-            </div>
+            <WordCloudView
+              terms={terms}
+              className="mt-4 min-h-48 rounded-panel border border-border-subtle bg-canvas p-3"
+              emptyLabel="هنوز عبارتی برای نمایش وجود ندارد."
+            />
           ) : (
             <div className="mt-4 space-y-3">
               {options.map((option) => {

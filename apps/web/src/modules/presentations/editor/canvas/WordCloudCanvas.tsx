@@ -3,6 +3,7 @@ import { Cloud, Clock3, MessageCircleMore } from "lucide-react";
 
 import { formatPersianNumber } from "../../../../shared/forms/numbers.ts";
 import { presentationTheme } from "../../../../shared/styles/presentationTheme.ts";
+import { WordCloudView } from "../../../../shared/ui/WordCloudView.tsx";
 import type { EditorSlide } from "../../model/editor.ts";
 import { createWordCloudDraft } from "../model/wordCloudDraft.ts";
 import { useOptionalDesignDraft } from "../model/useDesignDraftContext.ts";
@@ -16,11 +17,17 @@ type WordCloudCanvasProps = {
 };
 
 const previewTerms = [
-  ["خلاقیت", "text-4xl"],
-  ["یادگیری", "text-3xl"],
-  ["تعامل", "text-2xl"],
-  ["ایده", "text-xl"],
-  ["همکاری", "text-lg"],
+  { text: "خلاقیت", count: 12 },
+  { text: "یادگیری", count: 9 },
+  { text: "تعامل", count: 8 },
+  { text: "هوش مصنوعی", count: 7 },
+  { text: "همکاری", count: 6 },
+  { text: "ایده تازه", count: 5 },
+  { text: "تمرکز", count: 4 },
+  { text: "انرژی", count: 3 },
+  { text: "کار تیمی", count: 3 },
+  { text: "بازخورد", count: 2 },
+  { text: "تجربه", count: 2 },
 ] as const;
 
 export default function WordCloudCanvas({
@@ -75,7 +82,7 @@ export default function WordCloudCanvas({
           <div className="flex flex-wrap gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-black/20 px-3 py-1.5">
               <MessageCircleMore className="size-3.5" aria-hidden="true" />
-              تا {formatPersianNumber(draft.maxWords)} واژه
+              تا {formatPersianNumber(draft.maxWords)} عبارت
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-black/20 px-3 py-1.5">
               <Clock3 className="size-3.5" aria-hidden="true" />
@@ -88,6 +95,14 @@ export default function WordCloudCanvas({
           <p className="text-sm font-bold text-[color:var(--live-muted)]">
             پیش‌نمایش نتیجه زنده
           </p>
+          {draft.title ? (
+            <p
+              dir="auto"
+              className="mt-2 text-sm font-bold text-[color:var(--live-muted)]"
+            >
+              {draft.title}
+            </p>
+          ) : null}
           <h2
             dir="auto"
             className="mt-2 whitespace-pre-wrap text-3xl font-black leading-[1.5] sm:text-4xl"
@@ -95,24 +110,23 @@ export default function WordCloudCanvas({
             {draft.prompt || "پرسش ابر واژه اینجا نمایش داده می‌شود"}
           </h2>
 
-          <div
-            className="mt-8 flex min-h-48 w-full flex-wrap items-center justify-center gap-x-5 gap-y-3 rounded-3xl border border-[color:var(--live-border)] bg-black/15 p-6"
-            aria-label="نمونه چیدمان ابر واژه"
-          >
-            {previewTerms.map(([term, size]) => (
-              <span
-                key={term}
-                className={size + " font-black leading-none"}
-                dir="auto"
-              >
-                {term}
-              </span>
-            ))}
-          </div>
+          {draft.imageUrl ? (
+            <img
+              src={draft.imageUrl}
+              alt=""
+              className="mt-4 max-h-32 max-w-full rounded-2xl object-contain"
+            />
+          ) : null}
+
+          <WordCloudView
+            terms={previewTerms}
+            className="mt-6 min-h-48 w-full rounded-3xl border border-[color:var(--live-border)] bg-black/15 p-3"
+            emptyLabel="پیش‌نمایشی برای نمایش وجود ندارد."
+          />
 
           <p className="mt-5 max-w-2xl text-sm leading-7 text-[color:var(--live-muted)]">
-            اندازه هر واژه با فراوانی پاسخ‌ها بیشتر می‌شود. تکرار یک واژه در
-            پاسخ یک شرکت‌کننده فقط یک بار شمرده می‌شود.
+            هر عبارت کوتاه یک entry مستقل است و فراوانی بیشتر با اندازه بزرگ‌تر
+            نمایش داده می‌شود؛ عبارت تکراری در پاسخ یک شرکت‌کننده دوباره شمرده نمی‌شود.
           </p>
         </div>
 

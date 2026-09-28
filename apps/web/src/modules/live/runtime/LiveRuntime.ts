@@ -63,7 +63,8 @@ export interface LiveAnswerInput {
   activity_item_id: string | number;
   response:
     | { selected_option_indexes: number[] }
-    | { text: string };
+    | { text: string }
+    | { entries: string[] };
 }
 
 interface RuntimeStorage {
@@ -1243,7 +1244,12 @@ export class LiveRuntime {
       ) {
         return "rejected" as const;
       }
-    } else if (!response.text.trim()) {
+    } else if ("text" in response) {
+      if (!response.text.trim()) return "rejected" as const;
+    } else if (
+      response.entries.length === 0 ||
+      response.entries.some((entry) => !entry.trim())
+    ) {
       return "rejected" as const;
     }
 

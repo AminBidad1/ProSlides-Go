@@ -15,10 +15,12 @@ export interface EditorTextActivity {
   title: string;
   text: string;
   image_url: string;
-  max_length: number;
-  max_words: number;
+  max_length?: number;
+  max_words?: number;
+  max_entry_length?: number;
+  max_entries?: number;
   time_limit: number;
-  aggregation: "word_frequency";
+  aggregation: "word_frequency" | "entry_frequency";
 }
 
 export interface EditorQuestion {
@@ -92,9 +94,9 @@ export const TEXT_ACTIVITY_LIMITS = {
   promptText: 10_000,
   imageUrl: 4_096,
   minResponseLength: 1,
-  maxResponseLength: 500,
+  maxResponseLength: 40,
   minWords: 1,
-  maxWords: 10,
+  maxWords: 5,
   minDurationSeconds: 1,
   maxDurationSeconds: 86_400,
 } as const;
@@ -128,8 +130,13 @@ export const validateEditorTextActivity = (
   const prompt = String(activity.text ?? "").trim();
   const title = String(activity.title ?? "");
   const imageUrl = String(activity.image_url ?? "");
-  const maxLength = Number(activity.max_length);
-  const maxWords = Number(activity.max_words);
+  const entryBased = activity.aggregation === "entry_frequency";
+  const maxLength = Number(
+    entryBased ? activity.max_entry_length : activity.max_length,
+  );
+  const maxWords = Number(
+    entryBased ? activity.max_entries : activity.max_words,
+  );
   const duration = Number(activity.time_limit);
 
   if (!prompt) {
@@ -167,7 +174,7 @@ export const validateEditorTextActivity = (
     issues.push({
       code: "max_length_invalid",
       field: "max_length",
-      message: "حداکثر طول پاسخ باید بین ۱ تا ۵۰۰ نویسه باشد.",
+      message: "حداکثر طول هر عبارت باید بین ۱ تا ۴۰ نویسه باشد.",
     });
   }
   if (
@@ -178,7 +185,7 @@ export const validateEditorTextActivity = (
     issues.push({
       code: "max_words_invalid",
       field: "max_words",
-      message: "تعداد واژه‌های پاسخ باید بین ۱ تا ۱۰ باشد.",
+      message: "تعداد عبارت‌های هر شرکت‌کننده باید بین ۱ تا ۵ باشد.",
     });
   }
   if (
@@ -192,7 +199,10 @@ export const validateEditorTextActivity = (
       message: "زمان پاسخ‌گویی باید بین ۱ ثانیه تا ۲۴ ساعت باشد.",
     });
   }
-  if (activity.aggregation !== "word_frequency") {
+  if (
+    activity.aggregation !== "word_frequency" &&
+    activity.aggregation !== "entry_frequency"
+  ) {
     issues.push({
       code: "aggregation_invalid",
       field: "text_activity",

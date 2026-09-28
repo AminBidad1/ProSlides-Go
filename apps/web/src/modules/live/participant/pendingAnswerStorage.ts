@@ -59,6 +59,20 @@ const parseAnswer = (value: unknown): LiveAnswerInput | null => {
     };
   }
 
+  if (
+    Array.isArray(value.response.entries) &&
+    value.response.entries.length > 0 &&
+    value.response.entries.every(
+      (entry) => typeof entry === "string" && entry.trim(),
+    )
+  ) {
+    return {
+      request_id: value.request_id,
+      activity_item_id: value.activity_item_id,
+      response: { entries: value.response.entries as string[] },
+    };
+  }
+
   return null;
 };
 

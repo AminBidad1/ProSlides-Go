@@ -86,6 +86,32 @@ const wordCloudItem = () => ({
     },
   },
 });
+const entryWordCloudItem = () => ({
+  id: "cloud-entry-1",
+  kind: "activity",
+  position: 2,
+  content: {
+    schema_version: 1,
+    activity_kind: "text",
+    prompt: {
+      title: "عبارت‌های کلیدی",
+      text: "جلسه را با چند عبارت کوتاه توصیف کنید",
+      image_url: "https://example.test/cloud.png",
+    },
+    response: {
+      max_entry_length: 30,
+      max_entries: 3,
+    },
+    evaluation: { mode: "none" },
+    scoring: { mode: "none" },
+    timing: { duration_seconds: 45 },
+    results: {
+      aggregation: "entry_frequency",
+      show_overall_leaderboard_after: false,
+    },
+  },
+});
+
 
 test("equal state versions are accepted when event_id advances", () => {
   const cursor = { eventId: 10, stateVersion: 4 };
@@ -285,6 +311,27 @@ test("Poll projects through the existing Choice live protocol without correctnes
     [1, 1],
   );
   assert.equal(projection.leaderboardResults, null);
+});
+
+
+test("entry Word Cloud projects phrase limits and presentation metadata", () => {
+  const question = normalizeLiveSlide(entryWordCloudItem(), {
+    state_version: 10,
+    activity_phase: "accepting",
+    stage_view: "item",
+    remaining_seconds: 21,
+  });
+
+  assert.equal(question.activity_kind, "text");
+  assert.equal(question.question_id, "cloud-entry-1");
+  assert.equal(question.question_title, "عبارت‌های کلیدی");
+  assert.equal(question.image_url, "https://example.test/cloud.png");
+  assert.equal(question.response_aggregation, "entry_frequency");
+  assert.equal(question.response_max_entries, 3);
+  assert.equal(question.response_max_entry_length, 30);
+  assert.equal(question.response_max_words, 0);
+  assert.equal(question.response_max_length, 0);
+  assert.equal(question.remaining_seconds, 21);
 });
 
 test("Word Cloud projects through the generic Activity lifecycle and result envelope", () => {

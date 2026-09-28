@@ -155,9 +155,14 @@ const textTransport: EditorTransportRegistration = {
     const response = recordValue(content.response);
     const timing = recordValue(content.timing);
     const results = recordValue(content.results);
-    if (results.aggregation !== "word_frequency") {
+    const aggregation = results.aggregation;
+    if (
+      aggregation !== "word_frequency" &&
+      aggregation !== "entry_frequency"
+    ) {
       throw new Error("Unsupported Text Activity aggregation.");
     }
+    const entryBased = aggregation === "entry_frequency";
 
     return {
       ...commonEditorSlide(slide),
@@ -170,10 +175,20 @@ const textTransport: EditorTransportRegistration = {
         title: stringValue(prompt.title),
         text: stringValue(prompt.text),
         image_url: stringValue(prompt.image_url),
-        max_length: numberValue(response.max_length, 80),
-        max_words: numberValue(response.max_words, 3),
+        max_length: entryBased
+          ? undefined
+          : numberValue(response.max_length, 80),
+        max_words: entryBased
+          ? undefined
+          : numberValue(response.max_words, 3),
+        max_entry_length: entryBased
+          ? numberValue(response.max_entry_length, 30)
+          : undefined,
+        max_entries: entryBased
+          ? numberValue(response.max_entries, 3)
+          : undefined,
         time_limit: numberValue(timing.duration_seconds, 30),
-        aggregation: "word_frequency",
+        aggregation,
       },
     };
   },
@@ -328,10 +343,16 @@ export const editorSlideToTransportDefinition = (
           text: activity.text || "",
           image_url: activity.image_url || "",
         },
-        response: {
-          max_length: activity.max_length,
-          max_words: activity.max_words,
-        },
+        response:
+          activity.aggregation === "entry_frequency"
+            ? {
+                max_entry_length: activity.max_entry_length ?? 30,
+                max_entries: activity.max_entries ?? 3,
+              }
+            : {
+                max_length: activity.max_length ?? 80,
+                max_words: activity.max_words ?? 3,
+              },
         evaluation: {
           mode: "none",
         },
@@ -342,7 +363,7 @@ export const editorSlideToTransportDefinition = (
           duration_seconds: activity.time_limit,
         },
         results: {
-          aggregation: "word_frequency",
+          aggregation: activity.aggregation,
           show_overall_leaderboard_after: false,
         },
       },

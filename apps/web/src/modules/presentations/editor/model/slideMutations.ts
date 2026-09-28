@@ -83,12 +83,12 @@ const createDefaultQuestion = (
 
 const createDefaultTextActivity = (): EditorTextActivity => ({
   title: "",
-  text: "این موضوع را با چه واژه‌هایی توصیف می‌کنید؟",
+  text: "این موضوع را با چه واژه‌ها یا عبارت‌های کوتاهی توصیف می‌کنید؟",
   image_url: "",
-  max_length: 80,
-  max_words: 3,
+  max_entry_length: 30,
+  max_entries: 3,
   time_limit: 30,
-  aggregation: "word_frequency",
+  aggregation: "entry_frequency",
 });
 
 export const createTextActivitySlide = (

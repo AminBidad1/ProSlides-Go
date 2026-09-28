@@ -42,6 +42,9 @@ export interface LegacyQuestionSlide {
   show_leaderboard_after?: boolean;
   response_max_length?: number;
   response_max_words?: number;
+  response_max_entry_length?: number;
+  response_max_entries?: number;
+  response_aggregation?: "word_frequency" | "entry_frequency";
   options?: LegacyQuestionOption[];
 }
 

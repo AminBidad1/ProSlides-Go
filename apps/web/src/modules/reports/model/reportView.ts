@@ -38,6 +38,7 @@ type ChoiceResponse = {
 
 type TextResponse = {
   text?: string;
+  entries?: string[];
   terms?: string[];
 };
 
@@ -90,7 +91,10 @@ export const isWordCloudActivity = (
   const definition = asActivityDefinition(activity);
   return (
     definition.activity_kind === "text" &&
-    definition.results?.aggregation === "word_frequency"
+    (
+      definition.results?.aggregation === "word_frequency" ||
+      definition.results?.aggregation === "entry_frequency"
+    )
   );
 };
 
@@ -136,6 +140,10 @@ export const responseLabels = (
   const definition = asActivityDefinition(activity);
   if (definition.activity_kind === "text") {
     const payload = response.response as TextResponse;
+    const entries = (payload.entries ?? [])
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+    if (entries.length) return entries;
     const text = payload.text?.trim();
     return text ? [text] : [];
   }

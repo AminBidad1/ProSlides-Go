@@ -181,7 +181,7 @@ export default function WordCloudInspector({
           <div>
             <h2 className="text-base font-bold">ابر واژه</h2>
             <p className="mt-1 text-xs leading-5 text-content-muted">
-              پاسخ‌های متنی کوتاه بر اساس فراوانی واژه‌ها تجمیع می‌شوند.
+              عبارت‌های کوتاه مشابه با هم گروه‌بندی می‌شوند و بر اساس فراوانی نمایش داده می‌شوند.
             </p>
           </div>
           <Button
@@ -275,12 +275,12 @@ export default function WordCloudInspector({
                 محدودیت پاسخ
               </h3>
               <p className="mt-1 text-xs leading-5 text-content-muted">
-                پاسخ هر شرکت‌کننده یک بار ثبت می‌شود؛ واژه تکراری در همان پاسخ
-                دوباره شمرده نمی‌شود.
+                هر شرکت‌کننده یک پاسخ ثبت می‌کند و می‌تواند چند عبارت کوتاه وارد کند؛
+                عبارت تکراری در همان پاسخ دوباره شمرده نمی‌شود.
               </p>
               <div className="mt-3 grid grid-cols-2 gap-3">
                 <label className="text-xs font-semibold">
-                  تعداد واژه
+                  تعداد عبارت
                   <input
                     type="number"
                     inputMode="numeric"
@@ -296,7 +296,7 @@ export default function WordCloudInspector({
                   />
                 </label>
                 <label className="text-xs font-semibold">
-                  حداکثر نویسه
+                  نویسه هر عبارت
                   <input
                     type="number"
                     inputMode="numeric"

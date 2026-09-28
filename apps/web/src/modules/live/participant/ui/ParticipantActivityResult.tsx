@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 
+import { WordCloudView } from "../../../../shared/ui/WordCloudView.tsx";
 import type { LivePresentationModel } from "../../model/presentation.ts";
 import type {
   LegacyQuestionResult,
@@ -39,9 +40,11 @@ export function ParticipantActivityResult({
     );
   }, [personalResult?.response]);
   const personalText =
-    personalResult?.response && "text" in personalResult.response
-      ? personalResult.response.text
-      : null;
+    personalResult?.response && "entries" in personalResult.response
+      ? personalResult.response.entries.join("، ")
+      : personalResult?.response && "text" in personalResult.response
+        ? personalResult.response.text
+        : null;
 
   const options = question.options ?? [];
   const counts = useMemo(() => {
@@ -56,10 +59,6 @@ export function ParticipantActivityResult({
   }, [result?.optionsResult]);
 
   const wordTerms = result?.wordTerms ?? [];
-  const maxTermCount = Math.max(
-    1,
-    ...wordTerms.map((term) => Math.max(0, Number(term.count))),
-  );
   const totalResponses = Math.max(0, Number(result?.response_count ?? 0));
   const isWordCloud = question.activity_kind === "text";
   const hasCorrectAnswer = question.has_correct_answer !== false;
@@ -83,12 +82,27 @@ export function ParticipantActivityResult({
                   ? "نتیجه نظرسنجی"
                   : "نتیجه فعالیت"}
             </p>
+            {question.question_title ? (
+              <p
+                className="mt-2 text-sm font-bold text-[color:var(--live-muted)]"
+                dir="auto"
+              >
+                {question.question_title}
+              </p>
+            ) : null}
             <h1
               className="mt-2 text-2xl font-black leading-10 sm:text-3xl"
               dir="auto"
             >
               {question.question_text || "نتیجه"}
             </h1>
+            {question.image_url ? (
+              <img
+                src={question.image_url}
+                alt=""
+                className="mx-auto mt-4 max-h-40 max-w-full rounded-2xl object-contain"
+              />
+            ) : null}
             <p className="mt-2 text-sm text-[color:var(--live-muted)]">
               {totalResponses.toLocaleString("fa-IR")} پاسخ ثبت‌شده
             </p>
@@ -143,36 +157,11 @@ export function ParticipantActivityResult({
           )}
 
           {isWordCloud ? (
-            <div
-              className="mt-6 flex min-h-52 flex-wrap items-center justify-center gap-x-5 gap-y-3 rounded-3xl border border-[color:var(--live-border)] bg-white/5 p-5"
-              aria-label="ابر واژه نتیجه"
-            >
-              {wordTerms.length === 0 ? (
-                <p className="text-sm text-[color:var(--live-muted)]">
-                  هنوز واژه‌ای برای نمایش وجود ندارد.
-                </p>
-              ) : (
-                wordTerms.map((term) => {
-                  const ratio = Math.max(0.35, term.count / maxTermCount);
-                  return (
-                    <span
-                      key={term.text}
-                      dir="auto"
-                      className="font-black leading-none"
-                      style={{ fontSize: 16 + Math.round(ratio * 28) }}
-                      aria-label={
-                        term.text +
-                        "، " +
-                        term.count.toLocaleString("fa-IR") +
-                        " بار"
-                      }
-                    >
-                      {term.text}
-                    </span>
-                  );
-                })
-              )}
-            </div>
+            <WordCloudView
+              terms={wordTerms}
+              className="mt-6 min-h-52 rounded-3xl border border-[color:var(--live-border)] bg-white/5 p-3"
+              emptyLabel="هنوز عبارتی برای نمایش وجود ندارد."
+            />
           ) : (
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               {options.map((option, index) => {

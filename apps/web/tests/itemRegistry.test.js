@@ -199,9 +199,9 @@ test("Word Cloud is a canonical Text Activity with no scoring or ranking", () =>
   assert.equal(cloud.activity_kind, "text");
   assert.equal(cloud.schema_version, 1);
   assert.equal(cloud.question, null);
-  assert.equal(cloud.text_activity.aggregation, "word_frequency");
-  assert.equal(cloud.text_activity.max_words, 3);
-  assert.equal(cloud.text_activity.max_length, 80);
+  assert.equal(cloud.text_activity.aggregation, "entry_frequency");
+  assert.equal(cloud.text_activity.max_entries, 3);
+  assert.equal(cloud.text_activity.max_entry_length, 30);
   assert.equal(cloud.text_activity.time_limit, 30);
   assert.equal(cloud.show_leaderboard_after, false);
   assert.equal(editorSlideMatchesTypeChoice(cloud, "word-cloud"), true);
@@ -219,11 +219,11 @@ test("Word Cloud is a canonical Text Activity with no scoring or ranking", () =>
   assert.equal(converted.slide_id, choiceSlide.slide_id);
   assert.equal(converted.activity_kind, "text");
   assert.equal(converted.question, null);
-  assert.equal(converted.text_activity.aggregation, "word_frequency");
+  assert.equal(converted.text_activity.aggregation, "entry_frequency");
   assert.equal(converted.show_leaderboard_after, false);
   assert.match(
     getEditorConversionConfirmation(choiceSlide, "word-cloud").description,
-    /فراوانی واژه/,
+    /فراوانی واژه‌ها یا عبارت‌های کوتاه/,
   );
 
   const quizAgain = convertEditorSlideToType(

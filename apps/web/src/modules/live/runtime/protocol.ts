@@ -255,6 +255,7 @@ const textActivityToLegacy = (
   const prompt = recordValue(content.prompt);
   const response = recordValue(content.response);
   const timing = recordValue(content.timing);
+  const results = recordValue(content.results);
   const questionTime = finiteNumber(timing.duration_seconds);
   const endsAt =
     typeof session.ends_at === "string"
@@ -293,6 +294,12 @@ const textActivityToLegacy = (
     show_leaderboard_after: false,
     response_max_length: finiteNumber(response.max_length),
     response_max_words: finiteNumber(response.max_words),
+    response_max_entry_length: finiteNumber(response.max_entry_length),
+    response_max_entries: finiteNumber(response.max_entries),
+    response_aggregation:
+      results.aggregation === "entry_frequency"
+        ? "entry_frequency"
+        : "word_frequency",
     options: [],
   };
 };

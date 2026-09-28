@@ -17,12 +17,14 @@ type choiceActivityResponse struct {
 }
 
 type textActivityResponse struct {
-	Text string `json:"text"`
+	Text    string   `json:"text,omitempty"`
+	Entries []string `json:"entries,omitempty"`
 }
 
 type storedTextActivityResponse struct {
-	Text  string   `json:"text"`
-	Terms []string `json:"terms"`
+	Text    string   `json:"text,omitempty"`
+	Entries []string `json:"entries,omitempty"`
+	Terms   []string `json:"terms"`
 }
 
 func normalizeActivityResponse(
@@ -70,22 +72,70 @@ func normalizeActivityResponse(
 		if err := decodeStrictResponse(raw, &response); err != nil {
 			return nil, nil, ErrInvalid
 		}
-		text := strings.TrimSpace(norm.NFKC.String(response.Text))
-		if text == "" || utf8.RuneCountInString(text) > definition.Response.MaxLength {
+
+		switch definition.Results.Aggregation {
+		case presentations.TextAggregationWordFrequency:
+			if len(response.Entries) != 0 {
+				return nil, nil, ErrInvalid
+			}
+			text := strings.TrimSpace(norm.NFKC.String(response.Text))
+			if text == "" || utf8.RuneCountInString(text) > definition.Response.MaxLength {
+				return nil, nil, ErrInvalid
+			}
+			tokens := wordCloudTokens(text)
+			if len(tokens) == 0 || len(tokens) > definition.Response.MaxWords {
+				return nil, nil, ErrInvalid
+			}
+			normalized, err := json.Marshal(storedTextActivityResponse{
+				Text:  text,
+				Terms: uniqueWordCloudTerms(tokens),
+			})
+			if err != nil {
+				return nil, nil, err
+			}
+			return normalized, nil, nil
+
+		case presentations.TextAggregationEntryFrequency:
+			if response.Text != "" ||
+				len(response.Entries) == 0 ||
+				len(response.Entries) > definition.Response.MaxEntries {
+				return nil, nil, ErrInvalid
+			}
+
+			entries := make([]string, 0, len(response.Entries))
+			keys := make([]string, 0, len(response.Entries))
+			seen := make(map[string]struct{}, len(response.Entries))
+			for _, rawEntry := range response.Entries {
+				entry := strings.TrimSpace(norm.NFKC.String(rawEntry))
+				if entry == "" ||
+					utf8.RuneCountInString(entry) > definition.Response.MaxEntryLength {
+					return nil, nil, ErrInvalid
+				}
+				key := canonicalWordCloudEntry(entry)
+				if key == "" {
+					return nil, nil, ErrInvalid
+				}
+				if _, duplicate := seen[key]; duplicate {
+					continue
+				}
+				seen[key] = struct{}{}
+				entries = append(entries, entry)
+				keys = append(keys, key)
+			}
+			if len(entries) == 0 {
+				return nil, nil, ErrInvalid
+			}
+			normalized, err := json.Marshal(storedTextActivityResponse{
+				Entries: entries,
+				Terms:   keys,
+			})
+			if err != nil {
+				return nil, nil, err
+			}
+			return normalized, nil, nil
+		default:
 			return nil, nil, ErrInvalid
 		}
-		tokens := wordCloudTokens(text)
-		if len(tokens) == 0 || len(tokens) > definition.Response.MaxWords {
-			return nil, nil, ErrInvalid
-		}
-		normalized, err := json.Marshal(storedTextActivityResponse{
-			Text:  text,
-			Terms: uniqueWordCloudTerms(tokens),
-		})
-		if err != nil {
-			return nil, nil, err
-		}
-		return normalized, nil, nil
 	default:
 		return nil, nil, ErrInvalid
 	}
@@ -122,6 +172,29 @@ func wordCloudTokens(value string) []string {
 	}
 	flush()
 	return tokens
+}
+
+func canonicalWordCloudEntry(value string) string {
+	var builder strings.Builder
+	pendingSpace := false
+	for _, rawRune := range strings.ToLower(norm.NFKC.String(value)) {
+		r := canonicalWordCloudRune(rawRune)
+		if unicode.IsSpace(r) {
+			if builder.Len() > 0 {
+				pendingSpace = true
+			}
+			continue
+		}
+		if unicode.IsControl(r) {
+			continue
+		}
+		if pendingSpace {
+			builder.WriteRune(' ')
+			pendingSpace = false
+		}
+		builder.WriteRune(r)
+	}
+	return strings.TrimSpace(builder.String())
 }
 
 func canonicalWordCloudRune(r rune) rune {

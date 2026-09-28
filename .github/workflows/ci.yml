@@ -61,6 +61,7 @@ jobs:
         shell: bash
         run: |
           node --input-type=module --check < ../../load/k6/live-smoke.js
+          node --input-type=module --check < ../../load/k6/live-word-cloud.js
           node ../../load/k6/check-harness.mjs
 
       - name: Parse PowerShell integration matrix

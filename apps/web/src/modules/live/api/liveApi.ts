@@ -117,7 +117,8 @@ export const submitLiveAnswer = (
     activity_item_id: string;
     response:
       | { selected_option_indexes: number[] }
-      | { text: string };
+      | { text: string }
+      | { entries: string[] };
   },
 ) =>
   requestJSON<AnswerResult>(

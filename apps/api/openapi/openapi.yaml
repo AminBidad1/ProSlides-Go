@@ -907,12 +907,24 @@ components:
         timing: { $ref: '#/components/schemas/ActivityTimingPolicy' }
         results: { $ref: '#/components/schemas/TextResultPolicy' }
     TextResponsePolicy:
+      description: Legacy Word Clouds use word limits; entry-based Word Clouds preserve short phrases as independent entries.
+      oneOf:
+        - $ref: '#/components/schemas/LegacyTextResponsePolicy'
+        - $ref: '#/components/schemas/EntryTextResponsePolicy'
+    LegacyTextResponsePolicy:
       type: object
       additionalProperties: false
       required: [max_length, max_words]
       properties:
         max_length: { type: integer, minimum: 1, maximum: 500 }
         max_words: { type: integer, minimum: 1, maximum: 10 }
+    EntryTextResponsePolicy:
+      type: object
+      additionalProperties: false
+      required: [max_entry_length, max_entries]
+      properties:
+        max_entry_length: { type: integer, minimum: 1, maximum: 40 }
+        max_entries: { type: integer, minimum: 1, maximum: 5 }
     TextEvaluationPolicy:
       type: object
       additionalProperties: false
@@ -930,7 +942,7 @@ components:
       additionalProperties: false
       required: [aggregation, show_overall_leaderboard_after]
       properties:
-        aggregation: { type: string, enum: [word_frequency] }
+        aggregation: { type: string, enum: [word_frequency, entry_frequency] }
         show_overall_leaderboard_after: { type: boolean, enum: [false] }
     ActivityPrompt:
       type: object
@@ -1026,12 +1038,31 @@ components:
           uniqueItems: true
           items: { type: integer, minimum: 0 }
     TextActivityResponse:
+      oneOf:
+        - $ref: '#/components/schemas/LegacyTextActivityResponse'
+        - $ref: '#/components/schemas/EntryTextActivityResponse'
+    LegacyTextActivityResponse:
       type: object
       additionalProperties: false
       required: [text]
       properties:
         text: { type: string, minLength: 1, maxLength: 500 }
+    EntryTextActivityResponse:
+      type: object
+      additionalProperties: false
+      required: [entries]
+      properties:
+        entries:
+          type: array
+          minItems: 1
+          maxItems: 5
+          uniqueItems: false
+          items: { type: string, minLength: 1, maxLength: 40 }
     StoredTextActivityResponse:
+      oneOf:
+        - $ref: '#/components/schemas/StoredLegacyTextActivityResponse'
+        - $ref: '#/components/schemas/StoredEntryTextActivityResponse'
+    StoredLegacyTextActivityResponse:
       type: object
       additionalProperties: false
       required: [text, terms]
@@ -1043,6 +1074,23 @@ components:
           maxItems: 10
           uniqueItems: true
           items: { type: string, minLength: 1, maxLength: 500 }
+    StoredEntryTextActivityResponse:
+      type: object
+      additionalProperties: false
+      required: [entries, terms]
+      properties:
+        entries:
+          type: array
+          minItems: 1
+          maxItems: 5
+          uniqueItems: true
+          items: { type: string, minLength: 1, maxLength: 40 }
+        terms:
+          type: array
+          minItems: 1
+          maxItems: 5
+          uniqueItems: true
+          items: { type: string, minLength: 1, maxLength: 40 }
     CreateLiveSessionRequest:
       type: object
       required: [request_id, presentation_id]

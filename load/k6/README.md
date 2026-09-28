@@ -82,3 +82,32 @@ after every HTTP error. Review and pin both components before accepting
 production-like evidence. Record
 the commit, topology, raw summary, API/PostgreSQL metrics, and correctness SQL
 from `docs/capacity-plan.md`. A local pass is not evidence for 1k or 10k.
+
+
+## Word Cloud capacity scenario
+
+`live-word-cloud.js` exercises the same canonical lifecycle with an
+entry-based Word Cloud instead of a scored Choice Activity. Each participant
+submits three short entries, including a multi-word Persian phrase. The
+controller measures close/aggregation latency, reveals the result, and teardown
+asserts that the authoritative response count matches `USERS` and that the
+aggregated term set is non-empty.
+
+Run it with the same pinned xk6 binary:
+
+```powershell
+docker run --rm --network proslides-go-platform_default `
+  -v "${PWD}/.tmp/k6:/tools:ro" -v "${PWD}/load/k6:/scripts:ro" `
+  -v "${PWD}/.tmp/load-results:/results" `
+  --entrypoint /tools/k6 grafana/k6:2.2.0 `
+  run --summary-export=/results/live-word-cloud-100.json `
+  -e BASE_URL=http://api:8080 -e USERS=100 `
+  /scripts/live-word-cloud.js
+```
+
+For 1k/5k/10k evidence, use the same deterministic `JOIN_RATE` discipline as
+the Choice scenario and record `word_cloud_answer_duration`,
+`word_cloud_close_duration`, PostgreSQL CPU/IO, and the raw summary. The
+Word Cloud close metric is especially important because aggregation expands
+each accepted response into up to five entry keys. A local pass is still not a
+production capacity claim.

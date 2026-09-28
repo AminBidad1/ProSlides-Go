@@ -83,7 +83,7 @@ Product presets may present friendlier concepts on top:
 
 - Poll = choice with no correctness evaluation or score;
 - Quiz = choice with correctness evaluation and optional score;
-- Word Cloud = text with word-frequency aggregation/visualization;
+- Word Cloud = text with entry-frequency aggregation/visualization;
 - Open Text = text with list/card aggregation;
 - Rating = scale.
 
@@ -145,19 +145,26 @@ For choice, distinguish:
 - no scoring vs fixed/speed-aware scoring;
 - optional partial-credit policy for multiple selection.
 
-For the initial Text primitive used by Word Cloud:
+For the Text primitive used by Word Cloud:
 
-- response policy bounds text length and submitted word count;
+- newly authored Word Clouds use `entry_frequency`: one participant response
+  contains one to five independently bounded short entries, so a phrase such as
+  "هوش مصنوعی" remains one visual/aggregation unit rather than being split into
+  unrelated tokens;
+- `word_frequency` remains a supported legacy representation for already
+  persisted definitions and frozen Sessions; editing and saving an old Word
+  Cloud upgrades future runs without reinterpreting historical answers;
 - evaluation and scoring are both `none`;
-- result policy explicitly selects `word_frequency` aggregation;
-- accepted text is Unicode-normalized at the command boundary;
-- aggregation keys additionally canonicalize common Arabic/Persian yeh and kaf
-  glyph variants while the participant's accepted text remains preserved;
-- canonical terms are frozen with the accepted response so historical Word Cloud
-  results do not change if tokenizer behavior evolves;
-- repeated occurrences of the same normalized term in one participant response
-  count once toward aggregation, while all submitted tokens still count toward
-  the response word limit.
+- accepted entries are Unicode-normalized at the command boundary;
+- aggregation keys lowercase, collapse whitespace and canonicalize common
+  Arabic/Persian yeh and kaf glyph variants while the first accepted authored
+  label is retained for display casing/spelling;
+- canonical keys are frozen with the accepted response so historical results do
+  not change if normalization evolves;
+- duplicate canonical entries inside one participant response count once, which
+  prevents a participant from inflating a phrase by repeating it;
+- result reveal remains presenter-controlled by default. Aggregates are not
+  exposed to participants during acceptance, avoiding response priming.
 
 Open Text may later reuse the same Text response primitive with a different
 result policy. Do not create a separate live Session state or response endpoint

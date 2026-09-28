@@ -46,7 +46,8 @@ export interface ActivityResult {
 
 type ActivityResponse =
   | { selected_option_indexes: number[] }
-  | { text: string; terms?: string[] };
+  | { text: string; terms?: string[] }
+  | { entries: string[]; terms?: string[] };
 
 interface PersonalActivityResult {
   activity_item_id: string;

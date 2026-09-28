@@ -184,8 +184,8 @@ test("manager primary surface renders revealed Word Cloud terms", async () => {
     screen.queryByText("در حال آماده‌سازی سؤال…"),
   ).toBeNull();
   expect(screen.getByText("سؤال ۳ از ۳")).not.toBeNull();
-  expect(screen.getByLabelText("نتیجه ابر واژه")).not.toBeNull();
+  expect(await screen.findByLabelText("نتیجه ابر واژه")).not.toBeNull();
   expect(screen.getByText("۳ پاسخ ثبت‌شده")).not.toBeNull();
-  expect(screen.getByText("خلاق")).not.toBeNull();
+  expect(await screen.findByText("خلاق")).not.toBeNull();
   expect(screen.getByText("سریع")).not.toBeNull();
 });

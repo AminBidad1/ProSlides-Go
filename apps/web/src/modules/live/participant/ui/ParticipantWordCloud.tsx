@@ -23,11 +23,21 @@ type SubmitState =
   | "rejected"
   | "expired";
 
+type WordCloudResponse =
+  | { text: string }
+  | { entries: string[] };
+
 type PendingTextAttempt = {
   scope: string;
   requestId: string;
-  text: string;
+  response: WordCloudResponse;
 };
+
+const responseEntries = (value: string): string[] =>
+  value
+    .split(/\r?\n/u)
+    .map((entry) => entry.normalize("NFKC").trim())
+    .filter(Boolean);
 
 const responseTerms = (value: string): string[] =>
   (
@@ -59,8 +69,23 @@ export function ParticipantWordCloud({
   } = useLiveSession();
   const identity = String(question.question_id ?? question.slide_id ?? "");
   const timerScope = String(roomId ?? "unknown") + ":" + identity + ":" + String(question.run_id ?? "na");
-  const maxLength = Math.max(1, Number(question.response_max_length ?? 80));
-  const maxWords = Math.max(1, Number(question.response_max_words ?? 3));
+  const entryBased = question.response_aggregation === "entry_frequency";
+  const maxLength = Math.max(
+    1,
+    Number(
+      entryBased
+        ? question.response_max_entry_length ?? 30
+        : question.response_max_length ?? 80,
+    ),
+  );
+  const maxWords = Math.max(
+    1,
+    Number(
+      entryBased
+        ? question.response_max_entries ?? 3
+        : question.response_max_words ?? 3,
+    ),
+  );
   const [value, setValue] = useState("");
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [submitMessage, setSubmitMessage] = useState("");
@@ -93,11 +118,13 @@ export function ParticipantWordCloud({
     const restored = readPendingAnswer(roomId, timerScope);
     const draft = readAnswerDraft(roomId, timerScope);
     const restoredText =
-      restored && "text" in restored.response
-        ? restored.response.text
-        : draft && "text" in draft
-          ? draft.text
-          : "";
+      restored && "entries" in restored.response
+        ? restored.response.entries.join("\n")
+        : restored && "text" in restored.response
+          ? restored.response.text
+          : draft && "text" in draft
+            ? draft.text
+            : "";
     setValue(restoredText);
     setSubmitState(restored ? "retryable" : "idle");
     setSubmitMessage(
@@ -106,11 +133,14 @@ export function ParticipantWordCloud({
         : "",
     );
     pendingRef.current =
-      restored?.request_id && "text" in restored.response
+      restored?.request_id &&
+      ("text" in restored.response || "entries" in restored.response)
         ? {
             scope: timerScope,
             requestId: restored.request_id,
-            text: restored.response.text,
+            response: "entries" in restored.response
+              ? { entries: restored.response.entries }
+              : { text: restored.response.text },
           }
         : null;
     restoredPendingRef.current = Boolean(restored);
@@ -156,15 +186,40 @@ export function ParticipantWordCloud({
   }, [identity, totalSeconds]);
 
   const terms = useMemo(() => responseTerms(value), [value]);
+  const entries = useMemo(() => responseEntries(value), [value]);
+  const entryDrafts = useMemo(() => {
+    const lines = value.split("\n");
+    return Array.from({ length: maxWords }, (_, index) => lines[index] ?? "");
+  }, [maxWords, value]);
+
+  const updateDraftValue = (nextValue: string) => {
+    setValue(nextValue);
+    if (nextValue.trim()) {
+      saveAnswerDraft(roomId, timerScope, { text: nextValue });
+    } else {
+      clearAnswerDraft(roomId, timerScope);
+    }
+    if (submitState === "retryable") {
+      pendingRef.current = null;
+      restoredPendingRef.current = false;
+      clearPendingAnswer(roomId, timerScope);
+      setSubmitState("idle");
+      setSubmitMessage("");
+    }
+  };
   const normalized = value.normalize("NFKC").trim();
-  const tooLong = Array.from(normalized).length > maxLength;
-  const tooManyWords = terms.length > maxWords;
+  const tooLong = entryBased
+    ? entries.some((entry) => Array.from(entry).length > maxLength)
+    : Array.from(normalized).length > maxLength;
+  const tooManyWords = entryBased
+    ? entries.length > maxWords
+    : terms.length > maxWords;
   const locked = ["sending", "sent", "rejected", "expired"].includes(submitState);
   const canSubmit =
     Boolean(normalized) &&
     !tooLong &&
     !tooManyWords &&
-    terms.length > 0 &&
+    (entryBased ? entries.length > 0 : terms.length > 0) &&
     timeLeft > 0 &&
     !locked;
 
@@ -187,7 +242,7 @@ export function ParticipantWordCloud({
         const outcome = await submitAnswer({
           request_id: attempt.requestId,
           activity_item_id: identity,
-          response: { text: attempt.text },
+          response: attempt.response,
         });
 
         if (activeScopeRef.current !== attempt.scope) {
@@ -227,16 +282,19 @@ export function ParticipantWordCloud({
 
   const submit = async () => {
     if (!canSubmit) return;
+    const response: WordCloudResponse = entryBased
+      ? { entries }
+      : { text: normalized };
     const attempt: PendingTextAttempt = {
       scope: timerScope,
       requestId: createRequestId(),
-      text: normalized,
+      response,
     };
     pendingRef.current = attempt;
     savePendingAnswer(roomId, timerScope, {
       request_id: attempt.requestId,
       activity_item_id: identity,
-      response: { text: attempt.text },
+      response: attempt.response,
     });
     await send(attempt);
   };
@@ -340,7 +398,9 @@ export function ParticipantWordCloud({
         <div className="flex flex-1 flex-col rounded-[2rem] border border-[color:var(--live-border)] bg-[color:var(--live-surface)] p-4 shadow-2xl backdrop-blur-xl sm:p-7">
           <div className="flex items-center justify-between gap-3 text-sm font-bold text-[color:var(--live-muted)]">
             <span>
-              تا {maxWords.toLocaleString("fa-IR")} واژه بنویسید
+              {entryBased
+                ? `تا ${maxWords.toLocaleString("fa-IR")} عبارت کوتاه، هر کدام در یک خط`
+                : `تا ${maxWords.toLocaleString("fa-IR")} واژه بنویسید`}
             </span>
             <span
               className={
@@ -371,55 +431,100 @@ export function ParticipantWordCloud({
             />
           </div>
 
+          {question.question_title ? (
+            <p
+              className="text-center text-sm font-bold text-[color:var(--live-muted)]"
+              dir="auto"
+            >
+              {question.question_title}
+            </p>
+          ) : null}
           <h1
-            className="text-center text-2xl font-black leading-10 sm:text-3xl"
+            className="mt-1 text-center text-2xl font-black leading-10 sm:text-3xl"
             dir="auto"
           >
             {question.question_text || "ابر واژه"}
           </h1>
-
-          <label className="mt-6 block">
-            <span className="sr-only">پاسخ متنی شما</span>
-            <textarea
-              dir="auto"
-              rows={4}
-              value={value}
-              disabled={locked || timeLeft <= 0}
-              onChange={(event) => {
-                const nextValue = event.target.value;
-                setValue(nextValue);
-                if (nextValue) {
-                  saveAnswerDraft(roomId, timerScope, { text: nextValue });
-                } else {
-                  clearAnswerDraft(roomId, timerScope);
-                }
-                if (submitState === "retryable") {
-                  pendingRef.current = null;
-                  restoredPendingRef.current = false;
-                  clearPendingAnswer(roomId, timerScope);
-                  setSubmitState("idle");
-                  setSubmitMessage("");
-                }
-              }}
-              placeholder="واژه‌های خود را بنویسید…"
-              className="min-h-32 w-full resize-none rounded-2xl border-2 border-[color:var(--live-border)] bg-white/10 px-4 py-3 text-lg font-bold outline-none placeholder:text-[color:var(--live-muted)] focus:border-white focus:ring-4 focus:ring-white/20 disabled:opacity-60"
-              aria-invalid={tooLong || tooManyWords}
+          {question.image_url ? (
+            <img
+              src={question.image_url}
+              alt=""
+              className="mx-auto mt-4 max-h-48 w-auto max-w-full rounded-2xl object-contain"
             />
-          </label>
+          ) : null}
+
+          {entryBased ? (
+            <fieldset className="mt-6 space-y-3">
+              <legend className="sr-only">عبارت‌های ابر واژه</legend>
+              {entryDrafts.map((entry, index) => {
+                const entryTooLong = Array.from(entry.normalize("NFKC").trim()).length > maxLength;
+                return (
+                  <label
+                    key={index}
+                    className="flex items-center gap-3 rounded-2xl border-2 border-[color:var(--live-border)] bg-white/10 px-4 py-2.5 focus-within:border-white focus-within:ring-4 focus-within:ring-white/20"
+                  >
+                    <span className="shrink-0 text-xs font-black text-[color:var(--live-muted)]">
+                      {(index + 1).toLocaleString("fa-IR")}
+                    </span>
+                    <input
+                      dir="auto"
+                      type="text"
+                      value={entry}
+                      disabled={locked || timeLeft <= 0}
+                      onChange={(event) => {
+                        const next = [...entryDrafts];
+                        next[index] = event.target.value.replace(/[\r\n]+/gu, " ");
+                        updateDraftValue(next.join("\n").replace(/\n+$/u, ""));
+                      }}
+                      placeholder={index === 0 ? "مثلاً: هوش مصنوعی" : "عبارت دیگر…"}
+                      className="min-w-0 flex-1 bg-transparent py-1.5 text-base font-bold outline-none placeholder:text-[color:var(--live-muted)] disabled:opacity-60"
+                      aria-label={`عبارت ${(index + 1).toLocaleString("fa-IR")}`}
+                      aria-invalid={entryTooLong}
+                      maxLength={maxLength + 1}
+                    />
+                    <span className="shrink-0 text-[11px] tabular-nums text-[color:var(--live-muted)]">
+                      {Array.from(entry.normalize("NFKC").trim()).length.toLocaleString("fa-IR")}
+                      /{maxLength.toLocaleString("fa-IR")}
+                    </span>
+                  </label>
+                );
+              })}
+            </fieldset>
+          ) : (
+            <label className="mt-6 block">
+              <span className="sr-only">پاسخ متنی شما</span>
+              <textarea
+                dir="auto"
+                rows={4}
+                value={value}
+                disabled={locked || timeLeft <= 0}
+                onChange={(event) => updateDraftValue(event.target.value)}
+                placeholder="واژه‌های خود را بنویسید…"
+                className="min-h-32 w-full resize-none rounded-2xl border-2 border-[color:var(--live-border)] bg-white/10 px-4 py-3 text-lg font-bold outline-none placeholder:text-[color:var(--live-muted)] focus:border-white focus:ring-4 focus:ring-white/20 disabled:opacity-60"
+                aria-invalid={tooLong || tooManyWords}
+              />
+            </label>
+          )}
 
           <div className="mt-2 flex flex-wrap justify-between gap-2 text-xs text-[color:var(--live-muted)]">
             <span>
-              {terms.length.toLocaleString("fa-IR")} / {maxWords.toLocaleString("fa-IR")} واژه
+              {(entryBased ? entries.length : terms.length).toLocaleString("fa-IR")} / {maxWords.toLocaleString("fa-IR")} {entryBased ? "عبارت" : "واژه"}
             </span>
             <span>
-              {Array.from(normalized).length.toLocaleString("fa-IR")} / {maxLength.toLocaleString("fa-IR")} نویسه
+              {entryBased
+                ? `حداکثر ${maxLength.toLocaleString("fa-IR")} نویسه برای هر عبارت`
+                : `${Array.from(normalized).length.toLocaleString("fa-IR")} / ${maxLength.toLocaleString("fa-IR")} نویسه`}
             </span>
           </div>
           {(tooLong || tooManyWords) && (
             <p role="alert" className="mt-2 text-sm font-bold text-warning">
               {tooManyWords
-                ? "تعداد واژه‌ها از محدودیت این فعالیت بیشتر است."
-                : "متن پاسخ بیش از حد طولانی است."}
+                ? entryBased
+                  ? "تعداد عبارت‌ها از محدودیت این فعالیت بیشتر است."
+                  : "تعداد واژه‌ها از محدودیت این فعالیت بیشتر است."
+                : entryBased
+                  ? "یکی از عبارت‌ها بیش از حد طولانی است."
+                  : "متن پاسخ بیش از حد طولانی است."}
             </p>
           )}
 
@@ -432,7 +537,7 @@ export function ParticipantWordCloud({
               >
                 <p className="text-lg font-black">پاسخ ثبت شد ✓</p>
                 <p className="mt-1 text-sm text-[color:var(--live-muted)]">
-                  متن شما ذخیره شده است. منتظر نمایش نتیجه بمانید.
+                  پاسخ شما ذخیره شده است. منتظر نمایش نتیجه بمانید.
                 </p>
               </div>
             ) : submitState === "expired" || timeLeft <= 0 ? (
