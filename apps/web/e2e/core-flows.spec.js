@@ -186,6 +186,13 @@ test("landing, protected navigation, and responsive auth layout @critical", asyn
   await expect(liveDemo).toBeVisible();
   await liveDemo.getByRole("button", { name: "مشارکت مخاطب", exact: true }).click();
   await expect(liveDemo.getByRole("status")).toContainText("پاسخ شما ثبت شد");
+  await expect(liveDemo.getByRole("button", { name: "دوباره امتحان کنید" })).toBeVisible();
+
+  await page.getByRole("button", { name: "ابر واژه", exact: true }).click();
+  await page.getByLabel("واژه شما").fill("خلاقیت");
+  await page.getByRole("button", { name: "ارسال", exact: true }).click();
+  await expect(page.getByRole("status").filter({ hasText: "خلاقیت" })).toBeVisible();
+  await expectAccessible(page, "landing-interactions");
 
   const joinCode = page.getByRole("textbox", { name: "کد ورود" });
   await joinCode.fill("۱۲۳۴A");
@@ -217,6 +224,12 @@ test("landing, protected navigation, and responsive auth layout @critical", asyn
     })).toBeVisible();
     await expect(page.locator("#live-demo")).toBeVisible();
   });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("button", { name: "ورود با کد", exact: true }).click();
+  await expect(page.getByRole("textbox", { name: "کد ورود" }).last()).toBeVisible();
+  await expectNoOverflow(page);
+  await page.setViewportSize({ width: 1280, height: 800 });
 
   await page.goto("/team");
   await expect(page.getByRole("heading", { name: "تیم ما", exact: true })).toBeVisible();

@@ -119,17 +119,33 @@ test("marketing routes are typed, module-owned, RTL-safe and historically accura
   assert.match(router, /modules\/marketing\/routes\/TeamRoute\.tsx/);
   assert.doesNotMatch(router, /pages\/(?:landing|team)\//);
 
+  const liveDemo = source("src/modules/marketing/ui/LandingLiveDemo.tsx");
+  const playground = source("src/modules/marketing/ui/LandingActivityPlayground.tsx");
+  const journey = source("src/modules/marketing/ui/LandingProductJourney.tsx");
+  const useCases = source("src/modules/marketing/ui/LandingUseCaseShowcase.tsx");
+  const indexCss = source("src/index.css");
+
   assert.match(landing, /dir="rtl"/);
   assert.match(landing, /aria-label="کد ورود"/);
   assert.match(landing, /dir="ltr"/);
   assert.match(landing, /prefers-reduced-motion: reduce/);
   assert.match(landing, /LandingLiveDemo/);
+  assert.match(landing, /LandingActivityPlayground/);
+  assert.match(landing, /LandingProductJourney/);
+  assert.match(landing, /LandingUseCaseShowcase/);
   assert.match(landing, /\^\[A-Z0-9\]\{5,12\}\$/);
-  assert.match(landing, /نمونه زنده را امتحان کنید/);
-  assert.match(source("src/modules/marketing/ui/LandingLiveDemo.tsx"), /aria-live="polite"/);
-  assert.match(source("src/modules/marketing/ui/LandingLiveDemo.tsx"), /prefers-reduced-motion: reduce/);
+  assert.match(landing, /همین حالا امتحان کنید/);
+  assert.match(liveDemo, /aria-live="polite"/);
+  assert.doesNotMatch(liveDemo, /setInterval|setTimeout/);
+  assert.match(playground, /landing-word/);
+  assert.match(playground, /شروع دوباره|دوباره امتحان کنید/);
+  assert.match(journey, /create.*join.*live.*review/s);
+  assert.match(useCases, /classroom.*workshop.*event.*training/s);
+  assert.match(indexCss, /landing-response-pulse/);
+  assert.match(indexCss, /prefers-reduced-motion: reduce/);
+  assert.match(indexCss, /--font-brand: "Outfit", "Vazirmatn"/);
   assert.match(landing, /normalizeAccessCode/);
-  assert.doesNotMatch(landing, /پاسخ باز|پرسش زنده|Q&A/);
+  assert.doesNotMatch(landing, /پاسخ باز|پرسش زنده|سؤال زنده|Q&A/);
   assert.doesNotMatch(landing, /94%|۹۴٪/);
   assert.doesNotMatch(landing, /#[0-9a-fA-F]{3,8}/);
 

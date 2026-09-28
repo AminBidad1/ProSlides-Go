@@ -21,6 +21,19 @@ test("landing desktop visual baseline", async ({ page }) => {
   });
 });
 
+test("landing mobile visual baseline", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await settleVisualSurface(page);
+
+  await expect(page).toHaveScreenshot("landing-mobile.png", {
+    fullPage: true,
+    animations: "disabled",
+    caret: "hide",
+    maxDiffPixelRatio: 0.002,
+  });
+});
+
 test("authentication mobile visual baseline", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/auth");

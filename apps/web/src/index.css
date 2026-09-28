@@ -2,7 +2,7 @@
 
 @theme {
   --font-sans: "Vazirmatn", "Segoe UI", sans-serif;
-  --font-brand: "Outfit", "Segoe UI", sans-serif;
+  --font-brand: "Outfit", "Vazirmatn", "Segoe UI", sans-serif;
 
   --color-canvas: #f8fafc;
   --color-surface: #ffffff;
@@ -324,29 +324,31 @@ textarea::placeholder {
   }
 }
 
-/* Marketing landing motion communicates live state and continuity. */
-@keyframes landingLivePulse {
-  0%,
+/* Marketing landing motion is event-driven and never changes informational
+   content indefinitely on its own. */
+@keyframes landingResponsePulse {
+  0% {
+    opacity: 0;
+    transform: translateX(12px) scale(0.7);
+  }
+  20% {
+    opacity: 1;
+  }
   100% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-success) 34%, transparent);
+    opacity: 0;
+    transform: translateX(-20px) scale(1);
+  }
+}
+
+@keyframes landingWordEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+  100% {
+    opacity: 1;
     transform: scale(1);
   }
-  50% {
-    box-shadow: 0 0 0 7px transparent;
-    transform: scale(1.08);
-  }
-}
-
-@keyframes landingFloat {
-  0%,
-  100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-}
-
-@keyframes landingWordBreathe {
-  0%,
-  100% { transform: scale(1); }
-  50% { transform: scale(1.035); }
 }
 
 .landing-ambient {
@@ -361,20 +363,12 @@ textarea::placeholder {
   filter: blur(28px);
 }
 
-.landing-live-dot {
-  animation: landingLivePulse 1.8s var(--ease-interface) infinite;
+.landing-response-pulse {
+  animation: landingResponsePulse 380ms var(--ease-interface) both;
 }
 
-.landing-float-card {
-  animation: landingFloat 4.6s var(--ease-interface) infinite;
-}
-
-.landing-word-chip {
-  animation: landingWordBreathe 4.2s var(--ease-interface) infinite;
-}
-
-.landing-word-chip:nth-child(2n) {
-  animation-delay: -1.4s;
+.landing-word-enter {
+  animation: landingWordEnter 260ms var(--ease-interface) both;
 }
 
 .landing-dark-glow {
@@ -384,9 +378,8 @@ textarea::placeholder {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .landing-live-dot,
-  .landing-float-card,
-  .landing-word-chip {
+  .landing-response-pulse,
+  .landing-word-enter {
     animation: none !important;
   }
 }

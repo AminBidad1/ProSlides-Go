@@ -126,6 +126,33 @@ Route/editor transitions may use platform/React transition capabilities where
 appropriate; richer live effects may use a motion library behind the route
 boundary. All effects require reduced-motion behavior.
 
+## Marketing landing experience
+
+The public landing page demonstrates the product rather than competing on a
+speculative feature count.
+
+- The core story is `create -> join -> live interaction -> review`.
+- The hero contains one clear participant-to-Stage interaction. Broader activity
+  variety belongs in a later playground instead of competing with the first
+  product message.
+- Marketing claims stay within shipped product capability. Future Session
+  channels such as Q&A are not marketed as current features.
+- Demo values are deterministic fixtures and are labelled as demo/sample data.
+  They must not resemble real customer or usage proof.
+- Informational counts/results do not update indefinitely on their own. Motion is
+  event-driven and normally follows user input; reduced-motion users receive the
+  same state change without path/scale choreography.
+- Marketing product proof should be derived from the real Editor, participant,
+  Stage and Report vocabulary without importing heavy application routes into
+  the landing bundle. Stable deterministic captures or lightweight
+  product-derived scenes are preferred.
+- Desktop may use sticky product storytelling only while native scrolling remains
+  untouched. Mobile uses a linear layout; no scroll hijacking is allowed.
+- Trust content uses verifiable product facts until real customer evidence exists.
+  Never invent customer logos, participation rates, testimonials or usage totals.
+- The public landing has deterministic visual regression anchors for desktop and
+  mobile when the design is intentionally stable.
+
 ## Browser acceptance
 
 Critical browser flows are part of the required pull-request gate and are
