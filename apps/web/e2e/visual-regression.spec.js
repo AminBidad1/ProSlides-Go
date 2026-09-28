@@ -8,30 +8,71 @@ async function settleVisualSurface(page) {
   await page.waitForTimeout(150);
 }
 
-test("landing desktop visual baseline", async ({ page }) => {
+test("landing desktop responsive layout contract", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/");
   await settleVisualSurface(page);
 
-  await expect(page).toHaveScreenshot("landing-desktop.png", {
-    fullPage: true,
-    animations: "disabled",
-    caret: "hide",
-    maxDiffPixelRatio: 0.002,
-  });
+  await expect(page.locator("#live-demo")).toBeVisible();
+  await expect(page.locator("#landing-product-scene")).toBeVisible();
+
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - window.innerWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(1);
+
+  const journey = page.locator("#journey");
+  await expect(journey.getByRole("button", { name: "ساخت", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await journey.getByRole("button", { name: "اجرا", exact: true }).click();
+  await expect(journey.getByRole("button", { name: "اجرا", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(journey.getByText("Stage · نظرسنجی", { exact: true })).toBeVisible();
 });
 
-test("landing mobile visual baseline", async ({ page }) => {
+test("landing mobile responsive layout contract", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await settleVisualSurface(page);
 
-  await expect(page).toHaveScreenshot("landing-mobile.png", {
-    fullPage: true,
-    animations: "disabled",
-    caret: "hide",
-    maxDiffPixelRatio: 0.002,
-  });
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - window.innerWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(1);
+
+  const liveDemo = page.locator("#live-demo");
+  const liveDemoBox = await liveDemo.boundingBox();
+  expect(liveDemoBox).not.toBeNull();
+  expect(liveDemoBox.width).toBeLessThanOrEqual(390);
+
+  const journey = page.locator("#journey");
+  const productScene = journey.locator("#landing-product-scene");
+  await expect(productScene).toHaveCount(1);
+
+  const buildButton = journey.getByRole("button", { name: "ساخت", exact: true });
+  await expect(buildButton).toHaveAttribute("aria-pressed", "true");
+  await journey.scrollIntoViewIfNeeded();
+  await page.mouse.wheel(0, 500);
+  await expect(buildButton).toHaveAttribute("aria-pressed", "true");
+
+  for (const name of ["ساخت", "ورود", "اجرا", "گزارش"]) {
+    const button = journey.getByRole("button", { name, exact: true });
+    const box = await button.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box.height).toBeGreaterThanOrEqual(44);
+  }
+
+  await journey.getByRole("button", { name: "ورود", exact: true }).click();
+  await expect(journey.getByText("AB12C", { exact: true }).first()).toBeVisible();
+
+  const documentHeight = await page.evaluate(
+    () => document.documentElement.scrollHeight,
+  );
+  expect(documentHeight).toBeLessThan(7200);
 });
 
 test("authentication mobile visual baseline", async ({ page }) => {

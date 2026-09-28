@@ -349,7 +349,7 @@ export default function LandingRoute() {
         ) : null}
       </header>
 
-      <main className="relative mx-auto flex max-w-6xl flex-col gap-24 px-4 pb-20 pt-12 sm:px-6 md:gap-32 md:pt-16">
+      <main className="relative mx-auto flex max-w-6xl flex-col gap-20 px-4 pb-16 pt-9 sm:px-6 md:gap-28 md:pb-20 md:pt-16">
         <div
           className="landing-ambient pointer-events-none absolute inset-x-0 top-0 -z-10 h-[44rem]"
           aria-hidden="true"
@@ -416,9 +416,9 @@ export default function LandingRoute() {
 
         <section id="activities" className="scroll-mt-32">
           <SectionHeader
-            eyebrow="فعالیت‌ها را لمس کنید"
-            title="تعامل فقط یک شکل ندارد"
-            description="بعد از اینکه جریان اصلی را دیدید، سه فعالیت فعلی را خودتان امتحان کنید. ابر واژه عمداً پیش‌فرض است تا تجربه‌ای متفاوت از Poll بالای صفحه ببینید."
+            eyebrow="فعالیت‌های اصلی"
+            title="برای هر لحظه، یک نوع مشارکت"
+            description="سه نمونه کوتاه کافی است تا تفاوت فعالیت‌ها را ببینید؛ تعامل واقعی را همان دمو ابتدای صفحه نگه داشته‌ایم تا مسیر صفحه شلوغ نشود."
           />
           <div className="mt-10">
             <LandingActivityPlayground />
@@ -427,9 +427,9 @@ export default function LandingRoute() {
 
         <section id="audience" className="scroll-mt-32">
           <SectionHeader
-            eyebrow="سناریو عوض می‌شود، منطق مشارکت نه"
+            eyebrow="کاربردها"
             title="برای کلاس، جلسه، رویداد و آموزش"
-            description="نوع فعالیت متناسب با موقعیت تغییر می‌کند، اما مسیر برای مخاطب ساده می‌ماند: ورود با کد، پاسخ از موبایل و نتیجه روی Stage."
+            description="نوع فعالیت با موقعیت تغییر می‌کند، اما مسیر مخاطب همان است: ورود با کد، پاسخ از موبایل و مشاهده نتیجه روی Stage."
           />
           <LandingUseCaseShowcase />
         </section>

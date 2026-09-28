@@ -132,9 +132,9 @@ The public landing page demonstrates the product rather than competing on a
 speculative feature count.
 
 - The core story is `create -> join -> live interaction -> review`.
-- The hero contains one clear participant-to-Stage interaction. Broader activity
-  variety belongs in a later playground instead of competing with the first
-  product message.
+- The hero contains the one primary participant-to-Stage interaction. Broader
+  activity variety is shown later as compact product previews instead of asking
+  the visitor to complete several separate mini-app interactions.
 - Marketing claims stay within shipped product capability. Future Session
   channels such as Q&A are not marketed as current features.
 - Demo values are deterministic fixtures and are labelled as demo/sample data.
@@ -146,12 +146,17 @@ speculative feature count.
   Stage and Report vocabulary without importing heavy application routes into
   the landing bundle. Stable deterministic captures or lightweight
   product-derived scenes are preferred.
-- Desktop may use sticky product storytelling only while native scrolling remains
-  untouched. Mobile uses a linear layout; no scroll hijacking is allowed.
+- Product walkthrough scenes change only from explicit visitor controls, never
+  from scroll position. Mobile renders one active scene at a time so product
+  proof stays readable without multiplying page length or compressing desktop
+  layouts into a narrow viewport.
 - Trust content uses verifiable product facts until real customer evidence exists.
   Never invent customer logos, participation rates, testimonials or usage totals.
-- The public landing has deterministic visual regression anchors for desktop and
-  mobile when the design is intentionally stable.
+- While the public landing is still being refined, browser coverage protects
+  responsive layout contracts directly: no horizontal overflow, explicit-only
+  journey changes, one active product scene and usable touch targets. Full-page
+  screenshot baselines are reserved for landing states stable enough that pixel
+  diffs add signal rather than snapshot churn.
 
 ## Browser acceptance
 

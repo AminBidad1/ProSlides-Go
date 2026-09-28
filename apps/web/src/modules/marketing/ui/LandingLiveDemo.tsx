@@ -1,34 +1,25 @@
 import { Check, RotateCcw } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 const OPTIONS = ["مشارکت مخاطب", "محتوای تصویری", "ریتم ارائه"] as const;
-const INITIAL_VOTES = [49, 34, 22] as const;
+const STAGE_VALUES = [46, 32, 22] as const;
+const SAMPLE_RESPONSES = 105;
 
 export default function LandingLiveDemo() {
-  const [votes, setVotes] = useState<number[]>([...INITIAL_VOTES]);
   const [selected, setSelected] = useState<number | null>(null);
   const [pulseKey, setPulseKey] = useState(0);
-
-  const total = useMemo(
-    () => votes.reduce((sum, value) => sum + value, 0),
-    [votes],
-  );
 
   const answer = (index: number) => {
     if (selected !== null) return;
     setSelected(index);
-    setVotes((current) =>
-      current.map((value, itemIndex) =>
-        itemIndex === index ? value + 1 : value,
-      ),
-    );
     setPulseKey((value) => value + 1);
   };
 
   const reset = () => {
-    setVotes([...INITIAL_VOTES]);
     setSelected(null);
   };
+
+  const total = SAMPLE_RESPONSES + (selected === null ? 0 : 1);
 
   return (
     <section
@@ -41,12 +32,12 @@ export default function LandingLiveDemo() {
         aria-hidden="true"
       />
 
-      <div className="overflow-hidden rounded-[30px] border border-border-subtle bg-surface shadow-panel">
+      <div className="overflow-hidden rounded-[28px] border border-border-subtle bg-surface shadow-panel sm:rounded-[30px]">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-4 py-3 sm:px-5">
           <div>
-            <p className="text-xs font-black text-brand">دموی تعاملی</p>
+            <p className="text-xs font-black text-brand">دموی زنده</p>
             <h2 id="landing-demo-title" className="mt-1 text-sm font-black text-content">
-              یک پاسخ بدهید و اثرش را روی Stage ببینید
+              یک پاسخ بفرستید و رسیدنش به Stage را ببینید
             </h2>
           </div>
           <span className="rounded-full bg-canvas px-3 py-1.5 text-xs font-semibold text-content-muted">
@@ -54,64 +45,87 @@ export default function LandingLiveDemo() {
           </span>
         </div>
 
-        <div
-          className="grid items-stretch gap-4 p-4 sm:p-5 lg:grid-cols-[1fr_2.75rem_13rem]"
-          dir="ltr"
-        >
+        <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[1fr_12.5rem]" dir="ltr">
           <div
-            className="rounded-2xl border border-border-subtle bg-content p-5 text-content-inverse shadow-sm"
+            className="relative overflow-hidden rounded-2xl border border-border-subtle bg-content p-4 text-content-inverse shadow-sm sm:p-5"
             dir="rtl"
           >
             <div className="flex items-center justify-between gap-3">
               <span className="text-xs font-black text-brand-border">نمای Stage</span>
-              <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/80">
-                نتیجه زنده
+              <span
+                className={[
+                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold transition",
+                  selected === null
+                    ? "bg-white/10 text-white/75"
+                    : "bg-brand-soft text-brand-ink",
+                ].join(" ")}
+              >
+                {selected !== null ? (
+                  <span
+                    key={pulseKey}
+                    className="landing-response-pulse size-2 rounded-full bg-brand"
+                    aria-hidden="true"
+                  />
+                ) : null}
+                {selected === null ? "نتیجه زنده" : "پاسخ شما رسید"}
               </span>
             </div>
+
             <h3 className="mt-4 text-lg font-black leading-8">
               چه چیزی یک ارائه را به‌یادماندنی‌تر می‌کند؟
             </h3>
 
             <div className="mt-5 space-y-3">
               {OPTIONS.map((option, index) => {
-                const percent = Math.round((votes[index] / total) * 100);
+                const active = selected === index;
+                const value = STAGE_VALUES[index];
                 return (
-                  <div key={option}>
-                    <div className="flex items-center justify-between gap-4 text-xs font-semibold">
-                      <span>{option}</span>
+                  <div
+                    key={option}
+                    className={[
+                      "rounded-xl border p-3 transition",
+                      active
+                        ? "border-brand-border bg-white/10"
+                        : "border-transparent",
+                    ].join(" ")}
+                  >
+                    <div className="flex items-center justify-between gap-3 text-xs font-semibold">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="truncate">{option}</span>
+                        {active ? (
+                          <span className="shrink-0 rounded-full bg-brand px-2 py-0.5 text-[10px] font-black text-content-inverse">
+                            پاسخ شما
+                          </span>
+                        ) : null}
+                      </span>
                       <span className="font-brand text-white/70" dir="ltr">
-                        {percent.toLocaleString("fa-IR")}٪
+                        {value.toLocaleString("fa-IR")}٪
                       </span>
                     </div>
-                    <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-white/10">
+                    <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white/10">
                       <span
-                        className="block h-full origin-right rounded-full bg-brand-border transition-transform duration-500 motion-reduce:transition-none"
-                        style={{ transform: `scaleX(${percent / 100})` }}
+                        className={[
+                          "block h-full origin-right rounded-full transition-all duration-500 motion-reduce:transition-none",
+                          active ? "bg-brand" : "bg-brand-border",
+                        ].join(" ")}
+                        style={{
+                          transform: `scaleX(${value / 100})`,
+                        }}
                       />
                     </div>
                   </div>
                 );
               })}
             </div>
+
+            <p className="mt-4 text-[11px] leading-6 text-white/60">
+              درصدها فقط تصویر یک جمع بزرگ‌اند؛ برای اینکه اثر پاسخ خودتان گم نشود،
+              Stage همان گزینه را با برچسب «پاسخ شما» مشخص می‌کند.
+            </p>
           </div>
 
           <div
-            className="relative hidden items-center justify-center lg:flex"
-            aria-hidden="true"
-          >
-            <div className="absolute inset-x-1 h-px bg-brand-border" />
-            {pulseKey > 0 ? (
-              <span
-                key={pulseKey}
-                className="landing-response-pulse absolute size-3 rounded-full bg-brand shadow-[0_0_0_6px_var(--color-brand-soft)]"
-              />
-            ) : (
-              <span className="size-2 rounded-full bg-brand-border" />
-            )}
-          </div>
-
-          <div
-            className="rounded-[1.6rem] border border-border-subtle bg-canvas p-3 shadow-sm"
+            className="rounded-[1.5rem] border border-border-subtle bg-canvas p-3 shadow-sm sm:p-4"
             dir="rtl"
           >
             <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-content/10" aria-hidden="true" />
@@ -137,7 +151,7 @@ export default function LandingLiveDemo() {
                     ].join(" ")}
                   >
                     <span>{option}</span>
-                    {active ? <Check className="size-4" aria-hidden="true" /> : null}
+                    {active ? <Check className="size-4 shrink-0" aria-hidden="true" /> : null}
                   </button>
                 );
               })}
@@ -153,8 +167,8 @@ export default function LandingLiveDemo() {
             className="text-xs font-semibold text-brand-ink"
           >
             {selected === null
-              ? "پاسخ‌ها فقط وقتی شما تعامل می‌کنید تغییر می‌کنند."
-              : "پاسخ شما ثبت شد؛ Stage همان لحظه تغییر کرد."}
+              ? "یک پاسخ نمونه بفرستید؛ هیچ چیزی خودکار تغییر نمی‌کند."
+              : "پاسخ شما ثبت شد و روی Stage به‌صورت مشخص دیده می‌شود."}
           </p>
 
           {selected !== null ? (

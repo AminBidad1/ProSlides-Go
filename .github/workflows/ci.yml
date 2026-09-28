@@ -267,6 +267,7 @@ jobs:
         working-directory: apps/web
         run: npm run test:e2e:critical -- --repeat-each=2
 
+
       - name: Verify ended-session live event retention
         shell: bash
         env:

@@ -188,10 +188,13 @@ test("landing, protected navigation, and responsive auth layout @critical", asyn
   await expect(liveDemo.getByRole("status")).toContainText("پاسخ شما ثبت شد");
   await expect(liveDemo.getByRole("button", { name: "دوباره امتحان کنید" })).toBeVisible();
 
-  await page.getByRole("button", { name: "ابر واژه", exact: true }).click();
-  await page.getByLabel("واژه شما").fill("خلاقیت");
-  await page.getByRole("button", { name: "ارسال", exact: true }).click();
-  await expect(page.getByRole("status").filter({ hasText: "خلاقیت" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "ابر واژه", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "کوئیز", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "نظرسنجی", exact: true })).toBeVisible();
+
+  const journey = page.locator("#journey");
+  await journey.getByRole("button", { name: "ورود", exact: true }).click();
+  await expect(journey.getByText("AB12C", { exact: true }).first()).toBeVisible();
   await expectAccessible(page, "landing-interactions");
 
   const joinCode = page.getByRole("textbox", { name: "کد ورود" });

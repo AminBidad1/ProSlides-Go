@@ -137,10 +137,13 @@ test("marketing routes are typed, module-owned, RTL-safe and historically accura
   assert.match(landing, /همین حالا امتحان کنید/);
   assert.match(liveDemo, /aria-live="polite"/);
   assert.doesNotMatch(liveDemo, /setInterval|setTimeout/);
-  assert.match(playground, /landing-word/);
-  assert.match(playground, /شروع دوباره|دوباره امتحان کنید/);
+  assert.match(playground, /ابر واژه.*کوئیز.*نظرسنجی/s);
+  assert.doesNotMatch(playground, /useState|onClick/);
   assert.match(journey, /create.*join.*live.*review/s);
-  assert.match(useCases, /classroom.*workshop.*event.*training/s);
+  assert.match(journey, /aria-label="مراحل کار با ProSlides"/);
+  assert.doesNotMatch(journey, /IntersectionObserver/);
+  assert.match(useCases, /کلاس و دانشگاه.*جلسه و کارگاه.*رویداد و وبینار.*آموزش سازمانی/s);
+  assert.doesNotMatch(useCases, /useState|onClick/);
   assert.match(indexCss, /landing-response-pulse/);
   assert.match(indexCss, /prefers-reduced-motion: reduce/);
   assert.match(indexCss, /--font-brand: "Outfit", "Vazirmatn"/);

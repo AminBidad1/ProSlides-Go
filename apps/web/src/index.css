@@ -340,17 +340,6 @@ textarea::placeholder {
   }
 }
 
-@keyframes landingWordEnter {
-  0% {
-    opacity: 0;
-    transform: scale(0.82);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
 .landing-ambient {
   background:
     radial-gradient(circle at 20% 24%, color-mix(in srgb, var(--color-info-soft) 88%, transparent), transparent 30%),
@@ -367,10 +356,6 @@ textarea::placeholder {
   animation: landingResponsePulse 380ms var(--ease-interface) both;
 }
 
-.landing-word-enter {
-  animation: landingWordEnter 260ms var(--ease-interface) both;
-}
-
 .landing-dark-glow {
   background:
     radial-gradient(circle at 15% 10%, color-mix(in srgb, var(--color-brand) 24%, transparent), transparent 30%),
@@ -378,8 +363,7 @@ textarea::placeholder {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .landing-response-pulse,
-  .landing-word-enter {
+  .landing-response-pulse {
     animation: none !important;
   }
 }
