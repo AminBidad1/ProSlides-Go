@@ -915,7 +915,7 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
       .getByRole("button", { name: "نمایش رتبه‌بندی کلی روی Stage" })
       .click();
     await expect(
-      participant.getByRole("heading", { name: "جایگاه فعلی شما" }),
+      participant.getByRole("heading", { name: "امتیاز فعلی شما" }),
     ).toBeVisible({
       timeout: 15000,
     });
@@ -925,17 +925,21 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
         .getByText("شرکت‌کننده تست", { exact: true }),
     ).toBeVisible({ timeout: 15000 });
     await expect(
-      stage.getByRole("heading", { name: "جدول امتیازات" }),
+      stage.getByRole("heading", { name: "شرکت‌کننده تست" }),
     ).toBeVisible({ timeout: 15000 });
-    await expect(stage.getByText("شرکت‌کننده تست")).toBeVisible();
+    await expect(
+      stage.getByText("جلسه فعلاً یک شرکت‌کننده دارد؛ رتبه رقابتی نمایش داده نمی‌شود."),
+    ).toBeVisible();
 
     await participant.reload();
     await expect(
-      participant.getByRole("heading", { name: "جایگاه فعلی شما" }),
+      participant.getByRole("heading", { name: "امتیاز فعلی شما" }),
     ).toBeVisible({
       timeout: 15000,
     });
-    await expect(participant.getByText("امتیاز شما")).toBeVisible();
+    await expect(
+      participant.getByText("امتیاز شما", { exact: true }),
+    ).toBeVisible();
 
     await backstage
       .getByRole("button", { name: "بستن پشت‌صحنه" })
@@ -991,7 +995,7 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
     ).toBeVisible({ timeout: 15000 });
     await expect(participant.getByText("جلسه پایان یافت")).toBeVisible();
     await expect(
-      stage.getByRole("heading", { name: "برترین‌های این رقابت" }),
+      stage.getByRole("heading", { name: "نتیجه انفرادی" }),
     ).toBeVisible({ timeout: 15000 });
     await expect(stage.getByText("شرکت‌کننده تست")).toBeVisible();
     await expectNoOverflow(participant);

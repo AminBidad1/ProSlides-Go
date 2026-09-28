@@ -369,11 +369,32 @@ function StageActivity({
 function RankingList({
   ranking,
   title,
+  participantCount,
 }: {
   ranking: StageRankingEntry[];
   title: string;
+  participantCount: number;
 }) {
   const maxScore = Math.max(0, ...ranking.map((entry) => Number(entry.score || 0)));
+  if (participantCount === 1 && ranking.length > 0) {
+    const player = ranking[0];
+    return (
+      <main className="grid min-h-screen place-items-center px-5 pb-10 pt-24 text-center sm:px-8">
+        <section className="w-full max-w-xl rounded-[2.5rem] border border-white/10 bg-[color:var(--live-surface)] p-9 shadow-2xl backdrop-blur">
+          <p className="text-sm font-bold text-[color:var(--live-muted)]">امتیاز فعلی</p>
+          <h1 className="mt-3 truncate text-4xl font-black sm:text-5xl" dir="auto">
+            {player.display_name}
+          </h1>
+          <p className="mt-7 text-6xl font-black">
+            {Math.round(player.score).toLocaleString("fa-IR")}
+          </p>
+          <p className="mt-3 text-[color:var(--live-muted)]">
+            جلسه فعلاً یک شرکت‌کننده دارد؛ رتبه رقابتی نمایش داده نمی‌شود.
+          </p>
+        </section>
+      </main>
+    );
+  }
   return (
     <main className="min-h-screen px-5 pb-10 pt-24 sm:px-8">
       <section className="mx-auto max-w-6xl">
@@ -435,6 +456,40 @@ function StageFinal({ snapshot }: { snapshot: StageSnapshot }) {
   }
 
   const podium = snapshot.ranking.slice(0, 3);
+  const isSolo = snapshot.participant_count === 1;
+  if (snapshot.participant_count === 0 || podium.length === 0) {
+    return (
+      <main className="grid min-h-screen place-items-center px-5 pb-10 pt-24 text-center">
+        <section className="max-w-2xl rounded-[2.5rem] border border-white/10 bg-[color:var(--live-surface)] p-10 shadow-2xl backdrop-blur">
+          <p className="text-sm font-bold text-[color:var(--live-muted)]">جلسه پایان یافت</p>
+          <h1 className="mt-3 text-4xl font-black sm:text-6xl">هنوز نتیجه‌ای ثبت نشده است</h1>
+          <p className="mt-5 leading-8 text-[color:var(--live-muted)]">
+            این جلسه فعالیت امتیازی داشت، اما هیچ شرکت‌کننده‌ای برای رتبه‌بندی نهایی وجود ندارد.
+          </p>
+        </section>
+      </main>
+    );
+  }
+  if (isSolo) {
+    const player = podium[0];
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center px-5 pb-10 pt-24 text-center">
+        <p className="text-sm font-bold text-[color:var(--live-muted)]">پایان جلسه</p>
+        <h1 className="mt-2 text-4xl font-black sm:text-6xl">نتیجه انفرادی</h1>
+        <section className="mt-10 w-full max-w-xl rounded-[2.5rem] border border-white/15 bg-[color:var(--live-surface)] p-10 shadow-2xl backdrop-blur">
+          <div className="text-5xl" aria-hidden="true">🎯</div>
+          <h2 className="mt-5 truncate text-3xl font-black" dir="auto">{player.display_name}</h2>
+          <p className="mt-5 text-5xl font-black">
+            {Math.round(player.score).toLocaleString("fa-IR")} امتیاز
+          </p>
+          <p className="mt-4 leading-8 text-[color:var(--live-muted)]">
+            چون جلسه یک شرکت‌کننده داشت، رتبه و سکو نمایش داده نمی‌شود.
+          </p>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-5 pb-10 pt-24 text-center">
       <p className="text-sm font-bold text-[color:var(--live-muted)]">پایان جلسه</p>
@@ -486,7 +541,13 @@ export default function StageRoute() {
   } else if (snapshot.session.state === "ended") {
     body = <StageFinal snapshot={snapshot} />;
   } else if (snapshot.session.stage_view === "overall_ranking") {
-    body = <RankingList ranking={snapshot.ranking} title="جدول امتیازات" />;
+    body = (
+      <RankingList
+        ranking={snapshot.ranking}
+        title="جدول امتیازات"
+        participantCount={snapshot.participant_count}
+      />
+    );
   } else if (item?.item_kind === "content") {
     body = <StageContent content={item} />;
   } else if (item?.item_kind === "activity") {

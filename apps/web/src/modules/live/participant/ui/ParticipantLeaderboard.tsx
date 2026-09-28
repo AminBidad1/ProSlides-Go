@@ -15,6 +15,7 @@ export function ParticipantLeaderboard({
   const rank = participant?.rank;
   const score = Number(participant?.score ?? 0);
   const totalParticipants = Number(participantCount || 0);
+  const isSolo = totalParticipants === 1;
 
   return (
     <ParticipantShell quiz={quiz} connected={isStreamConnected} showConnection>
@@ -23,21 +24,32 @@ export function ParticipantLeaderboard({
           <p className="text-sm font-bold text-[color:var(--live-muted)]">
             رتبه‌بندی کلی
           </p>
-          <h1 className="mt-2 text-3xl font-black">جایگاه فعلی شما</h1>
-          {rank != null && totalParticipants > 0 ? (
+          <h1 className="mt-2 text-3xl font-black">
+            {isSolo ? "امتیاز فعلی شما" : "جایگاه فعلی شما"}
+          </h1>
+          {!isSolo && rank != null && totalParticipants > 0 ? (
             <p className="mt-2 text-sm text-[color:var(--live-muted)]">
               رتبه {Number(rank).toLocaleString("fa-IR")} از {totalParticipants.toLocaleString("fa-IR")} شرکت‌کننده
             </p>
           ) : null}
 
-          <div className="mx-auto my-7 grid h-36 w-36 place-items-center rounded-full border-4 border-white/25 bg-white/10 shadow-2xl">
-            <div>
-              <p className="text-sm text-[color:var(--live-muted)]">رتبه</p>
-              <p className="text-5xl font-black">
-                {rank == null ? "—" : Number(rank).toLocaleString("fa-IR")}
+          {isSolo ? (
+            <div className="mx-auto my-7 max-w-md rounded-3xl border border-[color:var(--live-border)] bg-white/10 p-5">
+              <p className="font-black">فعلاً تنها شرکت‌کننده جلسه هستید</p>
+              <p className="mt-2 text-sm leading-7 text-[color:var(--live-muted)]">
+                امتیاز شما ثبت می‌شود. با ورود شرکت‌کننده دیگری، جایگاه رقابتی هم نمایش داده خواهد شد.
               </p>
             </div>
-          </div>
+          ) : (
+            <div className="mx-auto my-7 grid h-36 w-36 place-items-center rounded-full border-4 border-white/25 bg-white/10 shadow-2xl">
+              <div>
+                <p className="text-sm text-[color:var(--live-muted)]">رتبه</p>
+                <p className="text-5xl font-black">
+                  {rank == null ? "—" : Number(rank).toLocaleString("fa-IR")}
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl border border-[color:var(--live-border)] bg-white/10 p-4">

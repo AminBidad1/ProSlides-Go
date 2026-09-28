@@ -280,12 +280,19 @@ Mid-session overall leaderboard:
 - top 5 by default;
 - cumulative score;
 - clear Persian title "رتبه‌بندی کلی";
+- with exactly one participant, show the current individual score instead of a
+  one-row competitive ranking;
 - never a giant participant table.
 
 Final Stage result:
 
 - podium emphasis for leading participants;
-- distinct visual treatment from the mid-session leaderboard.
+- distinct visual treatment from the mid-session leaderboard;
+- when no participants exist, end with an explicit no-result state rather than
+  an empty podium;
+- when exactly one participant exists, preserve the score but render an
+  individual result instead of a meaningless one-person podium or competitive
+  rank.
 
 ### Participant device
 
@@ -294,7 +301,9 @@ After a scored Activity, prioritize personal feedback:
 - correct/incorrect where disclosure is allowed;
 - score gained;
 - cumulative personal score;
-- own current rank when an overall ranking exists.
+- own current rank when an overall ranking exists;
+- when the Session has exactly one participant, show the personal score without
+  presenting "rank 1 of 1" as a competitive achievement.
 
 Do not render the full public leaderboard on a small participant screen by
 default.

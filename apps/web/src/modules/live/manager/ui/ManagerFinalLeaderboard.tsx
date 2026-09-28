@@ -48,6 +48,7 @@ export function ManagerFinalLeaderboard({
   const {
     isStreamConnected,
     snapshot,
+    participantCount,
     loadRoster,
   } = useLiveSession();
   const requestedFinalRoster = useRef(false);
@@ -89,6 +90,7 @@ export function ManagerFinalLeaderboard({
       return { player, rank };
     });
   }, [leaderboardData]);
+  const isSolo = Number(participantCount || 0) === 1;
   const theme = participantTheme(quiz);
 
   return (
@@ -129,7 +131,7 @@ export function ManagerFinalLeaderboard({
           animate={{ opacity: 1, y: 0 }}
           className="mt-2 text-4xl font-black md:text-6xl"
         >
-          برترین‌های این رقابت
+          {isSolo ? "نتیجه انفرادی" : "برترین‌های این رقابت"}
         </Motion.h1>
 
         {!hasScoring ? (
@@ -137,6 +139,19 @@ export function ManagerFinalLeaderboard({
             <h2 className="text-2xl font-black text-white">جلسه پایان یافت</h2>
             <p className="mt-3 leading-7">
               این جلسه فعالیت امتیازی نداشت؛ بنابراین رتبه‌بندی نهایی یا سکو نمایش داده نمی‌شود.
+            </p>
+          </div>
+        ) : isSolo && players.length > 0 ? (
+          <div className="mt-10 w-full max-w-xl rounded-[2rem] border border-white/15 bg-black/20 px-8 py-10 backdrop-blur">
+            <p className="text-sm text-white/65">نتیجه انفرادی</p>
+            <h2 className="mt-2 truncate text-3xl font-black" dir="auto">
+              {players[0].player.name}
+            </h2>
+            <p className="mt-5 text-5xl font-black">
+              {Math.round(players[0].player.total_points || 0).toLocaleString("fa-IR")}
+            </p>
+            <p className="mt-2 text-sm text-white/65">
+              امتیاز نهایی؛ رتبه رقابتی برای جلسه تک‌نفره نمایش داده نمی‌شود.
             </p>
           </div>
         ) : players.length > 0 ? (
