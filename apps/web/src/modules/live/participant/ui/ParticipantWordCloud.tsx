@@ -382,16 +382,27 @@ export function ParticipantWordCloud({
       ? Math.max(0, Math.min(100, (timeLeft / totalSeconds) * 100))
       : 0;
   const urgent = timeLeft > 0 && timeLeft <= 10;
+  const responseIsAuthoritative =
+    submitState === "sent" ||
+    (snapshot?.role === "participant" && snapshot.has_responded === true);
+  const connectionNotice =
+    !isStreamConnected && connectionError
+      ? responseIsAuthoritative
+        ? "پاسخ شما ثبت شده است؛ ارتباط زنده در حال بازیابی است."
+        : submitState === "retryable" || Boolean(normalized)
+          ? "ارتباط زنده ناپایدار است؛ پاسخ شما روی این دستگاه حفظ شده است."
+          : "ارتباط زنده ناپایدار است؛ در حال بازیابی ارتباط هستیم."
+      : null;
 
   return (
     <ParticipantShell quiz={quiz} connected={isStreamConnected} showConnection>
       <section className="flex flex-1 flex-col py-3">
-        {!isStreamConnected && connectionError ? (
+        {connectionNotice ? (
           <p
             role="alert"
             className="mb-3 rounded-xl border border-amber-300/30 bg-amber-950/25 px-4 py-3 text-center text-sm"
           >
-            ارتباط زنده ناپایدار است؛ متن شما روی این دستگاه حفظ شده است.
+            {connectionNotice}
           </p>
         ) : null}
 
@@ -399,7 +410,7 @@ export function ParticipantWordCloud({
           <div className="flex items-center justify-between gap-3 text-sm font-bold text-[color:var(--live-muted)]">
             <span>
               {entryBased
-                ? `تا ${maxWords.toLocaleString("fa-IR")} عبارت کوتاه، هر کدام در یک خط`
+                ? `تا ${maxWords.toLocaleString("fa-IR")} عبارت کوتاه`
                 : `تا ${maxWords.toLocaleString("fa-IR")} واژه بنویسید`}
             </span>
             <span

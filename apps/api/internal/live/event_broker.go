@@ -135,8 +135,12 @@ func (b *EventBroker) run(c context.Context, session string, stream *eventStream
 		case <-ticker.C:
 			if reconciler, ok := b.store.(deadlineReconciler); ok {
 				if _, err := reconciler.ReconcileDeadline(c, session); err != nil {
-					b.fail(session, stream)
-					return
+					// Deadline reconciliation is a side effect of the shared
+					// poller, not the transport itself. A reconciliation-specific
+					// failure must not tear down otherwise healthy SSE streams.
+					// The normal Events read below still detects broader database
+					// failures and closes subscribers when recovery is required.
+					b.databaseFailures.Add(1)
 				}
 			}
 			for {

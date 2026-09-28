@@ -372,6 +372,67 @@ describe("live React lifecycle resilience", () => {
     );
   });
 
+  test("submitted Word Cloud answer does not claim local-only preservation during stream recovery", async () => {
+    const submitAnswer = vi.fn(async () => true);
+    const question: LegacyQuestionSlide = {
+      item_kind: "activity",
+      slide_id: "cloud-sent-recovery",
+      question_id: "cloud-sent-recovery",
+      run_id: 10,
+      activity_kind: "text",
+      question_text: "ابر ثبت‌شده",
+      question_time: 60,
+      remaining_seconds: 60,
+      response_aggregation: "entry_frequency",
+      response_max_entry_length: 30,
+      response_max_entries: 3,
+    };
+    const connected = baseContext({
+      submitAnswer,
+      isConnected: true,
+      isStreamConnected: true,
+    });
+    const disconnected = baseContext({
+      submitAnswer,
+      isConnected: true,
+      isStreamConnected: false,
+      connectionError: "event_stream_stalled",
+    });
+
+    const view = render(
+      <LiveSessionContext.Provider value={connected}>
+        <ParticipantWordCloud
+          roomId="session-a"
+          question={question}
+          quiz={quiz}
+        />
+      </LiveSessionContext.Provider>,
+    );
+
+    fireEvent.change(screen.getByRole("textbox", { name: "عبارت ۱" }), {
+      target: { value: "هوش مصنوعی" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "ثبت پاسخ" }));
+    await screen.findByText("پاسخ ثبت شد ✓");
+
+    view.rerender(
+      <LiveSessionContext.Provider value={disconnected}>
+        <ParticipantWordCloud
+          roomId="session-a"
+          question={question}
+          quiz={quiz}
+        />
+      </LiveSessionContext.Provider>,
+    );
+
+    expect(
+      screen.getByText("پاسخ شما ثبت شده است؛ ارتباط زنده در حال بازیابی است."),
+    ).not.toBeNull();
+    expect(
+      screen.queryByText(/پاسخ شما روی این دستگاه حفظ شده است/),
+    ).toBeNull();
+  });
+
   test("pending Word Cloud answer retries when the live stream recovers", async () => {
     const submitAnswer = vi
       .fn()

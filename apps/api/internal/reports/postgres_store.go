@@ -298,7 +298,7 @@ func (s *PostgresStore) ActivityReport(ctx context.Context, presentationID, sess
 			query = `WITH expanded AS (
 				SELECT
 					term.value AS aggregation_key,
-					answer.answer->'entries'->>(term.ordinality-1) AS display_value,
+					answer.answer->'entries'->>((term.ordinality-1)::int) AS display_value,
 					answer.submitted_at,
 					answer.id
 				FROM answers answer

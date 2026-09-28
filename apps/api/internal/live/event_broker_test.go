@@ -3,6 +3,7 @@ package live
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"sync"
 	"testing"
@@ -10,9 +11,11 @@ import (
 )
 
 type brokerStore struct {
-	mu            sync.Mutex
-	events        []Event
-	eventCalls    int
+	mu             sync.Mutex
+	events         []Event
+	eventCalls     int
+	reconcileCalls int
+	reconcileErr   error
 	latestCalls   int
 	latestStarted chan struct{}
 	latestRelease chan struct{}
@@ -35,6 +38,13 @@ func (s *brokerStore) LatestEventID(context.Context, string) (int64, error) {
 		return 0, nil
 	}
 	return events[len(events)-1].EventID, nil
+}
+
+func (s *brokerStore) ReconcileDeadline(context.Context, string) (bool, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.reconcileCalls++
+	return false, s.reconcileErr
 }
 
 func (s *brokerStore) Events(_ context.Context, _ string, after int64, limit int) ([]Event, error) {
@@ -132,6 +142,46 @@ func TestEventBrokerSingleFlightsConcurrentSessionInitialization(t *testing.T) {
 	store.mu.Unlock()
 	if latestCalls != 1 {
 		t.Fatalf("LatestEventID calls=%d, want 1", latestCalls)
+	}
+}
+
+func TestEventBrokerKeepsSubscribersWhenOnlyDeadlineReconciliationFails(t *testing.T) {
+	store := &brokerStore{reconcileErr: errors.New("word cloud aggregation failed")}
+	broker := NewEventBroker(store, 5*time.Millisecond, 4)
+	subscriber, cancel, err := broker.Subscribe(context.Background(), "session")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cancel()
+
+	store.append(Event{
+		EventID:    1,
+		SessionID:  "session",
+		Name:       "session.state_changed",
+		OccurredAt: time.Now(),
+	})
+
+	select {
+	case event, open := <-subscriber:
+		if !open {
+			t.Fatal("subscriber was disconnected by reconciliation-only failure")
+		}
+		if event.EventID != 1 {
+			t.Fatalf("received event %d, want 1", event.EventID)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("healthy event stream stalled after reconciliation failure")
+	}
+
+	store.mu.Lock()
+	reconcileCalls := store.reconcileCalls
+	eventCalls := store.eventCalls
+	store.mu.Unlock()
+	if reconcileCalls == 0 {
+		t.Fatal("deadline reconciliation was not exercised")
+	}
+	if eventCalls == 0 {
+		t.Fatal("event polling stopped after reconciliation failure")
 	}
 }
 

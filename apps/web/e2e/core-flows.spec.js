@@ -97,6 +97,32 @@ function choiceActivityContent({
   };
 }
 
+
+function wordCloudActivityContent({
+  title = "",
+  text,
+  durationSeconds = 60,
+  maxEntries = 3,
+  maxEntryLength = 30,
+}) {
+  return {
+    schema_version: 1,
+    activity_kind: "text",
+    prompt: { title, text, image_url: "" },
+    response: {
+      max_entry_length: maxEntryLength,
+      max_entries: maxEntries,
+    },
+    evaluation: { mode: "none" },
+    scoring: { mode: "none" },
+    timing: { duration_seconds: durationSeconds },
+    results: {
+      aggregation: "entry_frequency",
+      show_overall_leaderboard_after: false,
+    },
+  };
+}
+
 async function expectReportRouteReady(page, failures) {
   const backLink = page.getByLabel("بازگشت به پنل مدیریت");
 
@@ -539,6 +565,154 @@ test("mobile participant entry uses the public quiz theme", async ({ page }) => 
   expect(failures).toEqual([]);
 });
 
+
+test("entry Word Cloud closes and reveals without destabilizing live state @critical", async ({ page }) => {
+  test.setTimeout(60_000);
+  const failures = watchRuntime(page);
+  const unique = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const email = `word-cloud-live-${unique}@example.com`;
+  const activityContent = wordCloudActivityContent({
+    title: "جمع‌بندی",
+    text: "جلسه را با چند عبارت کوتاه توصیف کنید",
+  });
+
+  await page.goto("/signup");
+  await page.locator('input[name="email"]').fill(email);
+  await page.locator('input[name="password"]').fill("BrowserPass!42");
+  await page.locator('input[name="fullName"]').fill("Word Cloud Browser Test");
+  await page.locator('button[type="submit"]').click();
+  await expect(page).toHaveURL(/\/manager\/panel$/);
+
+  const result = await page.evaluate(async ({ activityContent }) => {
+    const cookieValue = (name) => {
+      const prefix = `${encodeURIComponent(name)}=`;
+      const item = document.cookie
+        .split("; ")
+        .find((part) => part.startsWith(prefix));
+      return item ? decodeURIComponent(item.slice(prefix.length)) : "";
+    };
+    const requestId = () => crypto.randomUUID();
+    const api = async (path, options = {}) => {
+      const headers = new Headers(options.headers || {});
+      headers.set("Content-Type", "application/json");
+      const csrf = cookieValue("proslides_csrf");
+      if (csrf) headers.set("X-CSRF-Token", csrf);
+      const response = await fetch(`/api/v1${path}`, {
+        method: options.method || "GET",
+        credentials: "include",
+        headers,
+        body:
+          options.body === undefined
+            ? undefined
+            : JSON.stringify(options.body),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(
+          `${options.method || "GET"} ${path}: ${response.status} ${JSON.stringify(body)}`,
+        );
+      }
+      return body;
+    };
+
+    const presentation = await api("/presentations", {
+      method: "POST",
+      body: { title: "Word Cloud close regression", settings: {} },
+    });
+    const slide = await api(`/presentations/${presentation.id}/slides`, {
+      method: "POST",
+      headers: { "If-Match": String(presentation.revision) },
+      body: {
+        position: 0,
+        kind: "activity",
+        content: activityContent,
+      },
+    });
+    const session = await api("/live/sessions", {
+      method: "POST",
+      body: {
+        request_id: requestId(),
+        presentation_id: presentation.id,
+      },
+    });
+    const started = await api(`/live/sessions/${session.id}/actions`, {
+      method: "POST",
+      body: {
+        request_id: requestId(),
+        expected_state_version: session.state_version,
+        action: "start",
+      },
+    });
+    const presented = await api(`/live/sessions/${session.id}/actions`, {
+      method: "POST",
+      body: {
+        request_id: requestId(),
+        expected_state_version: started.state_version,
+        action: "present_item",
+        item_id: slide.id,
+      },
+    });
+
+    await api(`/live/sessions/${session.id}/join`, {
+      method: "POST",
+      body: {
+        request_id: requestId(),
+        display_name: "Word Cloud Participant",
+        avatar: "W",
+      },
+    });
+    await api(`/live/sessions/${session.id}/answers`, {
+      method: "POST",
+      body: {
+        request_id: requestId(),
+        activity_item_id: slide.id,
+        response: {
+          entries: ["هوش مصنوعی", "کار تیمی"],
+        },
+      },
+    });
+
+    const closed = await api(`/live/sessions/${session.id}/actions`, {
+      method: "POST",
+      body: {
+        request_id: requestId(),
+        expected_state_version: presented.state_version,
+        action: "close_activity",
+      },
+    });
+    const revealed = await api(`/live/sessions/${session.id}/actions`, {
+      method: "POST",
+      body: {
+        request_id: requestId(),
+        expected_state_version: closed.state_version,
+        action: "reveal_activity",
+      },
+    });
+    const snapshot = await api(
+      `/live/sessions/${session.id}/snapshot?viewer=manager`,
+    );
+
+    return {
+      closedPhase: closed.activity_phase,
+      revealedPhase: revealed.activity_phase,
+      snapshotPhase: snapshot.session.activity_phase,
+      responseCount: snapshot.activity_result?.response_count ?? 0,
+      terms: snapshot.activity_result?.payload?.terms ?? [],
+    };
+  }, { activityContent });
+
+  expect(result.closedPhase).toBe("closed");
+  expect(result.revealedPhase).toBe("revealed");
+  expect(result.snapshotPhase).toBe("revealed");
+  expect(result.responseCount).toBe(1);
+  expect(result.terms).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ text: "هوش مصنوعی", count: 1 }),
+      expect.objectContaining({ text: "کار تیمی", count: 1 }),
+    ]),
+  );
+  expect(failures).toEqual([]);
+});
 
 test("manager, audience Stage, and participant complete the live lifecycle with reconnect @critical", async ({ browser }) => {
   test.setTimeout(150000);

@@ -278,7 +278,7 @@ jobs:
       - name: Repeat critical browser E2E
         if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
         working-directory: apps/web
-        run: npm run test:e2e:critical -- --repeat-each=2
+        run: npm run test:e2e:critical -- --repeat-each=2 --workers=1
 
 
       - name: Verify ended-session live event retention

@@ -1220,7 +1220,7 @@ func activityResult(c context.Context, tx pgx.Tx, session, item string) (Activit
 			query = `WITH expanded AS (
 				SELECT
 					term.value AS aggregation_key,
-					a.answer->'entries'->>(term.ordinality-1) AS display_value,
+					a.answer->'entries'->>((term.ordinality-1)::int) AS display_value,
 					a.submitted_at,
 					a.id
 				FROM answers a
