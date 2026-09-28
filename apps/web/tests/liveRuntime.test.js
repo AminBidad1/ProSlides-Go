@@ -159,11 +159,14 @@ test("manager bootstrap loads frozen session items once and preserves them acros
   });
 
   assert.equal(await runtime.connect("presentation"), true);
-  assert.deepEqual(snapshotOptions[0], { includeItems: true });
+  assert.deepEqual(snapshotOptions[0], {
+    includeItems: true,
+    viewer: "manager",
+  });
   assert.equal(runtime.getState().snapshot.items[0].id, "cloud-1");
 
   assert.equal(await runtime.sendManagerAction("close_activity"), true);
-  assert.equal(snapshotOptions.at(-1), undefined);
+  assert.deepEqual(snapshotOptions.at(-1), { viewer: "manager" });
   assert.equal(runtime.getState().snapshot.items[0].id, "cloud-1");
 
   runtime.destroy();
@@ -333,6 +336,27 @@ test("a pre-command snapshot refresh cannot roll back a successful present_item"
       activityPhase: "revealed",
       activeItemId: "choice-1",
     }),
+    items: [
+      {
+        id: "cloud-1",
+        revision: 1,
+        position: 1,
+        kind: "activity",
+        content: {
+          schema_version: 1,
+          activity_kind: "text",
+          prompt: { title: "", text: "ابر واژه", image_url: "" },
+          response: { max_length: 80, max_words: 3 },
+          evaluation: { mode: "none" },
+          scoring: { mode: "none" },
+          timing: { duration_seconds: 30 },
+          results: {
+            aggregation: "word_frequency",
+            show_overall_leaderboard_after: false,
+          },
+        },
+      },
+    ],
     active_item: {
       id: "choice-1",
       position: 0,
@@ -424,7 +448,7 @@ test("a pre-command snapshot refresh cannot roll back a successful present_item"
   await new Promise((resolve) => setTimeout(resolve, 0));
   assert.equal(runtime.getState().snapshot.session.state_version, 3);
   assert.equal(runtime.getState().snapshot.session.active_item_id, "cloud-1");
-  assert.equal(runtime.getState().snapshot.active_item, undefined);
+  assert.equal(runtime.getState().snapshot.active_item.id, "cloud-1");
 
   resolveStaleRefresh();
   assert.equal(await navigation, true);
@@ -677,6 +701,42 @@ test("stream reconnect refreshes the snapshot before resuming from the new curso
   runtime.destroy();
 });
 
+test("SSE reconnect honors server Retry-After before retrying", async () => {
+  const delays = [];
+  let streamAttempts = 0;
+  const runtime = createLiveRuntime("manager", {
+    storage: null,
+    random: () => 0.5,
+    sleep: async (milliseconds) => {
+      delays.push(milliseconds);
+    },
+    transport: {
+      createRequestId: () => "00000000-0000-4000-8000-000000000099",
+      createLiveSession: async () => managerSession("session"),
+      getLiveSnapshot: async () =>
+        managerSnapshot("session", { eventId: 5, stateVersion: 1 }),
+      getRosterPage: async (_id, order) => emptyRoster(order),
+      streamLiveEvents: async (_id, _lastEventId, options) => {
+        assert.equal(options.viewer, "manager");
+        streamAttempts += 1;
+        if (streamAttempts === 1) {
+          throw new LiveAPIError(429, "event_stream_unavailable", 3_500);
+        }
+        return parkedStream(_id, _lastEventId, options);
+      },
+    },
+  });
+
+  assert.equal(await runtime.connect("presentation"), true);
+  for (let index = 0; index < 20 && streamAttempts < 2; index += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  assert.equal(delays[0], 3_500);
+  assert.equal(streamAttempts >= 2, true);
+  runtime.destroy();
+});
+
 test("presence updates preserve score ordering while the manager is on a leaderboard", async () => {
   let onEvent = null;
   const rosterOrders = [];
@@ -719,7 +779,7 @@ test("presence updates preserve score ordering while the manager is on a leaderb
     session_id: "session",
     state_version: 3,
     name: "presence.updated",
-    payload: { participant_delta: 1 },
+    payload: { participant_delta: 1, active_participant_delta: 1 },
     occurred_at: new Date().toISOString(),
   });
 
@@ -1086,6 +1146,8 @@ test("participant answer HTTP remains available while SSE is reconnecting", asyn
     last_event_id: 2,
   };
 
+  const participantSnapshotOptions = [];
+  const participantStreamViewers = [];
   const runtime = createLiveRuntime("player", {
     storage: null,
     sleep: async (_milliseconds, signal) =>
@@ -1099,8 +1161,12 @@ test("participant answer HTTP remains available while SSE is reconnecting", asyn
         display_name: "Player",
         avatar: "🙂",
       }),
-      getLiveSnapshot: async () => participantSnapshot,
-      streamLiveEvents: async () => {
+      getLiveSnapshot: async (_id, options) => {
+        participantSnapshotOptions.push(options);
+        return participantSnapshot;
+      },
+      streamLiveEvents: async (_id, _lastEventId, options) => {
+        participantStreamViewers.push(options.viewer);
         throw new Error("sse temporarily unavailable");
       },
       submitLiveAnswer: async (_id, input) => {
@@ -1150,6 +1216,10 @@ test("participant answer HTTP remains available while SSE is reconnecting", asyn
     true,
   );
   assert.equal(submissions, 1);
+  assert.deepEqual(participantSnapshotOptions.at(-1), {
+    viewer: "participant",
+  });
+  assert.equal(participantStreamViewers[0], "participant");
   assert.equal(runtime.getState().isConnected, true);
   assert.equal(runtime.getState().isStreamConnected, false);
   assert.equal(

@@ -463,7 +463,7 @@ export interface paths {
         };
         /**
          * Subscribe to server-sent live events.
-         * @description Requires either the manager session cookie or participant cookie. Replays events after Last-Event-ID and sends heartbeats. event_id orders delivery; state_version prevents state regressions, but aggregate events with a newer event_id may share the same state_version and must still be applied.
+         * @description Requires an authorized manager or participant credential. First-party clients declare viewer explicitly so a browser that owns both cookies receives the intended projection. stage requires manager ownership but filters manager-private activity results. Replays events after Last-Event-ID and sends heartbeats. event_id orders delivery; state_version prevents state regressions, but aggregate events with a newer event_id may share the same state_version and must still be applied.
          */
         get: operations["subscribeLiveSession"];
         put?: never;
@@ -1078,6 +1078,8 @@ export interface components {
             has_responded: boolean;
             personal_activity_result?: components["schemas"]["PersonalActivityResult"];
             participant_count: number;
+            /** @description Number of participants with at least one currently open SSE connection. */
+            active_participant_count: number;
             /** @description True when the frozen Session contains at least one scored Activity. */
             has_scoring: boolean;
             /** Format: int64 */
@@ -1102,6 +1104,8 @@ export interface components {
                 [key: string]: unknown;
             };
             participant_count: number;
+            /** @description Number of participants with at least one currently open SSE connection. */
+            active_participant_count: number;
             has_scoring: boolean;
             /** Format: int64 */
             last_event_id: number;
@@ -1128,6 +1132,8 @@ export interface components {
             /** @description Immutable ordered Item definitions captured when the Session was created. Returned only when a manager requests include_items=true. */
             items?: components["schemas"]["Slide"][];
             participant_count: number;
+            /** @description Number of participants with at least one currently open SSE connection. */
+            active_participant_count: number;
             /** @description True when the frozen Session contains at least one scored Activity. */
             has_scoring: boolean;
             /** Format: int64 */
@@ -1191,8 +1197,10 @@ export interface components {
             reason?: "deadline_elapsed";
         };
         PresenceUpdatedPayload: {
-            /** @description Number of committed joins compacted into this event. Apply it to the authoritative participant_count from the latest snapshot. */
+            /** @description Signed change in committed Session participants. New joins increment it; connection churn leaves it at zero. */
             participant_delta: number;
+            /** @description Signed change in participants with at least one open SSE connection. Multiple tabs for the same participant are reference-counted. */
+            active_participant_delta: number;
         };
         WordFrequencyTerm: {
             text: string;
@@ -2172,7 +2180,10 @@ export interface operations {
     };
     subscribeLiveSession: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Explicit viewer projection. Omission is retained only for backward-compatible cookie negotiation. */
+                viewer?: "manager" | "participant" | "stage";
+            };
             header?: {
                 "Last-Event-ID"?: string;
             };
@@ -2183,7 +2194,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Versioned text/event-stream. Each data field is a LiveEventEnvelope. Event names are session.created, presence.updated, session.state_changed, activity.result_updated, and ranking.updated. activity.result_updated is emitted when an Activity closes but is delivered only to an authorized manager stream; participants learn the result from the authoritative revealed snapshot after session.state_changed. ranking.updated is emitted when the overall ranking is shown; individual responses and complete ranking rows are never broadcast. Managers fetch rows from the paginated roster endpoint. */
+            /** @description Versioned text/event-stream. Each data field is a LiveEventEnvelope. Event names are session.created, presence.updated, session.state_changed, activity.result_updated, and ranking.updated. activity.result_updated is emitted when an Activity closes but is delivered only to an authorized manager stream; participant and Stage streams learn the result from the authoritative revealed snapshot after session.state_changed. ranking.updated is emitted when the overall ranking is shown; individual responses and complete ranking rows are never broadcast. Managers fetch rows from the paginated roster endpoint. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2418,6 +2429,8 @@ export interface operations {
     getLiveSnapshot: {
         parameters: {
             query?: {
+                /** @description Explicit manager or participant projection. Omission is retained only for backward-compatible cookie negotiation. */
+                viewer?: "manager" | "participant";
                 /** @description Manager-only bootstrap hint that includes the frozen Session Item manifest. */
                 include_items?: boolean;
             };

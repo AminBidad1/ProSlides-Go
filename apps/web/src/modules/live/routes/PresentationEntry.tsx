@@ -100,7 +100,9 @@ function AccessCodeResolver() {
           }
 
           try {
-            const snapshot = await getLiveSnapshot(cached.session_id);
+            const snapshot = await getLiveSnapshot(cached.session_id, {
+              viewer: "participant",
+            });
             if (!active) return;
 
             if (snapshot.role !== "participant") {

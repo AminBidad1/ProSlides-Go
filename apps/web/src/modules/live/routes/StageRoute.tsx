@@ -124,7 +124,7 @@ function StageLobby({ snapshot }: { snapshot: StageSnapshot }) {
           </div>
         </div>
         <p className="mt-7 text-xl font-bold">
-          {snapshot.participant_count.toLocaleString("fa-IR")} نفر آماده‌اند
+          {(snapshot.active_participant_count ?? snapshot.participant_count).toLocaleString("fa-IR")} نفر آنلاین‌اند
         </p>
       </section>
     </main>

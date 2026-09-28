@@ -408,7 +408,9 @@ export class LiveRuntime {
       let next: LiveSnapshot;
       do {
         this.refreshDirty = false;
-        next = await this.transport.getLiveSnapshot(id);
+        next = await this.transport.getLiveSnapshot(id, {
+          viewer: this.role === "manager" ? "manager" : "participant",
+        });
         if (
           id !== this.selectedSessionId ||
           lifecycleVersion !== this.lifecycleVersion
@@ -465,19 +467,32 @@ export class LiveRuntime {
     this.cursor = advanceLiveCursor(this.cursor, event);
 
     if (event.name === "presence.updated") {
-      const delta = Number(recordPayload(event.payload).participant_delta || 0);
-      if (delta !== 0 && this.snapshotValue) {
+      const payload = recordPayload(event.payload);
+      const participantDelta = Number(payload.participant_delta || 0);
+      const activeParticipantDelta = Number(
+        payload.active_participant_delta || 0,
+      );
+      if (
+        this.snapshotValue &&
+        (participantDelta !== 0 || activeParticipantDelta !== 0)
+      ) {
         const next: LiveSnapshot = {
           ...this.snapshotValue,
           participant_count: Math.max(
             0,
-            Number(this.snapshotValue.participant_count || 0) + delta,
+            Number(this.snapshotValue.participant_count || 0) +
+              participantDelta,
+          ),
+          active_participant_count: Math.max(
+            0,
+            Number(this.snapshotValue.active_participant_count || 0) +
+              activeParticipantDelta,
           ),
         };
         this.snapshotValue = next;
         this.publish({ snapshot: next });
       }
-      if (this.role === "manager") {
+      if (this.role === "manager" && participantDelta !== 0) {
         const snapshot = this.snapshotValue;
         const order: RosterOrder =
           snapshot &&
@@ -531,6 +546,7 @@ export class LiveRuntime {
             this.publish({ connectionError: null });
             await this.transport.streamLiveEvents(id, this.cursor.eventId, {
               signal: controller.signal,
+              viewer: this.role === "manager" ? "manager" : "participant",
               onOpen: () => {
                 if (id !== this.selectedSessionId) return;
                 this.publish({
@@ -566,7 +582,12 @@ export class LiveRuntime {
             }
 
             const jitter = 0.75 + this.random() * 0.5;
-            await this.sleep!(Math.round(retry * jitter), controller.signal);
+            const retryAfterMs =
+              error instanceof LiveAPIError ? error.retryAfterMs ?? 0 : 0;
+            await this.sleep!(
+              Math.max(Math.round(retry * jitter), retryAfterMs),
+              controller.signal,
+            );
             retry = Math.min(retry * 2, 10_000);
             if (controller.signal.aborted || id !== this.selectedSessionId) {
               return;
@@ -616,6 +637,7 @@ export class LiveRuntime {
       lifecycleVersion = this.lifecycleVersion;
       let next = await this.transport.getLiveSnapshot(created.id, {
         includeItems: true,
+        viewer: "manager",
       });
       if (!isCurrent()) return false;
 
@@ -737,12 +759,25 @@ export class LiveRuntime {
       String(current.session.active_item_id ?? "") !==
       String(result.active_item_id ?? "");
 
+    const frozenActiveItem =
+      activeItemChanged && result.active_item_id
+        ? current.items?.find(
+            (item) => String(item.id) === String(result.active_item_id),
+          )
+        : undefined;
     const next: LiveSnapshot = {
       ...current,
       session: result,
       ...(activeItemChanged
         ? {
-            active_item: undefined,
+            active_item: frozenActiveItem
+              ? {
+                  id: frozenActiveItem.id,
+                  position: frozenActiveItem.position,
+                  kind: frozenActiveItem.kind,
+                  content: frozenActiveItem.content,
+                }
+              : undefined,
             activity_result: undefined,
             activity_top_performers: [],
           }

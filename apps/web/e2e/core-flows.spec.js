@@ -502,11 +502,14 @@ test("mobile participant entry uses the public quiz theme", async ({ page }) => 
 test("manager, audience Stage, and participant complete the live lifecycle with reconnect @critical", async ({ browser }) => {
   test.setTimeout(150000);
 
+  // Keep all live surfaces in one browser context on purpose. This models a
+  // presenter testing the participant experience in another tab, so manager
+  // and participant cookies coexist and every surface must request its own
+  // explicit viewer projection.
   const managerContext = await browser.newContext();
-  const participantContext = await browser.newContext();
   const manager = await managerContext.newPage();
   const stage = await managerContext.newPage();
-  const participant = await participantContext.newPage();
+  const participant = await managerContext.newPage();
   await manager.setViewportSize({ width: 1280, height: 800 });
   await stage.setViewportSize({ width: 1440, height: 900 });
   await participant.setViewportSize({ width: 390, height: 844 });
@@ -976,7 +979,6 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
     expect(stageFailures).toEqual([]);
     expect(participantFailures).toEqual([]);
   } finally {
-    await participantContext.close();
     await managerContext.close();
   }
 });

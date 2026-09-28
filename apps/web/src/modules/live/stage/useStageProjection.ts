@@ -111,10 +111,30 @@ export function useStageProjection(sessionId: string | undefined) {
     cursorRef.current = { eventId: 0, stateVersion: 0 };
     setState(initialState);
 
-    const refresh = async () => {
-      const next = await getLiveStageSnapshot(sessionId, controller.signal);
-      if (!controller.signal.aborted) applySnapshot(next);
-      return next;
+    let refreshPromise: Promise<StageSnapshot> | null = null;
+    let refreshDirty = false;
+    const refresh = async (): Promise<StageSnapshot> => {
+      if (refreshPromise) {
+        refreshDirty = true;
+        return refreshPromise;
+      }
+
+      const task = (async () => {
+        let next: StageSnapshot;
+        do {
+          refreshDirty = false;
+          next = await getLiveStageSnapshot(sessionId, controller.signal);
+          if (!controller.signal.aborted) applySnapshot(next);
+        } while (refreshDirty && !controller.signal.aborted);
+        return next;
+      })();
+
+      refreshPromise = task;
+      try {
+        return await task;
+      } finally {
+        if (refreshPromise === task) refreshPromise = null;
+      }
     };
 
     const handleEvent = (event: LiveEvent) => {
@@ -122,12 +142,27 @@ export function useStageProjection(sessionId: string | undefined) {
       cursorRef.current = advanceLiveCursor(cursorRef.current, event);
 
       if (event.name === "presence.updated") {
-        const delta = Number(eventRecord(event.payload).participant_delta ?? 0);
+        const payload = eventRecord(event.payload);
+        const participantDelta = Number(payload.participant_delta ?? 0);
+        const activeParticipantDelta = Number(
+          payload.active_participant_delta ?? 0,
+        );
         const current = snapshotRef.current;
-        if (current && Number.isFinite(delta) && delta !== 0) {
+        if (
+          current &&
+          (participantDelta !== 0 || activeParticipantDelta !== 0)
+        ) {
           const next = {
             ...current,
-            participant_count: Math.max(0, current.participant_count + delta),
+            participant_count: Math.max(
+              0,
+              current.participant_count + participantDelta,
+            ),
+            active_participant_count: Math.max(
+              0,
+              (current.active_participant_count ?? current.participant_count) +
+                activeParticipantDelta,
+            ),
           };
           snapshotRef.current = next;
           setState((value) => ({ ...value, snapshot: next }));
@@ -164,7 +199,9 @@ export function useStageProjection(sessionId: string | undefined) {
             error: errorText(error),
           });
           if (isFatalStageError(error)) return;
-          await wait(retry, controller.signal);
+          const retryAfterMs =
+            error instanceof LiveAPIError ? error.retryAfterMs ?? 0 : 0;
+          await wait(Math.max(retry, retryAfterMs), controller.signal);
           retry = Math.min(retry * 2, 10_000);
         }
       }
@@ -178,6 +215,7 @@ export function useStageProjection(sessionId: string | undefined) {
           }));
           await streamLiveEvents(sessionId, cursorRef.current.eventId, {
             signal: controller.signal,
+            viewer: "stage",
             onOpen: () => {
               if (controller.signal.aborted) return;
               setState((value) => ({
@@ -200,7 +238,9 @@ export function useStageProjection(sessionId: string | undefined) {
           }));
           if (isFatalStageError(error)) return;
 
-          await wait(retry, controller.signal);
+          const retryAfterMs =
+            error instanceof LiveAPIError ? error.retryAfterMs ?? 0 : 0;
+          await wait(Math.max(retry, retryAfterMs), controller.signal);
           retry = Math.min(retry * 2, 10_000);
           if (controller.signal.aborted) return;
 

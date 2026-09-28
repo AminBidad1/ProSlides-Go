@@ -62,6 +62,7 @@ interface ParticipantSnapshot {
   has_responded: boolean;
   personal_activity_result?: PersonalActivityResult;
   participant_count: number;
+  active_participant_count?: number;
   has_scoring: boolean;
   last_event_id: number;
   activity_result?: ActivityResult;
@@ -82,6 +83,7 @@ interface ManagerSnapshot {
   active_item?: Record<string, unknown>;
   items?: PresentationSlide[];
   participant_count: number;
+  active_participant_count?: number;
   has_scoring: boolean;
   last_event_id: number;
   activity_result?: ActivityResult;
@@ -102,6 +104,7 @@ export interface StageSnapshot {
   presentation: LiveSessionLocator["presentation"];
   active_item?: Record<string, unknown>;
   participant_count: number;
+  active_participant_count?: number;
   has_scoring: boolean;
   last_event_id: number;
   activity_result?: ActivityResult;

@@ -107,6 +107,7 @@ type ParticipantSnapshot struct {
 	Participant            ParticipantWithScore    `json:"participant"`
 	HasResponded           bool                    `json:"has_responded"`
 	ParticipantCount       int                     `json:"participant_count"`
+	ActiveParticipantCount int                    `json:"active_participant_count"`
 	HasScoring             bool                    `json:"has_scoring"`
 	LastEventID            int64                   `json:"last_event_id"`
 	ActivityResult         *ActivityResult         `json:"activity_result,omitempty"`
@@ -128,6 +129,7 @@ type ManagerSnapshot struct {
 	ActiveItem            json.RawMessage        `json:"active_item,omitempty"`
 	Items                 *[]SessionItem         `json:"items,omitempty"`
 	ParticipantCount      int                    `json:"participant_count"`
+	ActiveParticipantCount int                  `json:"active_participant_count"`
 	HasScoring            bool                   `json:"has_scoring"`
 	LastEventID           int64                  `json:"last_event_id"`
 	ActivityResult        *ActivityResult        `json:"activity_result,omitempty"`
@@ -148,6 +150,7 @@ type StageSnapshot struct {
 	Presentation     PublicLivePresentation `json:"presentation"`
 	ActiveItem       json.RawMessage        `json:"active_item,omitempty"`
 	ParticipantCount int                    `json:"participant_count"`
+	ActiveParticipantCount int              `json:"active_participant_count"`
 	HasScoring       bool                   `json:"has_scoring"`
 	LastEventID      int64                  `json:"last_event_id"`
 	ActivityResult   *ActivityResult        `json:"activity_result,omitempty"`

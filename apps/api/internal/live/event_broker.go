@@ -207,19 +207,34 @@ func (b *EventBroker) Close() {
 func compactEvents(events []Event) []Event {
 	out := make([]Event, 0, len(events))
 	var pendingPresence *Event
-	presenceDelta := 0
+	participantDelta := 0
+	activeParticipantDelta := 0
 	flushPresence := func() {
 		if pendingPresence != nil {
-			pendingPresence.Payload, _ = json.Marshal(map[string]int{"participant_delta": presenceDelta})
+			pendingPresence.Payload, _ = json.Marshal(map[string]int{
+				"participant_delta":        participantDelta,
+				"active_participant_delta": activeParticipantDelta,
+			})
 			out = append(out, *pendingPresence)
 			pendingPresence = nil
-			presenceDelta = 0
+			participantDelta = 0
+			activeParticipantDelta = 0
 		}
 	}
 	for index := range events {
 		if events[index].Name == "presence.updated" {
+			var payload struct {
+				ParticipantDelta       int `json:"participant_delta"`
+				ActiveParticipantDelta int `json:"active_participant_delta"`
+			}
+			if err := json.Unmarshal(events[index].Payload, &payload); err != nil {
+				flushPresence()
+				out = append(out, events[index])
+				continue
+			}
 			pendingPresence = &events[index]
-			presenceDelta++
+			participantDelta += payload.ParticipantDelta
+			activeParticipantDelta += payload.ActiveParticipantDelta
 			continue
 		}
 		flushPresence()

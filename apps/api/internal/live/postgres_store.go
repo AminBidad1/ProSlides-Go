@@ -195,21 +195,69 @@ func (s *PostgresStore) Join(c context.Context, session, request, name, avatar s
 	return p, false, nil
 }
 func (s *PostgresStore) SetParticipantPresence(c context.Context, session string, hash []byte, disconnected bool) error {
-	if disconnected {
-		_, e := s.pool.Exec(c, `UPDATE participants
-			SET active_sse_connections=GREATEST(active_sse_connections-1,0),
-				disconnected_at=CASE
-					WHEN active_sse_connections<=1 THEN clock_timestamp()
-					ELSE NULL
-				END
-			WHERE session_id=$1 AND token_hash=$2`, session, hash)
+	tx, e := s.pool.BeginTx(c, pgx.TxOptions{})
+	if e != nil {
 		return e
 	}
-	_, e := s.pool.Exec(c, `UPDATE participants
-		SET active_sse_connections=active_sse_connections+1,
-			disconnected_at=NULL
-		WHERE session_id=$1 AND token_hash=$2`, session, hash)
-	return e
+	defer tx.Rollback(c)
+
+	var before, after int
+	if disconnected {
+		e = tx.QueryRow(c, `WITH current AS (
+				SELECT active_sse_connections
+				FROM participants
+				WHERE session_id=$1 AND token_hash=$2
+				FOR UPDATE
+			)
+			UPDATE participants AS p
+			SET active_sse_connections=GREATEST(current.active_sse_connections-1,0),
+				disconnected_at=CASE
+					WHEN current.active_sse_connections<=1 THEN clock_timestamp()
+					ELSE NULL
+				END
+			FROM current
+			WHERE p.session_id=$1 AND p.token_hash=$2
+			RETURNING current.active_sse_connections,p.active_sse_connections`, session, hash).Scan(&before, &after)
+	} else {
+		e = tx.QueryRow(c, `WITH current AS (
+				SELECT active_sse_connections
+				FROM participants
+				WHERE session_id=$1 AND token_hash=$2
+				FOR UPDATE
+			)
+			UPDATE participants AS p
+			SET active_sse_connections=current.active_sse_connections+1,
+				disconnected_at=NULL
+			FROM current
+			WHERE p.session_id=$1 AND p.token_hash=$2
+			RETURNING current.active_sse_connections,p.active_sse_connections`, session, hash).Scan(&before, &after)
+	}
+	if errors.Is(e, pgx.ErrNoRows) {
+		return ErrUnauthorized
+	}
+	if e != nil {
+		return e
+	}
+
+	activeDelta := 0
+	if before == 0 && after > 0 {
+		activeDelta = 1
+	} else if before > 0 && after == 0 {
+		activeDelta = -1
+	}
+	if activeDelta != 0 {
+		var stateVersion int64
+		if e = tx.QueryRow(c, `SELECT state_version FROM live_sessions WHERE id=$1`, session).Scan(&stateVersion); e != nil {
+			return mapPG(e)
+		}
+		if e = insertEvent(c, tx, session, stateVersion, "presence.updated", map[string]any{
+			"participant_delta": 0,
+			"active_participant_delta": activeDelta,
+		}); e != nil {
+			return e
+		}
+	}
+	return tx.Commit(c)
 }
 func (s *PostgresStore) ApplyAction(c context.Context, session, host, request string, expected int64, action, item string) (Session, bool, error) {
 	var out Session
@@ -587,6 +635,7 @@ func (s *PostgresStore) ParticipantSnapshot(c context.Context, session string, h
 			THEN 1+(SELECT count(*)::int FROM participants ranked WHERE ranked.session_id=p.session_id AND ranked.score>p.score)
 		END,
 		(SELECT count(*)::int FROM participants counted WHERE counted.session_id=l.id),
+		(SELECT count(*)::int FROM participants active WHERE active.session_id=l.id AND active.active_sse_connections>0),
 		EXISTS(
 			SELECT 1 FROM live_session_slides scored
 			WHERE scored.session_id=l.id
@@ -607,7 +656,7 @@ func (s *PostgresStore) ParticipantSnapshot(c context.Context, session string, h
 		WHERE l.id=$1 AND p.token_hash=$2`, session, hash).Scan(
 		&full.ID, &full.PresentationID, &full.HostID, &full.JoinCode, &full.State, &full.StateVersion, &full.ActiveItemID, &full.ActivityPhase, &full.StageView, &full.EndsAt, &full.RemainingSeconds,
 		&x.Participant.ID, &x.Participant.DisplayName, &x.Participant.Avatar, &x.Participant.Score, &x.Participant.Rank,
-		&x.ParticipantCount, &x.HasScoring, &x.LastEventID, &x.ActiveItem, &personalResultRaw,
+		&x.ParticipantCount, &x.ActiveParticipantCount, &x.HasScoring, &x.LastEventID, &x.ActiveItem, &personalResultRaw,
 	)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return x, ErrUnauthorized
@@ -672,6 +721,7 @@ func (s *PostgresStore) ManagerSnapshot(c context.Context, session, manager stri
 			ELSE '#ffffff'
 		END,
 		(SELECT count(*)::int FROM participants WHERE session_id=l.id),
+		(SELECT count(*)::int FROM participants active WHERE active.session_id=l.id AND active.active_sse_connections>0),
 		EXISTS(
 			SELECT 1 FROM live_session_slides scored
 			WHERE scored.session_id=l.id
@@ -687,7 +737,7 @@ func (s *PostgresStore) ManagerSnapshot(c context.Context, session, manager stri
 		&x.Session.ID, &x.Session.PresentationID, &x.Session.HostID, &x.Session.JoinCode, &x.Session.State, &x.Session.StateVersion, &x.Session.ActiveItemID, &x.Session.ActivityPhase, &x.Session.StageView, &x.Session.EndsAt, &x.Session.RemainingSeconds,
 		&x.Presentation.Title, &x.Presentation.BackgroundColor,
 		&x.Presentation.BackgroundImageURL, &x.Presentation.MusicURL,
-		&x.Presentation.TextColor, &x.ParticipantCount, &x.HasScoring,
+		&x.Presentation.TextColor, &x.ParticipantCount, &x.ActiveParticipantCount, &x.HasScoring,
 		&x.LastEventID, &x.ActiveItem,
 	)
 	if errors.Is(e, pgx.ErrNoRows) {
@@ -805,6 +855,7 @@ func (s *PostgresStore) StageSnapshot(c context.Context, session, manager string
 			ELSE '#ffffff'
 		END,
 		(SELECT count(*)::int FROM participants counted WHERE counted.session_id=l.id),
+		(SELECT count(*)::int FROM participants active WHERE active.session_id=l.id AND active.active_sse_connections>0),
 		EXISTS(
 			SELECT 1 FROM live_session_slides scored
 			WHERE scored.session_id=l.id
@@ -822,7 +873,7 @@ func (s *PostgresStore) StageSnapshot(c context.Context, session, manager string
 		&x.Session.EndsAt, &x.Session.RemainingSeconds, &x.JoinCode,
 		&x.Presentation.Title, &x.Presentation.BackgroundColor,
 		&x.Presentation.BackgroundImageURL, &x.Presentation.MusicURL,
-		&x.Presentation.TextColor, &x.ParticipantCount, &x.HasScoring,
+		&x.Presentation.TextColor, &x.ParticipantCount, &x.ActiveParticipantCount, &x.HasScoring,
 		&x.LastEventID, &x.ActiveItem,
 	)
 	if errors.Is(e, pgx.ErrNoRows) {

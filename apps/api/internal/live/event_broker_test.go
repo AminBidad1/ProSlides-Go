@@ -161,23 +161,31 @@ func TestEventBrokerDisconnectsSlowSubscriber(t *testing.T) {
 	}
 }
 
-func TestCompactEventsKeepsOnlyLatestPresenceInBurst(t *testing.T) {
+func TestCompactEventsKeepsLatestPresenceAndSumsSignedDeltas(t *testing.T) {
 	events := []Event{
-		{EventID: 1, Name: "presence.updated"},
-		{EventID: 2, Name: "presence.updated"},
+		{EventID: 1, Name: "presence.updated", Payload: json.RawMessage(`{"participant_delta":1,"active_participant_delta":0}`)},
+		{EventID: 2, Name: "presence.updated", Payload: json.RawMessage(`{"participant_delta":0,"active_participant_delta":1}`)},
 		{EventID: 3, Name: "session.state_changed"},
-		{EventID: 4, Name: "presence.updated"},
-		{EventID: 5, Name: "presence.updated"},
+		{EventID: 4, Name: "presence.updated", Payload: json.RawMessage(`{"participant_delta":0,"active_participant_delta":-1}`)},
+		{EventID: 5, Name: "presence.updated", Payload: json.RawMessage(`{"participant_delta":1,"active_participant_delta":1}`)},
 	}
 	got := compactEvents(events)
 	if len(got) != 3 || got[0].EventID != 2 || got[1].EventID != 3 || got[2].EventID != 5 {
 		t.Fatalf("unexpected compacted events: %#v", got)
 	}
-	var payload struct {
-		ParticipantDelta int `json:"participant_delta"`
+	var first struct {
+		ParticipantDelta       int `json:"participant_delta"`
+		ActiveParticipantDelta int `json:"active_participant_delta"`
 	}
-	if e := json.Unmarshal(got[0].Payload, &payload); e != nil || payload.ParticipantDelta != 2 {
-		t.Fatalf("unexpected presence payload: %s (%v)", got[0].Payload, e)
+	if e := json.Unmarshal(got[0].Payload, &first); e != nil || first.ParticipantDelta != 1 || first.ActiveParticipantDelta != 1 {
+		t.Fatalf("unexpected first presence payload: %s (%v)", got[0].Payload, e)
+	}
+	var second struct {
+		ParticipantDelta       int `json:"participant_delta"`
+		ActiveParticipantDelta int `json:"active_participant_delta"`
+	}
+	if e := json.Unmarshal(got[2].Payload, &second); e != nil || second.ParticipantDelta != 1 || second.ActiveParticipantDelta != 0 {
+		t.Fatalf("unexpected second presence payload: %s (%v)", got[2].Payload, e)
 	}
 }
 

@@ -20,14 +20,27 @@ const cookieValue = (name: string) => {
   return item ? decodeURIComponent(item.slice(prefix.length)) : "";
 };
 
+type LiveViewerRole = "manager" | "participant" | "stage";
+
+const retryAfterMilliseconds = (value: string | null): number | undefined => {
+  if (!value) return undefined;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds >= 0) return Math.ceil(seconds * 1000);
+  const at = Date.parse(value);
+  if (!Number.isFinite(at)) return undefined;
+  return Math.max(0, at - Date.now());
+};
+
 export class LiveAPIError extends Error {
   status: number;
   code: string;
-  constructor(status: number, code: string) {
+  retryAfterMs?: number;
+  constructor(status: number, code: string, retryAfterMs?: number) {
     super(code || `Live API request failed (${status})`);
     this.name = "LiveAPIError";
     this.status = status;
     this.code = code;
+    this.retryAfterMs = retryAfterMs;
   }
 }
 
@@ -61,7 +74,13 @@ const requestJSON = async <T>(path: string, init: RequestInit = {}, csrf = false
       signal: timeoutController.signal,
     });
     const payload = await response.json().catch(() => null);
-    if (!response.ok) throw new LiveAPIError(response.status, payload?.error || "live_api_error");
+    if (!response.ok) {
+      throw new LiveAPIError(
+        response.status,
+        payload?.error || "live_api_error",
+        retryAfterMilliseconds(response.headers.get("Retry-After")),
+      );
+    }
     return payload as T;
   } catch (error) {
     if (timedOut) throw new LiveAPIError(0, "network_timeout");
@@ -78,11 +97,14 @@ export const createLiveSession = (presentationId: string, requestId: string) => 
 export const resolveLiveSession = (joinCode: string) => requestJSON<LiveSessionLocator>(`live/sessions/resolve?join_code=${encodeURIComponent(joinCode)}`);
 export const getLiveSnapshot = (
   id: string,
-  options: { includeItems?: boolean } = {},
+  options: { includeItems?: boolean; viewer?: Exclude<LiveViewerRole, "stage"> } = {},
 ) => {
-  const query = options.includeItems ? "?include_items=true" : "";
+  const query = new URLSearchParams();
+  if (options.includeItems) query.set("include_items", "true");
+  if (options.viewer) query.set("viewer", options.viewer);
+  const suffix = query.size > 0 ? `?${query.toString()}` : "";
   return requestJSON<LiveSnapshot>(
-    `live/sessions/${encodeURIComponent(id)}/snapshot${query}`,
+    `live/sessions/${encodeURIComponent(id)}/snapshot${suffix}`,
   );
 };
 export const getLiveStageSnapshot = (id: string, signal?: AbortSignal) =>
@@ -118,15 +140,23 @@ export const streamLiveEvents = async (
     onOpen?: () => void;
     onEvent: (event: LiveEvent) => void;
     silenceTimeoutMs?: number;
+    viewer: LiveViewerRole;
   },
 ) => {
-  const response = await fetch(liveURL(`live/sessions/${encodeURIComponent(id)}/events`), {
+  const query = new URLSearchParams({ viewer: options.viewer });
+  const response = await fetch(liveURL(`live/sessions/${encodeURIComponent(id)}/events?${query.toString()}`), {
     headers: { Accept: "text/event-stream", "Last-Event-ID": String(lastEventId) },
     credentials: "include",
     cache: "no-store",
     signal: options.signal,
   });
-  if (!response.ok || !response.body) throw new LiveAPIError(response.status, "event_stream_unavailable");
+  if (!response.ok || !response.body) {
+    throw new LiveAPIError(
+      response.status,
+      "event_stream_unavailable",
+      retryAfterMilliseconds(response.headers.get("Retry-After")),
+    );
+  }
   options.onOpen?.();
 
   const reader = response.body.getReader();

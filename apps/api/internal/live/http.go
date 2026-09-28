@@ -189,6 +189,43 @@ func (h *HTTP) snapshot(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+
+	switch r.URL.Query().Get("viewer") {
+	case "manager":
+		u, e := h.manager(r, false)
+		if e != nil {
+			returnError(w, ErrUnauthorized)
+			return
+		}
+		x, e := h.service.ManagerSnapshot(r.Context(), sessionID, u.ID, includeItems)
+		if e != nil {
+			returnError(w, e)
+			return
+		}
+		writeJSON(w, http.StatusOK, x)
+		return
+	case "participant":
+		participant, e := r.Cookie("proslides_participant")
+		if e != nil {
+			returnError(w, ErrUnauthorized)
+			return
+		}
+		x, e := h.service.ParticipantSnapshot(r.Context(), sessionID, participant.Value)
+		if e != nil {
+			returnError(w, e)
+			return
+		}
+		writeJSON(w, http.StatusOK, x)
+		return
+	case "":
+		// Backward-compatible negotiation for older clients. First-party clients
+		// always declare a viewer role so mixed manager/participant cookies cannot
+		// silently select the wrong projection.
+	default:
+		returnError(w, ErrInvalid)
+		return
+	}
+
 	managerAuthenticated := false
 	if u, e := h.manager(r, false); e == nil {
 		managerAuthenticated = true
@@ -218,6 +255,7 @@ func (h *HTTP) snapshot(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, x)
 }
+
 func (h *HTTP) stage(w http.ResponseWriter, r *http.Request) {
 	r, cancel := h.bounded(r)
 	defer cancel()
@@ -269,41 +307,56 @@ type eventViewer struct {
 
 func (h *HTTP) eventViewer(r *http.Request) (eventViewer, error) {
 	sessionID := r.PathValue("sessionId")
-	if manager, err := h.manager(r, false); err == nil {
-		authErr := h.service.AuthorizeViewer(
-			r.Context(),
-			sessionID,
-			manager.ID,
-			"",
-		)
-		if authErr == nil {
-			return eventViewer{
-				role:             "manager",
-				rateLimitIdentity: "manager:" + manager.ID,
-			}, nil
+	viewerRole := r.URL.Query().Get("viewer")
+
+	managerViewer := func(role string) (eventViewer, error) {
+		manager, err := h.manager(r, false)
+		if err != nil {
+			return eventViewer{}, ErrUnauthorized
 		}
-		if !errors.Is(authErr, ErrUnauthorized) {
-			return eventViewer{}, authErr
+		if err = h.service.AuthorizeViewer(r.Context(), sessionID, manager.ID, ""); err != nil {
+			return eventViewer{}, err
 		}
+		return eventViewer{
+			role:             role,
+			rateLimitIdentity: role + ":" + manager.ID,
+		}, nil
+	}
+	participantViewer := func() (eventViewer, error) {
+		participant, err := r.Cookie("proslides_participant")
+		if err != nil {
+			return eventViewer{}, ErrUnauthorized
+		}
+		if err = h.service.AuthorizeViewer(r.Context(), sessionID, "", participant.Value); err != nil {
+			return eventViewer{}, err
+		}
+		return eventViewer{
+			role:             "participant",
+			rateLimitIdentity: "participant:" + participant.Value,
+			participantToken: participant.Value,
+		}, nil
 	}
 
-	participant, err := r.Cookie("proslides_participant")
-	if err != nil {
-		return eventViewer{}, ErrUnauthorized
+	switch viewerRole {
+	case "manager":
+		return managerViewer("manager")
+	case "stage":
+		return managerViewer("stage")
+	case "participant":
+		return participantViewer()
+	case "":
+		// Legacy auto-negotiation. Explicit roles above are required by first-party
+		// clients and avoid ambiguity when both cookies exist in one browser.
+	default:
+		return eventViewer{}, ErrInvalid
 	}
-	if err = h.service.AuthorizeViewer(
-		r.Context(),
-		sessionID,
-		"",
-		participant.Value,
-	); err != nil {
+
+	if viewer, err := managerViewer("manager"); err == nil {
+		return viewer, nil
+	} else if !errors.Is(err, ErrUnauthorized) && !errors.Is(err, ErrNotFound) {
 		return eventViewer{}, err
 	}
-	return eventViewer{
-		role:             "participant",
-		rateLimitIdentity: "participant:" + participant.Value,
-		participantToken: participant.Value,
-	}, nil
+	return participantViewer()
 }
 
 func eventVisibleToViewer(role string, event Event) bool {
@@ -311,7 +364,7 @@ func eventVisibleToViewer(role string, event Event) bool {
 	// privately. Participants receive the authoritative result from the
 	// revealed snapshot after session.state_changed; broadcasting the close
 	// event would disclose results before the presenter reveals them.
-	return role != "participant" || event.Name != "activity.result_updated"
+	return role == "manager" || event.Name != "activity.result_updated"
 }
 
 func (h *HTTP) events(w http.ResponseWriter, r *http.Request) {

@@ -439,6 +439,40 @@ func TestEventViewerPrefersOwningManagerAndFallsBackToParticipant(t *testing.T) 
 	}
 }
 
+func TestExplicitViewerRoleWinsWhenManagerAndParticipantCookiesCoexist(t *testing.T) {
+	store := &snapshotStore{}
+	handler := snapshotHandler(store)
+
+	participantRequest := httptest.NewRequest(http.MethodGet, "/api/v1/live/sessions/"+testSessionID+"/snapshot?viewer=participant", nil)
+	participantRequest.AddCookie(&http.Cookie{Name: "proslides_session", Value: "manager-token"})
+	participantRequest.AddCookie(&http.Cookie{Name: "proslides_participant", Value: testParticipantToken})
+	participantResponse := httptest.NewRecorder()
+	handler.ServeHTTP(participantResponse, participantRequest)
+	if participantResponse.Code != http.StatusOK || !jsonFieldEquals(participantResponse.Body.Bytes(), "role", "participant") {
+		t.Fatalf("explicit participant snapshot = %d %s", participantResponse.Code, participantResponse.Body.String())
+	}
+
+	managerRequest := httptest.NewRequest(http.MethodGet, "/api/v1/live/sessions/"+testSessionID+"/snapshot?viewer=manager", nil)
+	managerRequest.AddCookie(&http.Cookie{Name: "proslides_session", Value: "manager-token"})
+	managerRequest.AddCookie(&http.Cookie{Name: "proslides_participant", Value: testParticipantToken})
+	managerResponse := httptest.NewRecorder()
+	handler.ServeHTTP(managerResponse, managerRequest)
+	if managerResponse.Code != http.StatusOK || !jsonFieldEquals(managerResponse.Body.Bytes(), "role", "manager") {
+		t.Fatalf("explicit manager snapshot = %d %s", managerResponse.Code, managerResponse.Body.String())
+	}
+
+	service := NewService(store, DeductionPolicy{})
+	eventHandler := NewHTTP(service, NewEventBroker(store, time.Hour, 1), snapshotAuth{}, false)
+	stageRequest := httptest.NewRequest(http.MethodGet, "/api/v1/live/sessions/"+testSessionID+"/events?viewer=stage", nil)
+	stageRequest.SetPathValue("sessionId", testSessionID)
+	stageRequest.AddCookie(&http.Cookie{Name: "proslides_session", Value: "manager-token"})
+	stageRequest.AddCookie(&http.Cookie{Name: "proslides_participant", Value: testParticipantToken})
+	stageViewer, err := eventHandler.eventViewer(stageRequest)
+	if err != nil || stageViewer.role != "stage" || stageViewer.participantToken != "" {
+		t.Fatalf("stage viewer = %#v, err = %v", stageViewer, err)
+	}
+}
+
 func TestParticipantEventStreamDoesNotExposeClosedActivityResults(t *testing.T) {
 	resultEvent := Event{
 		EventID:      12,

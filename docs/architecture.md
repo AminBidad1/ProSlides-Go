@@ -150,9 +150,11 @@ The current single/multi-instance-safe delivery path is:
    bound for a slow client.
 
 Presence bursts are compacted so only the newest consecutive
-`presence.updated` event in a fetched batch is fanned out, with its
-`participant_delta` equal to the number of committed joins in that compacted
-burst. The exact count always comes from the snapshot. Answers never produce one
+`presence.updated` event in a fetched batch is fanned out. Compaction sums
+signed `participant_delta` and `active_participant_delta` values instead of
+assuming every presence event is a new join. Snapshots expose both the durable
+joined count and the exact count of participants with at least one open SSE
+stream. Answers never produce one
 SSE event per participant; canonical `activity.result_updated` is emitted only
 after Activity closure and `ranking.updated` carries only an aggregate
 participant count when cumulative ranking is shown. Complete rows are never
@@ -175,7 +177,13 @@ or resolves the same non-ended session idempotently (`request_id` or
 host+presentation lookup), so the run resumes at the exact live point.
 
 Snapshots are role-scoped and read from a single PostgreSQL `REPEATABLE READ`
-view. Participants receive public Session state, the active Item, their own
+view. First-party clients declare the intended viewer role explicitly instead
+of inferring it from whichever cookies happen to be present. This allows a
+manager to test the participant experience in the same browser without
+accidentally receiving a manager projection. Stage has its own read-only
+projection; its SSE stream is authorized by manager ownership but filters
+manager-private activity result events until reveal. Participants receive
+public Session state, the active Item, their own
 participant/score, aggregate count, and the event cursor. While an Activity is
 not yet revealed, the participant snapshot may expose only the boolean
 `has_responded` acknowledgement for the active Activity. This lets a refreshed
@@ -196,8 +204,11 @@ metadata; legacy Sessions created before the settings snapshot migration fall
 back to the current Presentation because their historical settings were never
 persisted. The client then joins over HTTP, applies the authoritative
 role-scoped snapshot, opens SSE
-with `Last-Event-ID`, and refreshes snapshot state before reconnecting. JSON
-live requests are bounded so a broken network cannot leave the UI waiting
+with `Last-Event-ID`, and refreshes snapshot state before reconnecting. SSE
+reconnects honor server `Retry-After` in addition to bounded exponential
+backoff, and Stage snapshot refreshes are coalesced so clustered state/ranking
+events do not create redundant concurrent reads. JSON live requests are bounded
+so a broken network cannot leave the UI waiting
 forever. Participant answer drafts and in-flight submissions are retained only
 in same-tab `sessionStorage`; refresh restores the draft, while an in-flight
 submission retains its original idempotency key until the authoritative
@@ -223,7 +234,7 @@ Redis loss must degrade latency/presence, never lose a durable event or answer.
 | duplicate HTTP request | original result, no second mutation |
 | stale manager version | `409 Conflict`, snapshot then retry with a new request ID |
 | answer after deadline/closure | `409 Conflict`, never scored |
-| SSE disconnect | exponential reconnect, snapshot, resume from `last_event_id` |
+| SSE disconnect | exponential reconnect honoring `Retry-After`, snapshot, resume from `last_event_id` |
 | half-open/stalled SSE | heartbeat silence watchdog closes the client stream; snapshot then replay |
 | lost answer HTTP acknowledgement | snapshot `has_responded` confirms the durable response without pre-reveal disclosure |
 | slow SSE client | disconnect; bounded server memory; client recovers |

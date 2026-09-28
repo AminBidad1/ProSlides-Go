@@ -451,9 +451,21 @@ paths:
     get:
       operationId: subscribeLiveSession
       summary: Subscribe to server-sent live events.
-      description: Requires either the manager session cookie or participant cookie. Replays events after Last-Event-ID and sends heartbeats. event_id orders delivery; state_version prevents state regressions, but aggregate events with a newer event_id may share the same state_version and must still be applied.
+      description: >-
+        Requires an authorized manager or participant credential. First-party
+        clients declare viewer explicitly so a browser that owns both cookies
+        receives the intended projection. stage requires manager ownership but
+        filters manager-private activity results. Replays events after
+        Last-Event-ID and sends heartbeats. event_id orders delivery;
+        state_version prevents state regressions, but aggregate events with a
+        newer event_id may share the same state_version and must still be applied.
       parameters:
         - $ref: '#/components/parameters/SessionId'
+        - name: viewer
+          in: query
+          required: false
+          description: Explicit viewer projection. Omission is retained only for backward-compatible cookie negotiation.
+          schema: { type: string, enum: [manager, participant, stage] }
         - name: Last-Event-ID
           in: header
           required: false
@@ -466,8 +478,8 @@ paths:
             Event names are session.created, presence.updated,
             session.state_changed, activity.result_updated, and ranking.updated.
             activity.result_updated is emitted when an Activity closes but is
-            delivered only to an authorized manager stream; participants learn
-            the result from the authoritative revealed snapshot after
+            delivered only to an authorized manager stream; participant and
+            Stage streams learn the result from the authoritative revealed snapshot after
             session.state_changed. ranking.updated is emitted when the overall
             ranking is shown; individual responses and complete ranking rows are
             never broadcast. Managers fetch rows from the paginated roster
@@ -593,6 +605,11 @@ paths:
         same frozen definition as the live backend.
       parameters:
         - { $ref: '#/components/parameters/SessionId' }
+        - name: viewer
+          in: query
+          required: false
+          description: Explicit manager or participant projection. Omission is retained only for backward-compatible cookie negotiation.
+          schema: { type: string, enum: [manager, participant] }
         - name: include_items
           in: query
           required: false
@@ -1285,7 +1302,7 @@ components:
         text_color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
     ParticipantLiveSnapshot:
       type: object
-      required: [role, session, participant, has_responded, participant_count, has_scoring, last_event_id]
+      required: [role, session, participant, has_responded, participant_count, active_participant_count, has_scoring, last_event_id]
       additionalProperties: false
       properties:
         role: { type: string, enum: [participant] }
@@ -1300,6 +1317,7 @@ components:
           description: True when this participant already has a durable Response for the active Activity; does not disclose correctness or score delta before reveal.
         personal_activity_result: { $ref: '#/components/schemas/PersonalActivityResult' }
         participant_count: { type: integer, minimum: 0 }
+        active_participant_count: { type: integer, minimum: 0, description: Number of participants with at least one currently open SSE connection. }
         has_scoring: { type: boolean, description: True when the frozen Session contains at least one scored Activity. }
         last_event_id: { type: integer, format: int64, minimum: 0 }
         activity_result: { $ref: '#/components/schemas/ActivityResultPayload' }
@@ -1314,7 +1332,7 @@ components:
         rank: { type: integer, minimum: 1, description: Competition rank in the cumulative Session ranking. }
     StageLiveSnapshot:
       type: object
-      required: [role, session, join_code, presentation, participant_count, has_scoring, last_event_id, ranking]
+      required: [role, session, join_code, presentation, participant_count, active_participant_count, has_scoring, last_event_id, ranking]
       additionalProperties: false
       properties:
         role: { type: string, enum: [stage] }
@@ -1326,6 +1344,7 @@ components:
           additionalProperties: true
           description: Active Item projected for the audience; correctness metadata is omitted until reveal.
         participant_count: { type: integer, minimum: 0 }
+        active_participant_count: { type: integer, minimum: 0, description: Number of participants with at least one currently open SSE connection. }
         has_scoring: { type: boolean }
         last_event_id: { type: integer, format: int64, minimum: 0 }
         activity_result: { $ref: '#/components/schemas/ActivityResultPayload' }
@@ -1345,7 +1364,7 @@ components:
         rank: { type: integer, minimum: 1, description: Competition rank within the current scored Activity only. }
     ManagerLiveSnapshot:
       type: object
-      required: [role, session, presentation, participant_count, has_scoring, last_event_id, activity_top_performers]
+      required: [role, session, presentation, participant_count, active_participant_count, has_scoring, last_event_id, activity_top_performers]
       additionalProperties: false
       properties:
         role: { type: string, enum: [manager] }
@@ -1358,6 +1377,7 @@ components:
           description: Immutable ordered Item definitions captured when the Session was created. Returned only when a manager requests include_items=true.
           items: { $ref: '#/components/schemas/Slide' }
         participant_count: { type: integer, minimum: 0 }
+        active_participant_count: { type: integer, minimum: 0, description: Number of participants with at least one currently open SSE connection. }
         has_scoring: { type: boolean, description: True when the frozen Session contains at least one scored Activity. }
         last_event_id: { type: integer, format: int64, minimum: 0 }
         activity_result: { $ref: '#/components/schemas/ActivityResultPayload' }
@@ -1426,10 +1446,11 @@ components:
         reason: { type: string, enum: [deadline_elapsed], description: Present only when the server closes an Activity at its authoritative deadline. }
     PresenceUpdatedPayload:
       type: object
-      required: [participant_delta]
+      required: [participant_delta, active_participant_delta]
       additionalProperties: false
       properties:
-        participant_delta: { type: integer, minimum: 1, description: Number of committed joins compacted into this event. Apply it to the authoritative participant_count from the latest snapshot. }
+        participant_delta: { type: integer, description: Signed change in committed Session participants. New joins increment it; connection churn leaves it at zero. }
+        active_participant_delta: { type: integer, description: Signed change in participants with at least one open SSE connection. Multiple tabs for the same participant are reference-counted. }
     WordFrequencyTerm:
       type: object
       additionalProperties: false
