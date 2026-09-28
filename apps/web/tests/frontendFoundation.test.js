@@ -908,3 +908,29 @@ test("manager live UI is module-owned, typed, Persian and contract-driven", () =
   assert.doesNotMatch(combined, /ðŸ|Ø|Ù|â€|ï¸/);
   assert.doesNotMatch(combined, /\.\.\/\.\.\/\.\.\/pages|\.\.\/\.\.\/\.\.\/components/);
 });
+
+
+test("projected live surfaces own the viewport instead of growing the page", () => {
+  const lobby = source("src/modules/live/manager/ui/ManagerJoinPage.tsx");
+  const question = source("src/modules/live/manager/ui/ManagerPickAnswerQuestion.tsx");
+  const content = source("src/modules/live/manager/ui/ManagerContentSlide.tsx");
+  const leaderboard = source("src/modules/live/manager/ui/ManagerLeaderBoard.tsx");
+  const finalLeaderboard = source("src/modules/live/manager/ui/ManagerFinalLeaderboard.tsx");
+  const stage = source("src/modules/live/routes/StageRoute.tsx");
+  const crowd = source("src/modules/live/ui/LiveLobbyCrowd.tsx");
+
+  for (const surface of [lobby, question, content, leaderboard, finalLeaderboard, stage]) {
+    assert.match(surface, /h-dvh/);
+    assert.match(surface, /overflow-hidden/);
+  }
+
+  assert.match(lobby, /fillAvailable/);
+  assert.match(stage, /fillAvailable/);
+  assert.match(crowd, /fillAvailable \? "min-h-0 flex-1"/);
+  assert.doesNotMatch(lobby, /min-h-\[30rem\]|min-h-\[38rem\]/);
+  assert.doesNotMatch(question, /h-\[52dvh\]|min-h-\[20rem\]|min-h-\[18rem\]|overflow-x-auto/);
+  assert.doesNotMatch(stage, /min-h-screen|min-h-\[18rem\]|overflow-y-auto/);
+  assert.doesNotMatch(leaderboard, /overflow-y-auto/);
+  assert.match(stage, /ranking\.slice\(0, 5\)/);
+  assert.doesNotMatch(finalLeaderboard, /overflow-auto/);
+});

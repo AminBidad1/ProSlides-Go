@@ -84,6 +84,8 @@ export function ManagerJoinPage({
         return "پیش از اجرا، متن فعالیت انتخابی را وارد کنید.";
       case "choice_options_too_few":
         return "پیش از اجرا، هر فعالیت انتخابی باید حداقل دو گزینه داشته باشد.";
+      case "choice_options_too_many":
+        return "برای اجرای زنده، سؤال‌های ارزیابی‌شونده حداکثر ۸ گزینه و نظرسنجی‌ها حداکثر ۱۲ گزینه می‌توانند داشته باشند.";
       case "choice_correct_answer_invalid":
         return "پیش از اجرا، پاسخ صحیح فعالیت ارزیابی‌شونده را مشخص کنید.";
     }
@@ -140,7 +142,7 @@ export function ManagerJoinPage({
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-cover bg-center text-[color:var(--live-fg)]"
+      className="h-screen h-dvh overflow-hidden bg-cover bg-center text-[color:var(--live-fg)]"
       style={theme.style}
     >
       <ManagerTopBar
@@ -156,42 +158,42 @@ export function ManagerJoinPage({
       />
 
       <main
-        className={`mx-auto flex min-h-screen max-w-7xl flex-col px-4 pb-10 pt-24 transition-[padding] sm:px-6 ${
+        className={`mx-auto flex h-full min-h-0 max-w-7xl flex-col overflow-hidden px-4 pb-4 pt-[4.5rem] transition-[padding] sm:px-6 sm:pb-5 ${
           showQr ? "sm:ps-84" : ""
         }`}
       >
-        <section className="my-auto rounded-3xl border border-white/10 bg-[color:var(--live-surface)] p-5 shadow-2xl backdrop-blur-md sm:p-8">
+        <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 bg-[color:var(--live-surface)] p-4 shadow-2xl backdrop-blur-md sm:p-6">
           <div className="text-center">
             <p className="text-sm text-[color:var(--live-muted)]">
               {Number(participantCount).toLocaleString("fa-IR")} بازیکن آماده
             </p>
-            <h1 className="mt-2 text-3xl font-black sm:text-5xl">
+            <h1 className="mt-1 text-2xl font-black sm:text-4xl xl:text-5xl">
               اتاق انتظار ارائه
             </h1>
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-[color:var(--live-muted)] sm:text-base">
+            <p className="mx-auto mt-2 max-w-2xl line-clamp-2 text-xs leading-5 text-[color:var(--live-muted)] sm:text-sm sm:leading-6">
               شرکت‌کنندگان از لینک یا QR وارد می‌شوند و هر ورود تازه به‌صورت
               زنده روی لابی ظاهر می‌شود.
             </p>
           </div>
 
-          <div className="mt-7">
+          <div className="mt-4 flex min-h-0 flex-1 flex-col">
             <LiveLobbyCrowd
               participants={lobbyParticipants}
               total={Number(participantCount || 0)}
               hiddenIds={hiddenUserIds}
               onToggleHidden={toggleName}
-              className="min-h-[30rem] sm:min-h-[38rem]"
+              fillAvailable
               emptyTitle="در انتظار ورود شرکت‌کنندگان…"
               emptyDescription="هر شرکت‌کننده با ورود به جلسه، به‌صورت زنده روی این فضا ظاهر می‌شود."
             />
             {lobbyParticipants.length > 0 ? (
-              <p className="mt-3 text-center text-xs leading-6 text-[color:var(--live-muted)]">
+              <p className="mt-2 shrink-0 text-center text-xs leading-5 text-[color:var(--live-muted)]">
                 برای پنهان‌کردن یک نام از نمای ارائه‌دهنده، روی همان نام بزنید.
               </p>
             ) : null}
           </div>
 
-          <div className="mt-8 flex flex-col items-center gap-3">
+          <div className="mt-4 shrink-0 flex flex-col items-center gap-2">
             <button
               type="button"
               onClick={() => void handleStart()}

@@ -167,6 +167,42 @@ test("Choice validation remains strict while Poll does not require correctness",
   assert.equal(getLiveActivityStartIssue(validPoll), null);
 });
 
+test("legacy Choice activities respect quiz and poll projection caps", () => {
+  const quizOptions = Array.from({ length: 9 }, (_, index) => ({
+    option_id: index,
+    option_text: `گزینه ${index + 1}`,
+    answer: index === 0,
+  }));
+  assert.equal(
+    getLiveActivityStartIssue({
+      item_kind: "activity",
+      activity_kind: "choice",
+      question_text: "سؤال شلوغ",
+      question_type: "single",
+      has_correct_answer: true,
+      options: quizOptions,
+    }),
+    "choice_options_too_many",
+  );
+
+  const pollOptions = Array.from({ length: 13 }, (_, index) => ({
+    option_id: index,
+    option_text: `گزینه ${index + 1}`,
+    answer: false,
+  }));
+  assert.equal(
+    getLiveActivityStartIssue({
+      item_kind: "activity",
+      activity_kind: "choice",
+      question_text: "نظرسنجی شلوغ",
+      question_type: "single",
+      has_correct_answer: false,
+      options: pollOptions,
+    }),
+    "choice_options_too_many",
+  );
+});
+
 test("Text Activity validates its own prompt instead of Choice rules", () => {
   assert.equal(
     getLiveActivityStartIssue({

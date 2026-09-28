@@ -72,7 +72,11 @@ export default function QuestionOptionsEditor({
         !issue.optionId,
     )?.message ?? null;
   const canDelete = options.length > QUESTION_LIMITS.minOptions;
-  const canAdd = options.length < QUESTION_LIMITS.maxOptions;
+  const maxOptions =
+    evaluationMode === "none"
+      ? QUESTION_LIMITS.maxPollOptions
+      : QUESTION_LIMITS.maxQuizOptions;
+  const canAdd = options.length < maxOptions;
   const correctnessDisabled =
     disabled || evaluationMode === "none";
 
@@ -305,7 +309,7 @@ export default function QuestionOptionsEditor({
         <Plus aria-hidden="true" />
         {canAdd
           ? "افزودن گزینه"
-          : `حداکثر ${formatPersianNumber(QUESTION_LIMITS.maxOptions)} گزینه`}
+          : `حداکثر ${formatPersianNumber(maxOptions)} گزینه`}
       </Button>
     </section>
   );

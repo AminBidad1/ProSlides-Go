@@ -96,7 +96,7 @@ export function ManagerFinalLeaderboard({
   return (
     <div
       dir="rtl"
-      className="fixed inset-0 z-50 flex flex-col overflow-auto bg-cover bg-center px-4 py-6 text-[color:var(--live-fg)]"
+      className="fixed inset-0 z-50 flex h-screen h-dvh flex-col overflow-hidden bg-cover bg-center px-4 py-4 text-[color:var(--live-fg)] sm:py-5"
       style={theme.style}
     >
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between">
@@ -118,7 +118,7 @@ export function ManagerFinalLeaderboard({
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center py-7 text-center">
+      <main className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col items-center justify-center overflow-hidden py-3 text-center sm:py-4">
         <Motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -129,20 +129,20 @@ export function ManagerFinalLeaderboard({
         <Motion.h1
           initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-2 text-4xl font-black md:text-6xl"
+          className="mt-1 text-3xl font-black md:text-5xl xl:text-6xl"
         >
           {isSolo ? "نتیجه انفرادی" : "برترین‌های این رقابت"}
         </Motion.h1>
 
         {!hasScoring ? (
-          <div className="mt-10 max-w-xl rounded-3xl border border-white/15 bg-black/20 px-8 py-10 text-white/75 backdrop-blur">
+          <div className="mt-5 max-w-xl rounded-3xl border border-white/15 bg-black/20 px-8 py-10 text-white/75 backdrop-blur">
             <h2 className="text-2xl font-black text-white">جلسه پایان یافت</h2>
             <p className="mt-3 leading-7">
               این جلسه فعالیت امتیازی نداشت؛ بنابراین رتبه‌بندی نهایی یا سکو نمایش داده نمی‌شود.
             </p>
           </div>
         ) : isSolo && players.length > 0 ? (
-          <div className="mt-10 w-full max-w-xl rounded-[2rem] border border-white/15 bg-black/20 px-8 py-10 backdrop-blur">
+          <div className="mt-5 w-full max-w-xl rounded-[2rem] border border-white/15 bg-black/20 px-8 py-10 backdrop-blur">
             <p className="text-sm text-white/65">نتیجه انفرادی</p>
             <h2 className="mt-2 truncate text-3xl font-black" dir="auto">
               {players[0].player.name}
@@ -155,7 +155,7 @@ export function ManagerFinalLeaderboard({
             </p>
           </div>
         ) : players.length > 0 ? (
-          <div className="mt-10 flex w-full flex-col items-stretch justify-center gap-4 md:flex-row md:items-end">
+          <div className="mt-5 flex w-full flex-col items-stretch justify-center gap-4 md:flex-row md:items-end">
             {players.map(({ player, rank }, index) => {
               const style = podiumStyleForRank(rank);
               const order = POSITION_ORDER[index];
@@ -197,7 +197,7 @@ export function ManagerFinalLeaderboard({
             })}
           </div>
         ) : (
-          <div className="mt-10 rounded-3xl border border-white/15 bg-black/20 px-8 py-10 text-white/75 backdrop-blur">
+          <div className="mt-5 rounded-3xl border border-white/15 bg-black/20 px-8 py-10 text-white/75 backdrop-blur">
             هنوز امتیازی برای نمایش وجود ندارد.
           </div>
         )}
@@ -205,7 +205,7 @@ export function ManagerFinalLeaderboard({
         <button
           type="button"
           onClick={onExit}
-          className="mt-9 min-h-12 rounded-2xl bg-white px-7 font-black text-slate-950 shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40"
+          className="mt-5 min-h-11 shrink-0 rounded-2xl bg-white px-7 font-black text-slate-950 shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40"
         >
           بازگشت به پنل مدیریت
         </button>

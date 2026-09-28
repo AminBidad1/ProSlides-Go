@@ -189,7 +189,11 @@ export function questionDraftReducer(
     case "leaderboard":
       return patchDraft(state, { showLeaderboardAfter: action.value });
     case "add-option": {
-      if (state.draft.options.length >= QUESTION_LIMITS.maxOptions) return state;
+      const maxOptions =
+        state.draft.evaluationMode === "none"
+          ? QUESTION_LIMITS.maxPollOptions
+          : QUESTION_LIMITS.maxQuizOptions;
+      if (state.draft.options.length >= maxOptions) return state;
       const nextOption: QuestionDraftOption = {
         id: action.optionId,
         text: `گزینه ${state.draft.options.length + 1}`,

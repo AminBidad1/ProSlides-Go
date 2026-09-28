@@ -369,6 +369,26 @@ Audience-facing projection optimized for readability at distance:
 - final podium;
 - join information where appropriate.
 
+The live projection contract is viewport-bound. Stage must render as a single
+projector frame with no document-level scrolling during lobby, presentation,
+results, ranking, or final states. The baseline supported large-screen viewport
+is 1024×768, with the same contract applying to common 16:9 displays. Layouts
+must shrink or reflow inside the available viewport instead of increasing page
+height.
+
+The Manager presentation surface follows the same no-document-scroll contract
+because single-screen rooms commonly mirror or screen-share the presenter
+device. Stage remains the preferred audience-only projection when a separate
+display/browser is available. Private Backstage drawers and long manager-only
+lists may scroll internally, but their scrolling must never move the projected
+presentation chrome or hide the primary live controls.
+
+Choice density is bounded for projection readability: correctness-evaluated
+Quiz Activities support at most 8 options, while unscored Poll Activities
+support at most 12. If a future self-paced form/survey product needs denser
+choice sets, it must define a separate interaction and rendering contract
+rather than weakening the live projection constraint.
+
 ### Backstage
 
 Presenter-only control and insight surface:

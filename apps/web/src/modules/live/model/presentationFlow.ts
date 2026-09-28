@@ -161,9 +161,13 @@ export const isQuestionSlide = (
   isRecord(slide) &&
   slide.item_kind === "activity";
 
+const MAX_LIVE_QUIZ_OPTIONS = 8;
+const MAX_LIVE_POLL_OPTIONS = 12;
+
 export type LiveActivityStartIssue =
   | "choice_prompt_required"
   | "choice_options_too_few"
+  | "choice_options_too_many"
   | "choice_correct_answer_invalid"
   | "text_prompt_required";
 
@@ -182,8 +186,13 @@ export const getLiveActivityStartIssue = (
 
   const options = Array.isArray(slide.options) ? slide.options : [];
   if (options.length < 2) return "choice_options_too_few";
-
   const requiresCorrectness = slide.has_correct_answer !== false;
+  const maxOptions = requiresCorrectness
+    ? MAX_LIVE_QUIZ_OPTIONS
+    : MAX_LIVE_POLL_OPTIONS;
+  if (options.length > maxOptions) {
+    return "choice_options_too_many";
+  }
   if (!requiresCorrectness) return null;
 
   const correct = options.filter((option) => option.answer === true).length;

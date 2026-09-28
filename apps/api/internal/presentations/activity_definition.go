@@ -24,6 +24,9 @@ const (
 
 	TextAggregationWordFrequency  = "word_frequency"
 	TextAggregationEntryFrequency = "entry_frequency"
+
+	MaxQuizChoiceOptions = 8
+	MaxPollChoiceOptions = 12
 )
 
 type ActivityPrompt struct {
@@ -245,7 +248,11 @@ func validateChoiceActivityDefinition(value ActivityDefinition) error {
 		value.Response.Selection != ChoiceSelectionMultiple {
 		return errInvalidSlideDefinition
 	}
-	if len(value.Response.Options) < 2 || len(value.Response.Options) > 100 {
+	maxOptions := MaxPollChoiceOptions
+	if value.Evaluation.Mode == EvaluationModeCorrectness {
+		maxOptions = MaxQuizChoiceOptions
+	}
+	if len(value.Response.Options) < 2 || len(value.Response.Options) > maxOptions {
 		return errInvalidSlideDefinition
 	}
 

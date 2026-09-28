@@ -36,6 +36,35 @@ test("rejects incomplete and inconsistent options", () => {
   assert.match(getQuestionValidationError({ ...validQuestion, question_type: "single", options: validQuestion.options.map((option) => ({ ...option, is_correct: true })) }), /یک گزینه صحیح/i);
 });
 
+test("uses separate projector-safe option limits for quizzes and polls", () => {
+  const quizOptions = Array.from({ length: 9 }, (_, index) => ({
+    option_id: `quiz-option-${index + 1}`,
+    text: `Quiz option ${index + 1}`,
+    is_correct: index === 0,
+  }));
+  assert.match(
+    getQuestionValidationError({ ...validQuestion, options: quizOptions }),
+    /حداکثر ۸ گزینه/,
+  );
+
+  const pollOptions = Array.from({ length: 13 }, (_, index) => ({
+    option_id: `poll-option-${index + 1}`,
+    text: `Poll option ${index + 1}`,
+    is_correct: false,
+  }));
+  assert.match(
+    getQuestionValidationError({
+      ...validQuestion,
+      evaluation_mode: "none",
+      scoring_mode: "none",
+      min_point: 0,
+      max_point: 0,
+      options: pollOptions,
+    }),
+    /حداکثر ۱۲ گزینه/,
+  );
+});
+
 test("rejects duplicate option identities and single-choice partial scoring", () => {
   assert.match(getQuestionValidationError({
     ...validQuestion,

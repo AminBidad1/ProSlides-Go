@@ -52,7 +52,7 @@ export function ManagerContentSlide({
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-cover bg-center text-[color:var(--live-fg)]"
+      className="h-screen h-dvh overflow-hidden bg-cover bg-center text-[color:var(--live-fg)]"
       style={theme.style}
     >
       <ManagerTopBar
@@ -68,11 +68,11 @@ export function ManagerContentSlide({
       />
 
       <main
-        className={`flex min-h-screen items-center px-4 pb-24 pt-20 transition-[padding] sm:px-6 ${
+        className={`flex h-full min-h-0 items-center overflow-hidden px-4 pb-20 pt-16 transition-[padding] sm:px-6 sm:pb-20 sm:pt-[4.5rem] ${
           showQr ? "sm:ps-84" : ""
         }`}
       >
-        <article className="mx-auto w-full max-w-5xl rounded-3xl border border-white/10 bg-[color:var(--live-surface)] p-6 text-center shadow-2xl backdrop-blur sm:p-10">
+        <article className="mx-auto flex max-h-full w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-[color:var(--live-surface)] p-5 text-center shadow-2xl backdrop-blur sm:p-8">
           {!source ? (
             <p role="status" className="text-[color:var(--live-muted)]">
               در حال همگام‌سازی محتوای اسلاید…
@@ -80,13 +80,13 @@ export function ManagerContentSlide({
           ) : (
             <>
               {source.title ? (
-                <h1 className="text-3xl font-black sm:text-5xl" dir="auto">
+                <h1 className="line-clamp-2 shrink-0 text-3xl font-black sm:text-5xl" dir="auto">
                   {source.title}
                 </h1>
               ) : null}
               {source.content_text ? (
                 <p
-                  className="mx-auto mt-6 max-w-3xl whitespace-pre-wrap text-lg leading-9 text-[color:var(--live-muted)]"
+                  className="mx-auto mt-4 max-h-[28dvh] max-w-3xl overflow-hidden whitespace-pre-wrap text-base leading-7 text-[color:var(--live-muted)] sm:text-lg sm:leading-8"
                   dir="auto"
                 >
                   {source.content_text}
@@ -96,7 +96,7 @@ export function ManagerContentSlide({
                 <img
                   src={source.content_image_url}
                   alt={source.title || "تصویر اسلاید توضیحی"}
-                  className="mx-auto mt-7 max-h-[52dvh] max-w-full rounded-2xl object-contain shadow-xl"
+                  className="mx-auto mt-5 min-h-0 max-h-[44dvh] max-w-full rounded-2xl object-contain shadow-xl"
                 />
               ) : null}
             </>

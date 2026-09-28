@@ -84,7 +84,8 @@ export const QUESTION_LIMITS = {
   optionId: 128,
   imageUrl: 4_096,
   minOptions: 2,
-  maxOptions: 100,
+  maxQuizOptions: 8,
+  maxPollOptions: 12,
   minDurationSeconds: 1,
   maxDurationSeconds: 86_400,
 } as const;
@@ -309,7 +310,13 @@ export const validateEditorQuestion = (
     });
   }
 
+  const evaluationMode =
+    question.evaluation_mode ?? "correctness";
   const options = Array.isArray(question.options) ? question.options : [];
+  const maxOptions =
+    evaluationMode === "none"
+      ? QUESTION_LIMITS.maxPollOptions
+      : QUESTION_LIMITS.maxQuizOptions;
   if (options.length < QUESTION_LIMITS.minOptions) {
     issues.push({
       code: "options_too_few",
@@ -317,11 +324,14 @@ export const validateEditorQuestion = (
       message: "حداقل دو گزینه اضافه کنید.",
     });
   }
-  if (options.length > QUESTION_LIMITS.maxOptions) {
+  if (options.length > maxOptions) {
     issues.push({
       code: "options_too_many",
       field: "options",
-      message: `هر سؤال حداکثر ${QUESTION_LIMITS.maxOptions.toLocaleString("fa-IR")} گزینه می‌تواند داشته باشد.`,
+      message:
+        evaluationMode === "none"
+          ? `هر نظرسنجی حداکثر ${maxOptions.toLocaleString("fa-IR")} گزینه می‌تواند داشته باشد.`
+          : `هر سؤال ارزیابی‌شونده حداکثر ${maxOptions.toLocaleString("fa-IR")} گزینه می‌تواند داشته باشد.`,
     });
   }
 
@@ -386,8 +396,6 @@ export const validateEditorQuestion = (
     });
   }
 
-  const evaluationMode =
-    question.evaluation_mode ?? "correctness";
   const scoringMode = question.scoring_mode ?? "points";
   const correctCount = options.filter(
     (option) => option.is_correct === true,

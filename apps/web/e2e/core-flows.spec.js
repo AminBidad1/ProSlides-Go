@@ -21,6 +21,34 @@ async function expectNoOverflow(page) {
   ).toBe(true);
 }
 
+async function expectNoDocumentScroll(page) {
+  const overflow = await page.evaluate(() => ({
+    width: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    height: document.documentElement.scrollHeight - document.documentElement.clientHeight,
+  }));
+  expect(overflow.width, "document must not scroll horizontally").toBeLessThanOrEqual(0);
+  expect(overflow.height, "projected live surface must not scroll vertically").toBeLessThanOrEqual(0);
+}
+
+async function expectProjectorViewports(page) {
+  const previousViewport = page.viewportSize();
+  const projectorViewports = [
+    { width: 1024, height: 768 },
+    { width: 1280, height: 720 },
+  ];
+
+  try {
+    for (const viewport of projectorViewports) {
+      await page.setViewportSize(viewport);
+      await expectNoDocumentScroll(page);
+    }
+  } finally {
+    if (previousViewport) {
+      await page.setViewportSize(previousViewport);
+    }
+  }
+}
+
 async function expectResponsiveSurface(page, assertSurface) {
   const previousViewport = page.viewportSize();
   const viewports = [
@@ -725,8 +753,9 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
   const manager = await managerContext.newPage();
   const stage = await managerContext.newPage();
   const participant = await managerContext.newPage();
-  await manager.setViewportSize({ width: 1280, height: 800 });
-  await stage.setViewportSize({ width: 1440, height: 900 });
+  // 1024×768 is the projector baseline for the live projection contract.
+  await manager.setViewportSize({ width: 1024, height: 768 });
+  await stage.setViewportSize({ width: 1024, height: 768 });
   await participant.setViewportSize({ width: 390, height: 844 });
   manager.setDefaultTimeout(15000);
   stage.setDefaultTimeout(15000);
@@ -853,6 +882,7 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
     await expect(startButton).toBeEnabled({ timeout: 15000 });
     await expectAccessible(manager, "manager live lobby");
     await expectNoOverflow(manager);
+    await expectProjectorViewports(manager);
 
     const qrTrigger = manager.getByRole("button", { name: "نمایش QR" });
     await qrTrigger.click();
@@ -892,6 +922,7 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
     ).toBeVisible();
     await expectAccessible(stage, "audience Stage lobby");
     await expectNoOverflow(stage);
+    await expectProjectorViewports(stage);
 
     await participant.goto(`/${fixture.accessCode}`);
     await expect(participant.getByRole("heading", { name: "نامتان را وارد کنید" })).toBeVisible();
@@ -924,6 +955,8 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
     await expectAccessible(participant, "participant live activity");
     await expectNoOverflow(participant);
     await expectNoOverflow(stage);
+    await expectProjectorViewports(manager);
+    await expectProjectorViewports(stage);
 
     const answerRequestIds = [];
     let failNextAnswer = true;
@@ -1070,6 +1103,13 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
     await expect(
       stageMain.getByText("پاسخ صحیح", { exact: true }),
     ).toBeVisible();
+    await expectProjectorViewports(stage);
+
+    await backstage.getByRole("button", { name: "بستن پشت‌صحنه" }).click();
+    await expect(backstage).toBeHidden();
+    await expectProjectorViewports(manager);
+    await backstageTrigger.click();
+    await expect(backstage).toBeVisible();
 
     await stage.reload();
     await expect(
@@ -1109,6 +1149,7 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
     await expect(
       stage.getByText("جلسه فعلاً یک شرکت‌کننده دارد؛ رتبه رقابتی نمایش داده نمی‌شود."),
     ).toBeVisible();
+    await expectProjectorViewports(stage);
 
     await participant.reload();
     await expect(
@@ -1124,6 +1165,7 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
       .getByRole("button", { name: "بستن پشت‌صحنه" })
       .click();
     await expect(backstage).toBeHidden();
+    await expectProjectorViewports(manager);
 
     await manager.getByRole("button", { name: "آیتم بعدی" }).click();
     await expect(
@@ -1151,6 +1193,8 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
     ).toBeVisible({ timeout: 15000 });
     await expectAccessible(participant, "participant live content");
     await expectNoOverflow(participant);
+    await expectProjectorViewports(manager);
+    await expectProjectorViewports(stage);
 
     await participant.reload();
     await expect(
@@ -1173,12 +1217,14 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
       participant.getByRole("heading", { name: "نتیجه نهایی شما" }),
     ).toBeVisible({ timeout: 15000 });
     await expect(participant.getByText("جلسه پایان یافت")).toBeVisible();
+    await expectProjectorViewports(manager);
     await expect(
       stage.getByRole("heading", { name: "نتیجه انفرادی" }),
     ).toBeVisible({ timeout: 15000 });
     await expect(stage.getByText("شرکت‌کننده تست")).toBeVisible();
     await expectNoOverflow(participant);
     await expectNoOverflow(stage);
+    await expectProjectorViewports(stage);
 
     const endedResolve = participant.waitForResponse(
       (response) =>

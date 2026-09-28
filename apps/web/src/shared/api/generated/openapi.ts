@@ -810,6 +810,7 @@ export interface components {
         ChoiceResponsePolicy: {
             /** @enum {string} */
             selection: "single" | "multiple";
+            /** @description Presenter-paced live density limit. Correctness-evaluated Choice activities allow at most 8 options; unscored Poll activities allow at most 12. */
             options: components["schemas"]["ChoiceOptionDefinition"][];
         };
         ChoiceOptionDefinition: {

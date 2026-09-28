@@ -62,6 +62,67 @@ func TestValidateSlideContentRejectsInvalidChoiceActivity(t *testing.T) {
 	}
 }
 
+func TestValidateChoiceActivityUsesSeparateQuizAndPollProjectionLimits(t *testing.T) {
+	makeOptions := func(count int) []ChoiceOptionDefinition {
+		options := make([]ChoiceOptionDefinition, count)
+		for i := range options {
+			options[i] = ChoiceOptionDefinition{
+				ID:    string(rune('a' + i)),
+				Text:  "Option",
+				Order: i + 1,
+			}
+		}
+		return options
+	}
+	validate := func(value ActivityDefinition) error {
+		raw, err := json.Marshal(value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return validateSlideContent(ItemKindActivity, raw)
+	}
+
+	quizOptions := makeOptions(9)
+	quiz := ActivityDefinition{
+		SchemaVersion: ActivitySchemaVersion1,
+		ActivityKind:  ActivityKindChoice,
+		Prompt:        ActivityPrompt{Text: "Choose"},
+		Response: ActivityResponsePolicy{
+			Selection: ChoiceSelectionSingle,
+			Options:   quizOptions,
+		},
+		Evaluation: ActivityEvaluationPolicy{
+			Mode:             EvaluationModeCorrectness,
+			CorrectOptionIDs: []string{quizOptions[0].ID},
+		},
+		Scoring: ActivityScoringPolicy{
+			Mode:      ScoringModePoints,
+			MaxPoints: 100,
+		},
+		Timing: ActivityTimingPolicy{DurationSeconds: 30},
+	}
+	if err := validate(quiz); err == nil {
+		t.Fatal("correctness-evaluated Choice Activity with 9 options accepted")
+	}
+
+	pollOptions := makeOptions(13)
+	poll := ActivityDefinition{
+		SchemaVersion: ActivitySchemaVersion1,
+		ActivityKind:  ActivityKindChoice,
+		Prompt:        ActivityPrompt{Text: "Choose"},
+		Response: ActivityResponsePolicy{
+			Selection: ChoiceSelectionSingle,
+			Options:   pollOptions,
+		},
+		Evaluation: ActivityEvaluationPolicy{Mode: EvaluationModeNone},
+		Scoring:    ActivityScoringPolicy{Mode: ScoringModeNone},
+		Timing:     ActivityTimingPolicy{DurationSeconds: 30},
+	}
+	if err := validate(poll); err == nil {
+		t.Fatal("unscored Poll Activity with 13 options accepted")
+	}
+}
+
 func TestValidateContentSlideRequiresVisibleContent(t *testing.T) {
 	if err := validateSlideContent("content", json.RawMessage(`{"title":"","text":"","image_url":""}`)); err == nil {
 		t.Fatal("empty content slide accepted")

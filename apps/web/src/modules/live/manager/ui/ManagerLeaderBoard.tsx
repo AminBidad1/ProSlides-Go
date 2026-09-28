@@ -60,12 +60,16 @@ export function ManagerLeaderBoard({
     [sourcePlayers],
   );
 
+  const visiblePlayers = useMemo(() => players.slice(0, 5), [players]);
   const maxScore = useMemo(
     () =>
-      players.length > 0
-        ? Math.max(...players.map((player) => player.total_points || 0), 0)
+      visiblePlayers.length > 0
+        ? Math.max(
+            ...visiblePlayers.map((player) => player.total_points || 0),
+            0,
+          )
         : 0,
-    [players],
+    [visiblePlayers],
   );
 
   const toggleName = (userId: string) => {
@@ -97,7 +101,7 @@ export function ManagerLeaderBoard({
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-cover bg-center text-[color:var(--live-fg)]"
+      className="h-screen h-dvh overflow-hidden bg-cover bg-center text-[color:var(--live-fg)]"
       style={theme.style}
     >
       <ManagerTopBar
@@ -113,16 +117,16 @@ export function ManagerLeaderBoard({
       />
 
       <main
-        className={`min-h-screen px-4 pb-24 pt-24 transition-[padding] sm:px-6 ${
+        className={`flex h-full min-h-0 flex-col overflow-hidden px-4 pb-20 pt-[4.5rem] transition-[padding] sm:px-6 ${
           showQr ? "sm:ps-84" : ""
         }`}
       >
-        <section className="mx-auto max-w-6xl">
-          <div className="text-center">
+        <section className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col overflow-hidden">
+          <div className="shrink-0 text-center">
             <p className="text-sm text-[color:var(--live-muted)]">
               نتیجه مرحله
             </p>
-            <h1 className="mt-2 text-4xl font-black sm:text-6xl">
+            <h1 className="mt-1 text-3xl font-black sm:text-5xl">
               جدول امتیازات
             </h1>
             <p className="mt-3 text-[color:var(--live-muted)]">
@@ -130,7 +134,7 @@ export function ManagerLeaderBoard({
             </p>
           </div>
 
-          <div className="mt-8 max-h-[62dvh] overflow-y-auto rounded-3xl border border-white/10 bg-[color:var(--live-surface)] p-4 shadow-2xl backdrop-blur sm:p-6">
+          <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 bg-[color:var(--live-surface)] p-4 shadow-2xl backdrop-blur sm:p-5">
             {players.length === 0 ? (
               <div
                 className="grid min-h-52 place-items-center text-center text-[color:var(--live-muted)]"
@@ -139,9 +143,9 @@ export function ManagerLeaderBoard({
                 در حال دریافت جدول امتیازات…
               </div>
             ) : (
-              <ol className="space-y-3">
+              <ol className="grid min-h-0 flex-1 auto-rows-fr gap-3">
                 <AnimatePresence initial={false}>
-                  {players.map((player, index) => {
+                  {visiblePlayers.map((player, index) => {
                     const hidden = hiddenUserIds.has(player.user_id);
                     const score = Math.max(0, Number(player.total_points || 0));
                     const width =
@@ -211,6 +215,11 @@ export function ManagerLeaderBoard({
                 </AnimatePresence>
               </ol>
             )}
+            {players.length > visiblePlayers.length ? (
+              <p className="mt-3 shrink-0 text-center text-xs text-[color:var(--live-muted)]">
+                ۵ نفر برتر نمایش داده شده‌اند؛ جدول کامل در نمای خصوصی در دسترس است.
+              </p>
+            ) : null}
 
           </div>
         </section>

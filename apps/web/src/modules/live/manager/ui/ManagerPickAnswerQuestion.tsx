@@ -152,6 +152,12 @@ export function ManagerPickAnswerQuestion({
     () => currentQuestion?.options ?? [],
     [currentQuestion],
   );
+  const optionGridColumns =
+    options.length <= 4
+      ? "lg:grid-cols-2"
+      : options.length <= 6
+        ? "lg:grid-cols-3"
+        : "lg:grid-cols-4";
   const hasCorrectAnswer = currentQuestion?.has_correct_answer !== false;
   const votes = useMemo(
     () =>
@@ -242,7 +248,7 @@ export function ManagerPickAnswerQuestion({
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-cover bg-center text-[color:var(--live-fg)]"
+      className="h-screen h-dvh overflow-hidden bg-cover bg-center text-[color:var(--live-fg)]"
       style={theme.style}
     >
       <ManagerTopBar
@@ -258,7 +264,7 @@ export function ManagerPickAnswerQuestion({
       />
 
       <main
-        className={`flex min-h-screen flex-col px-4 pb-24 pt-20 transition-[padding] sm:px-6 ${
+        className={`flex h-full min-h-0 flex-col overflow-hidden px-4 pb-20 pt-16 transition-[padding] sm:px-6 sm:pb-20 sm:pt-[4.5rem] ${
           showQr ? "sm:ps-84" : ""
         }`}
       >
@@ -270,22 +276,22 @@ export function ManagerPickAnswerQuestion({
             در حال آماده‌سازی سؤال…
           </div>
         ) : (
-          <section className="mx-auto flex w-full max-w-7xl flex-1 flex-col">
-            <div className="shrink-0 pt-4 text-center">
+          <section className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col overflow-hidden">
+            <div className="shrink-0 pt-2 text-center">
               <p className="text-sm text-[color:var(--live-muted)]">
                 سؤال {resolvedSlideNumber.toLocaleString("fa-IR")} از{" "}
                 {totalSlides.toLocaleString("fa-IR")}
               </p>
               {currentQuestion.question_title ? (
                 <p
-                  className="mx-auto mt-2 max-w-4xl text-sm font-bold text-[color:var(--live-muted)]"
+                  className="mx-auto mt-1 line-clamp-1 max-w-4xl text-sm font-bold text-[color:var(--live-muted)]"
                   dir="auto"
                 >
                   {currentQuestion.question_title}
                 </p>
               ) : null}
               <h1
-                className="mx-auto mt-2 max-w-5xl text-3xl font-black leading-tight sm:text-5xl"
+                className="mx-auto mt-1 line-clamp-3 max-w-5xl text-2xl font-black leading-tight sm:text-4xl xl:text-5xl"
                 dir="auto"
               >
                 {currentQuestion.question_text}
@@ -302,7 +308,7 @@ export function ManagerPickAnswerQuestion({
               </div>
             ) : !showResults && timerState.remaining > 0 ? (
               <div
-                className="mx-auto mt-4 grid h-20 w-20 place-items-center rounded-full border-4 border-white/15 bg-black/20 text-3xl font-black"
+                className="mx-auto mt-3 grid h-16 w-16 place-items-center rounded-full border-4 border-white/15 bg-black/20 text-2xl font-black sm:h-20 sm:w-20 sm:text-3xl"
                 role="timer"
                 aria-label="زمان باقی‌مانده"
               >
@@ -311,13 +317,13 @@ export function ManagerPickAnswerQuestion({
             ) : null}
 
             {isWordCloud ? (
-              <div className="mt-6 flex min-h-0 flex-1 flex-col">
+              <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden">
                 {showResults ? (
                   <p className="mb-4 text-center text-sm text-[color:var(--live-muted)]">
                     {responseCount.toLocaleString("fa-IR")} پاسخ ثبت‌شده
                   </p>
                 ) : null}
-                <div className="flex min-h-[20rem] flex-1 flex-col rounded-[2.5rem] border border-white/10 bg-white/5 p-5 shadow-2xl">
+                <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/5 p-4 shadow-2xl sm:p-5">
                   {currentQuestion.image_url ? (
                     <img
                       src={currentQuestion.image_url}
@@ -327,7 +333,7 @@ export function ManagerPickAnswerQuestion({
                   ) : null}
                   {!showResults ? (
                     <div
-                      className="grid min-h-[18rem] flex-1 place-items-center"
+                      className="grid min-h-0 flex-1 place-items-center"
                       aria-label="در انتظار پاسخ‌های ابر واژه"
                     >
                       <p className="max-w-2xl text-center text-lg font-bold leading-8 text-[color:var(--live-muted)]">
@@ -338,7 +344,7 @@ export function ManagerPickAnswerQuestion({
                   ) : (
                     <WordCloudView
                       terms={wordTerms}
-                      className="min-h-[18rem] flex-1"
+                      className="min-h-0 flex-1"
                       emptyLabel="هنوز عبارتی برای نمایش وجود ندارد."
                       ariaLabel="نتیجه ابر واژه"
                     />
@@ -346,18 +352,18 @@ export function ManagerPickAnswerQuestion({
                 </div>
               </div>
             ) : (
-              <div className="mt-6 flex min-h-0 flex-1 gap-5 overflow-hidden">
+              <div className="mt-4 flex min-h-0 flex-1 gap-5 overflow-hidden">
                 {currentQuestion.image_url ? (
                   <div className="hidden w-1/4 shrink-0 items-center justify-center lg:flex">
                     <img
                       src={currentQuestion.image_url}
                       alt="تصویر سؤال"
-                      className="max-h-[58dvh] max-w-full rounded-2xl object-contain shadow-xl"
+                      className="max-h-[48dvh] max-w-full rounded-2xl object-contain shadow-xl"
                     />
                   </div>
                 ) : null}
 
-                <div className="flex min-w-0 flex-1 items-end gap-3 overflow-x-auto pb-4 sm:gap-5">
+                <div className={`grid h-full min-h-0 min-w-0 flex-1 auto-rows-fr grid-cols-2 gap-3 overflow-hidden ${optionGridColumns}`}>
                   {options.map((option, index) => {
                     const correct = option.answer === true;
                     const count = votes[index] ?? 0;
@@ -370,7 +376,7 @@ export function ManagerPickAnswerQuestion({
                     return (
                       <article
                         key={option.option_id}
-                        className="flex h-[52dvh] min-w-36 flex-1 flex-col items-center justify-end"
+                        className="flex min-h-0 min-w-0 flex-col items-center justify-end overflow-hidden"
                       >
                         {showResults ? (
                           <p className="mb-2 text-2xl font-black">
@@ -381,10 +387,10 @@ export function ManagerPickAnswerQuestion({
                           <img
                             src={option.image_url}
                             alt={option.option_text}
-                            className="mb-2 max-h-28 max-w-full rounded-xl object-contain"
+                            className="mb-2 max-h-[10dvh] max-w-full rounded-xl object-contain"
                           />
                         ) : null}
-                        <div className="flex h-full w-full items-end">
+                        <div className="flex min-h-0 w-full flex-1 items-end">
                           <div
                             className={`w-full rounded-t-2xl transition-[height] duration-700 ${
                               showResults && hasCorrectAnswer
@@ -404,7 +410,7 @@ export function ManagerPickAnswerQuestion({
                           />
                         </div>
                         <p
-                          className="mt-3 min-h-14 text-center text-base font-bold sm:text-lg"
+                          className="mt-2 line-clamp-2 min-h-10 text-center text-sm font-bold sm:text-base xl:text-lg"
                           dir="auto"
                         >
                           {option.option_text}

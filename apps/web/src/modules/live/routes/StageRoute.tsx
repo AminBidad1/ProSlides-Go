@@ -90,20 +90,20 @@ function StageLobby({ snapshot }: { snapshot: StageSnapshot }) {
   }, [joinUrl]);
 
   return (
-    <main className="min-h-screen px-5 pb-6 pt-20 sm:px-6 sm:pb-8 sm:pt-24">
-      <div className="mx-auto grid w-full max-w-[96rem] gap-5 lg:grid-cols-[minmax(22rem,0.72fr)_minmax(0,1.28fr)]">
-        <section className="flex flex-col justify-center rounded-[2.5rem] border border-white/10 bg-[color:var(--live-surface)] p-7 text-center shadow-2xl backdrop-blur sm:p-9 lg:text-start">
+    <main className="h-full min-h-0 overflow-hidden px-4 pb-3 pt-[4.5rem] sm:px-5 sm:pb-4">
+      <div className="mx-auto grid h-full min-h-0 w-full max-w-[96rem] gap-4 md:grid-cols-[minmax(18rem,0.72fr)_minmax(0,1.28fr)]">
+        <section className="flex min-h-0 flex-col justify-center overflow-hidden rounded-[2rem] border border-white/10 bg-[color:var(--live-surface)] p-5 text-center shadow-2xl backdrop-blur sm:p-6 md:text-start">
           <p className="text-sm font-bold text-[color:var(--live-muted)]">
             برای پیوستن به جلسه
           </p>
-          <h1 className="mt-3 text-3xl font-black sm:text-5xl" dir="auto">
+          <h1 className="mt-2 line-clamp-2 text-2xl font-black sm:text-4xl xl:text-5xl" dir="auto">
             {snapshot.presentation.title}
           </h1>
 
-          <div className="mt-7 rounded-3xl border border-white/15 bg-black/20 p-5">
+          <div className="mt-4 rounded-2xl border border-white/15 bg-black/20 p-4">
             <p className="text-sm text-[color:var(--live-muted)]">کد ورود</p>
             <p
-              className="mt-2 font-outfit text-5xl font-black tracking-[0.16em] sm:text-6xl"
+              className="mt-1 font-outfit text-4xl font-black tracking-[0.14em] sm:text-5xl xl:text-6xl"
               dir="ltr"
             >
               {snapshot.join_code}
@@ -116,7 +116,7 @@ function StageLobby({ snapshot }: { snapshot: StageSnapshot }) {
             </p>
           </div>
 
-          <div className="mx-auto mt-5 grid h-44 w-44 place-items-center rounded-3xl bg-white p-3 shadow-xl lg:mx-0">
+          <div className="mx-auto mt-4 grid h-[min(10rem,22dvh)] w-[min(10rem,22dvh)] shrink-0 place-items-center rounded-2xl bg-white p-2.5 shadow-xl md:mx-0">
             {qrDataUrl ? (
               <img
                 src={qrDataUrl}
@@ -130,7 +130,7 @@ function StageLobby({ snapshot }: { snapshot: StageSnapshot }) {
             )}
           </div>
 
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-sm font-bold lg:justify-start">
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs font-bold sm:text-sm md:justify-start">
             <span className="rounded-full bg-white/10 px-3 py-2">
               {snapshot.participant_count.toLocaleString("fa-IR")} نفر وارد شده‌اند
             </span>
@@ -149,7 +149,7 @@ function StageLobby({ snapshot }: { snapshot: StageSnapshot }) {
             }),
           )}
           total={snapshot.participant_count}
-          className="lg:min-h-[calc(100dvh-9rem)]"
+          fillAvailable
         />
       </div>
     </main>
@@ -158,15 +158,15 @@ function StageLobby({ snapshot }: { snapshot: StageSnapshot }) {
 
 function StageContent({ content }: { content: LegacyContentSlide }) {
   return (
-    <main className="flex min-h-screen items-center px-5 pb-12 pt-24 sm:px-8">
-      <article className="mx-auto w-full max-w-6xl rounded-[2.5rem] border border-white/10 bg-[color:var(--live-surface)] p-7 text-center shadow-2xl backdrop-blur sm:p-12">
+    <main className="flex h-full min-h-0 items-center overflow-hidden px-5 pb-4 pt-[4.5rem] sm:px-8">
+      <article className="mx-auto flex max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-[2.5rem] border border-white/10 bg-[color:var(--live-surface)] p-6 text-center shadow-2xl backdrop-blur sm:p-8">
         {content.title ? (
-          <h1 className="text-4xl font-black leading-tight sm:text-6xl" dir="auto">
+          <h1 className="line-clamp-3 shrink-0 text-3xl font-black leading-tight sm:text-5xl xl:text-6xl" dir="auto">
             {content.title}
           </h1>
         ) : null}
         {content.content_text ? (
-          <p className="mx-auto mt-7 max-w-4xl whitespace-pre-wrap text-xl leading-10 text-[color:var(--live-muted)] sm:text-2xl" dir="auto">
+          <p className="mx-auto mt-4 max-h-[36dvh] max-w-4xl overflow-hidden whitespace-pre-wrap text-lg leading-8 text-[color:var(--live-muted)] sm:text-xl sm:leading-9 xl:text-2xl" dir="auto">
             {content.content_text}
           </p>
         ) : null}
@@ -174,7 +174,7 @@ function StageContent({ content }: { content: LegacyContentSlide }) {
           <img
             src={content.content_image_url}
             alt={content.title || "تصویر محتوای ارائه"}
-            className="mx-auto mt-8 max-h-[58dvh] max-w-full rounded-3xl object-contain shadow-2xl"
+            className="mx-auto mt-5 min-h-0 max-h-[44dvh] max-w-full rounded-3xl object-contain shadow-2xl"
           />
         ) : null}
       </article>
@@ -206,7 +206,7 @@ function StageTimer({
 
   return (
     <div
-      className="mx-auto mt-5 grid h-24 w-24 place-items-center rounded-full border-4 border-white/15 bg-black/20 text-4xl font-black"
+      className="mx-auto mt-3 grid h-16 w-16 place-items-center rounded-full border-4 border-white/15 bg-black/20 text-2xl font-black sm:h-20 sm:w-20 sm:text-3xl"
       role="timer"
       aria-label="زمان باقی‌مانده"
     >
@@ -243,15 +243,21 @@ function StageActivity({
       : [];
   const total = Number(result?.response_count ?? 0);
   const options = question.options ?? [];
+  const optionGridColumns =
+    options.length <= 4
+      ? "lg:grid-cols-2"
+      : options.length <= 6
+        ? "lg:grid-cols-3"
+        : "lg:grid-cols-4";
   const isPoll =
     !isWordCloud &&
     question.has_correct_answer === false &&
     question.is_scored === false;
 
   return (
-    <main className="flex min-h-screen flex-col px-5 pb-10 pt-24 sm:px-8">
-      <section className="mx-auto flex w-full max-w-7xl flex-1 flex-col">
-        <div className="text-center">
+    <main className="flex h-full min-h-0 flex-col overflow-hidden px-5 pb-4 pt-[4.5rem] sm:px-8">
+      <section className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col overflow-hidden">
+        <div className="shrink-0 text-center">
           <p className="text-sm font-bold text-[color:var(--live-muted)]">
             {revealed
               ? isWordCloud
@@ -269,14 +275,14 @@ function StageActivity({
           </p>
           {question.question_title ? (
             <p
-              className="mx-auto mt-2 max-w-4xl text-sm font-bold text-[color:var(--live-muted)]"
+              className="mx-auto mt-1 line-clamp-1 max-w-4xl text-sm font-bold text-[color:var(--live-muted)]"
               dir="auto"
             >
               {question.question_title}
             </p>
           ) : null}
           <h1
-            className="mx-auto mt-2 max-w-5xl text-3xl font-black leading-tight sm:text-5xl"
+            className="mx-auto mt-1 line-clamp-3 max-w-5xl text-2xl font-black leading-tight sm:text-4xl xl:text-5xl"
             dir="auto"
           >
             {question.question_text || "فعالیت"}
@@ -297,17 +303,17 @@ function StageActivity({
         </div>
 
         {isWordCloud ? (
-          <div className="mt-8 flex min-h-[18rem] flex-1 flex-col rounded-[2.5rem] border border-white/10 bg-white/5 p-5 shadow-2xl">
+          <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/5 p-4 shadow-2xl sm:p-5">
             {question.image_url ? (
               <img
                 src={question.image_url}
                 alt=""
-                className="mx-auto mb-3 max-h-44 max-w-full rounded-2xl object-contain"
+                className="mx-auto mb-3 max-h-[18dvh] max-w-full rounded-2xl object-contain"
               />
             ) : null}
             {!revealed ? (
               <div
-                className="grid min-h-[18rem] flex-1 place-items-center"
+                className="grid min-h-0 flex-1 place-items-center"
                 aria-label="در انتظار پاسخ‌های ابر واژه"
               >
                 <p className="max-w-2xl text-center text-lg font-bold leading-8 text-[color:var(--live-muted)]">
@@ -318,13 +324,13 @@ function StageActivity({
             ) : (
               <WordCloudView
                 terms={wordTerms}
-                className="min-h-[18rem] flex-1"
+                className="min-h-0 flex-1"
                 emptyLabel="هنوز عبارتی برای نمایش وجود ندارد."
               />
             )}
           </div>
         ) : (
-          <div className="mt-8 grid flex-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className={`mt-4 grid min-h-0 flex-1 auto-rows-fr grid-cols-2 gap-3 overflow-hidden ${optionGridColumns}`}>
             {options.map((option, index) => {
               const count = counts.get(index) ?? 0;
               const percentage = total > 0 ? (count / total) * 100 : 0;
@@ -333,7 +339,7 @@ function StageActivity({
                 <article
                   key={String(option.option_id ?? index)}
                   className={
-                    "flex min-h-44 flex-col overflow-hidden rounded-3xl border p-5 shadow-xl " +
+                    "flex min-h-0 flex-col overflow-hidden rounded-2xl border p-3 shadow-xl sm:p-4 " +
                     (correct
                       ? "border-success/70 bg-success/15"
                       : "border-white/10 bg-white/5")
@@ -343,14 +349,14 @@ function StageActivity({
                     <img
                       src={option.image_url}
                       alt=""
-                      className="mx-auto mb-4 max-h-28 max-w-full rounded-2xl object-contain"
+                      className="mx-auto mb-2 max-h-[8dvh] max-w-full rounded-xl object-contain"
                     />
                   ) : null}
-                  <p className="text-center text-lg font-black" dir="auto">
+                  <p className="line-clamp-2 text-center text-sm font-black sm:text-base xl:text-lg" dir="auto">
                     {option.option_text}
                   </p>
                   {revealed ? (
-                    <div className="mt-auto pt-5">
+                    <div className="mt-auto pt-2">
                       <div className="flex items-end justify-between gap-3">
                         <span className="text-sm text-[color:var(--live-muted)]">
                           {correct ? "پاسخ صحیح" : ""}
@@ -395,11 +401,15 @@ function RankingList({
   title: string;
   participantCount: number;
 }) {
-  const maxScore = Math.max(0, ...ranking.map((entry) => Number(entry.score || 0)));
-  if (participantCount === 1 && ranking.length > 0) {
-    const player = ranking[0];
+  const visibleRanking = ranking.slice(0, 5);
+  const maxScore = Math.max(
+    0,
+    ...visibleRanking.map((entry) => Number(entry.score || 0)),
+  );
+  if (participantCount === 1 && visibleRanking.length > 0) {
+    const player = visibleRanking[0];
     return (
-      <main className="grid min-h-screen place-items-center px-5 pb-10 pt-24 text-center sm:px-8">
+      <main className="grid h-full min-h-0 place-items-center overflow-hidden px-5 pb-4 pt-[4.5rem] text-center sm:px-8">
         <section className="w-full max-w-xl rounded-[2.5rem] border border-white/10 bg-[color:var(--live-surface)] p-9 shadow-2xl backdrop-blur">
           <p className="text-sm font-bold text-[color:var(--live-muted)]">امتیاز فعلی</p>
           <h1 className="mt-3 truncate text-4xl font-black sm:text-5xl" dir="auto">
@@ -416,18 +426,18 @@ function RankingList({
     );
   }
   return (
-    <main className="min-h-screen px-5 pb-10 pt-24 sm:px-8">
-      <section className="mx-auto max-w-6xl">
-        <div className="text-center">
+    <main className="flex h-full min-h-0 flex-col overflow-hidden px-5 pb-4 pt-[4.5rem] sm:px-8">
+      <section className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col overflow-hidden">
+        <div className="shrink-0 text-center">
           <p className="text-sm font-bold text-[color:var(--live-muted)]">رتبه‌بندی تجمعی جلسه</p>
-          <h1 className="mt-2 text-4xl font-black sm:text-6xl">{title}</h1>
+          <h1 className="mt-1 text-3xl font-black sm:text-5xl">{title}</h1>
         </div>
-        <ol className="mt-9 space-y-4 rounded-[2.5rem] border border-white/10 bg-[color:var(--live-surface)] p-5 shadow-2xl backdrop-blur sm:p-7">
-          {ranking.length === 0 ? (
+        <ol className="mt-4 grid min-h-0 flex-1 auto-rows-fr gap-3 overflow-hidden rounded-[2.5rem] border border-white/10 bg-[color:var(--live-surface)] p-4 shadow-2xl backdrop-blur sm:p-5">
+          {visibleRanking.length === 0 ? (
             <li className="grid min-h-48 place-items-center text-[color:var(--live-muted)]">
               هنوز امتیازی برای نمایش وجود ندارد.
             </li>
-          ) : ranking.map((entry, index) => {
+          ) : visibleRanking.map((entry, index) => {
             const width = maxScore > 0 ? Math.max(4, (entry.score / maxScore) * 100) : 0;
             return (
               <li key={`${entry.rank}:${entry.display_name}:${index}`} className="grid grid-cols-[3.25rem_minmax(0,1fr)_auto] items-center gap-3">
@@ -463,7 +473,7 @@ const medalForRank = (rank: number) =>
 function StageFinal({ snapshot }: { snapshot: StageSnapshot }) {
   if (!snapshot.has_scoring) {
     return (
-      <main className="grid min-h-screen place-items-center px-5 pb-10 pt-24 text-center">
+      <main className="grid h-full min-h-0 place-items-center overflow-hidden px-5 pb-4 pt-[4.5rem] text-center">
         <section className="max-w-2xl rounded-[2.5rem] border border-white/10 bg-[color:var(--live-surface)] p-10 shadow-2xl backdrop-blur">
           <p className="text-sm font-bold text-[color:var(--live-muted)]">جلسه پایان یافت</p>
           <h1 className="mt-3 text-4xl font-black sm:text-6xl">ممنون از مشارکت شما</h1>
@@ -479,7 +489,7 @@ function StageFinal({ snapshot }: { snapshot: StageSnapshot }) {
   const isSolo = snapshot.participant_count === 1;
   if (snapshot.participant_count === 0 || podium.length === 0) {
     return (
-      <main className="grid min-h-screen place-items-center px-5 pb-10 pt-24 text-center">
+      <main className="grid h-full min-h-0 place-items-center overflow-hidden px-5 pb-4 pt-[4.5rem] text-center">
         <section className="max-w-2xl rounded-[2.5rem] border border-white/10 bg-[color:var(--live-surface)] p-10 shadow-2xl backdrop-blur">
           <p className="text-sm font-bold text-[color:var(--live-muted)]">جلسه پایان یافت</p>
           <h1 className="mt-3 text-4xl font-black sm:text-6xl">هنوز نتیجه‌ای ثبت نشده است</h1>
@@ -493,10 +503,10 @@ function StageFinal({ snapshot }: { snapshot: StageSnapshot }) {
   if (isSolo) {
     const player = podium[0];
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center px-5 pb-10 pt-24 text-center">
+      <main className="flex h-full min-h-0 flex-col items-center justify-center overflow-hidden px-5 pb-4 pt-[4.5rem] text-center">
         <p className="text-sm font-bold text-[color:var(--live-muted)]">پایان جلسه</p>
-        <h1 className="mt-2 text-4xl font-black sm:text-6xl">نتیجه انفرادی</h1>
-        <section className="mt-10 w-full max-w-xl rounded-[2.5rem] border border-white/15 bg-[color:var(--live-surface)] p-10 shadow-2xl backdrop-blur">
+        <h1 className="mt-1 text-3xl font-black sm:text-5xl xl:text-6xl">نتیجه انفرادی</h1>
+        <section className="mt-5 w-full max-w-xl rounded-[2.5rem] border border-white/15 bg-[color:var(--live-surface)] p-10 shadow-2xl backdrop-blur">
           <div className="text-5xl" aria-hidden="true">🎯</div>
           <h2 className="mt-5 truncate text-3xl font-black" dir="auto">{player.display_name}</h2>
           <p className="mt-5 text-5xl font-black">
@@ -511,14 +521,14 @@ function StageFinal({ snapshot }: { snapshot: StageSnapshot }) {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-5 pb-10 pt-24 text-center">
+    <main className="flex h-full min-h-0 flex-col items-center justify-center overflow-hidden px-5 pb-4 pt-[4.5rem] text-center">
       <p className="text-sm font-bold text-[color:var(--live-muted)]">پایان جلسه</p>
       <h1 className="mt-2 text-4xl font-black sm:text-6xl">برترین‌های این رقابت</h1>
-      <div className="mt-10 grid w-full max-w-5xl gap-5 md:grid-cols-3">
+      <div className="mt-5 grid w-full max-w-5xl gap-5 md:grid-cols-3">
         {podium.map((entry, index) => (
           <article
             key={`${entry.rank}:${entry.display_name}:${index}`}
-            className="rounded-[2rem] border border-white/15 bg-[color:var(--live-surface)] p-7 shadow-2xl backdrop-blur"
+            className="min-h-0 rounded-[2rem] border border-white/15 bg-[color:var(--live-surface)] p-4 shadow-2xl backdrop-blur sm:p-5"
           >
             <div className="text-5xl" aria-hidden="true">{medalForRank(entry.rank)}</div>
             <p className="mt-4 text-4xl font-black">{entry.rank.toLocaleString("fa-IR")}</p>
@@ -579,7 +589,7 @@ export default function StageRoute() {
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-cover bg-center text-[color:var(--live-fg)]"
+      className="h-screen h-dvh overflow-hidden bg-cover bg-center text-[color:var(--live-fg)]"
       style={theme.style}
       data-stage-surface="audience"
     >

@@ -13,6 +13,7 @@ type LiveLobbyCrowdProps = {
   hiddenIds?: ReadonlySet<string>;
   onToggleHidden?: (participantId: string) => void;
   className?: string;
+  fillAvailable?: boolean;
   emptyTitle?: string;
   emptyDescription?: string;
 };
@@ -54,6 +55,7 @@ export function LiveLobbyCrowd({
   hiddenIds,
   onToggleHidden,
   className = "",
+  fillAvailable = false,
   emptyTitle = "منتظر اولین نفر هستیم",
   emptyDescription = "با ورود شرکت‌کنندگان، نام و آواتارشان اینجا ظاهر می‌شود.",
 }: LiveLobbyCrowdProps) {
@@ -97,7 +99,7 @@ export function LiveLobbyCrowd({
 
   return (
     <section
-      className={`relative min-h-[26rem] overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/[0.045] shadow-2xl backdrop-blur sm:min-h-[34rem] ${className}`}
+      className={`${fillAvailable ? "min-h-0 flex-1" : "min-h-[26rem] sm:min-h-[34rem]"} relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/[0.045] shadow-2xl backdrop-blur ${className}`}
       aria-label="شرکت‌کنندگان حاضر در لابی"
     >
       <style>{`
