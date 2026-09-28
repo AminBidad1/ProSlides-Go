@@ -558,6 +558,60 @@ test("SSE starts after the snapshot cursor and parses event envelopes", async ()
   assert.deepEqual(received.map((event) => event.event_id), [43]);
 });
 
+test("SSE waits for asynchronous event application before consuming the next event", async () => {
+  const originalFetch = globalThis.fetch;
+  let releaseFirst;
+  const firstApplied = new Promise((resolve) => {
+    releaseFirst = resolve;
+  });
+  const received = [];
+
+  const event = (id) => ({
+    event_id: id,
+    schema_version: 1,
+    session_id: "session",
+    state_version: id,
+    name: "session.state_changed",
+    payload: {},
+    occurred_at: new Date().toISOString(),
+  });
+
+  globalThis.fetch = async () =>
+    new Response(
+      [
+        "data: " + JSON.stringify(event(1)),
+        "",
+        "data: " + JSON.stringify(event(2)),
+        "",
+        "",
+      ].join("\n"),
+      {
+        status: 200,
+        headers: { "Content-Type": "text/event-stream" },
+      },
+    );
+
+  try {
+    const consuming = streamLiveEvents("session", 0, {
+      signal: new AbortController().signal,
+      viewer: "participant",
+      onEvent: async (next) => {
+        received.push(next.event_id);
+        if (next.event_id === 1) await firstApplied;
+      },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.deepEqual(received, [1]);
+
+    releaseFirst();
+    await consuming;
+    assert.deepEqual(received, [1, 2]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("SSE reports open only after response headers are available", async () => {
   const originalFetch = globalThis.fetch;
   let opened = 0;

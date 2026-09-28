@@ -138,7 +138,7 @@ export const streamLiveEvents = async (
   options: {
     signal: AbortSignal;
     onOpen?: () => void;
-    onEvent: (event: LiveEvent) => void;
+    onEvent: (event: LiveEvent) => void | Promise<void>;
     silenceTimeoutMs?: number;
     viewer: LiveViewerRole;
   },
@@ -188,7 +188,7 @@ export const streamLiveEvents = async (
         const block = buffer.slice(0, boundary);
         buffer = buffer.slice(boundary + 2);
         const data = block.split("\n").filter((line) => line.startsWith("data:")).map((line) => line.slice(5).trimStart()).join("\n");
-        if (data) options.onEvent(JSON.parse(data) as LiveEvent);
+        if (data) await options.onEvent(JSON.parse(data) as LiveEvent);
         boundary = buffer.indexOf("\n\n");
       }
       if (done) return;

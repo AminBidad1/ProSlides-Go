@@ -144,6 +144,7 @@ const context: LiveSessionContextValue = {
   participantCount: 3,
   connect: vi.fn(async () => true),
   disconnect: vi.fn(),
+  resync: vi.fn(async () => true),
   joinParticipant: vi.fn(async () => true),
   submitAnswer: vi.fn(async () => true),
   sendNavigation: vi.fn(async () => true),

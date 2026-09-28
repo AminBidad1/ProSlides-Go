@@ -719,7 +719,9 @@ test("live projection is derived directly from authoritative snapshot and roster
   assert.match(entry, /<LiveSessionProvider[^>]*>[\s\S]*<ServerDataProvider>/);
   assert.match(entry, /key=\{`player:\$\{resolvedData\.session_id\}`\}/);
   assert.match(entry, /key=\{`\$\{role\}:\$\{roomId \|\| "unknown"\}`\}/);
-  assert.match(recovery, /if \(ok !== true\) joinSentRef\.current = false/);
+  assert.match(recovery, /if \(outcome === true\)/);
+  assert.match(recovery, /outcome\?\.status === "rate_limited"/);
+  assert.match(recovery, /clearPlayerSeenActive\(roomId\)/);
 });
 
 

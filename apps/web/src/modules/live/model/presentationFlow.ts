@@ -8,6 +8,7 @@ import type {
 type RoomId = string | number | null | undefined;
 type ReadableStorage = Pick<Storage, "getItem">;
 type WritableStorage = Pick<Storage, "setItem">;
+type MutableStorage = Pick<Storage, "removeItem">;
 
 export type PlayerLastActive =
   | {
@@ -91,6 +92,17 @@ export const persistPlayerSeenActive = (
 ): void => {
   try {
     storage?.setItem(playerSeenKey(roomId), "1");
+  } catch {
+    // Storage is a best-effort resume optimization.
+  }
+};
+
+export const clearPlayerSeenActive = (
+  roomId: RoomId,
+  storage: MutableStorage | null = sessionStorageOrNull(),
+): void => {
+  try {
+    storage?.removeItem(playerSeenKey(roomId));
   } catch {
     // Storage is a best-effort resume optimization.
   }

@@ -737,6 +737,97 @@ test("SSE reconnect honors server Retry-After before retrying", async () => {
   runtime.destroy();
 });
 
+test("manager never projects a ranking snapshot with the previous joined-order roster", async () => {
+  let onEvent = null;
+  let snapshotReads = 0;
+  let scoreRosterStarted = false;
+  let releaseScoreRoster = null;
+  const scoreRoster = new Promise((resolve) => {
+    releaseScoreRoster = resolve;
+  });
+
+  const runtime = createLiveRuntime("manager", {
+    storage: null,
+    transport: {
+      createRequestId: () => "00000000-0000-4000-8000-000000000053",
+      createLiveSession: async () => managerSession("session"),
+      getLiveSnapshot: async () => {
+        snapshotReads += 1;
+        return snapshotReads === 1
+          ? managerSnapshot("session", {
+              eventId: 1,
+              stateVersion: 1,
+              state: "presenting",
+              stageView: "item",
+            })
+          : managerSnapshot("session", {
+              eventId: 2,
+              stateVersion: 2,
+              state: "presenting",
+              stageView: "overall_ranking",
+            });
+      },
+      getRosterPage: async (_id, order) => {
+        if (order === "joined") {
+          return {
+            ...emptyRoster(order),
+            items: [{
+              participant_id: "joined-first",
+              display_name: "Joined first",
+              score: 1,
+              joined_at: new Date().toISOString(),
+            }],
+          };
+        }
+        scoreRosterStarted = true;
+        await scoreRoster;
+        return {
+          ...emptyRoster(order),
+          items: [{
+            participant_id: "score-first",
+            display_name: "Score first",
+            score: 100,
+            rank: 1,
+            joined_at: new Date().toISOString(),
+          }],
+        };
+      },
+      streamLiveEvents: async (_id, lastEventId, options) => {
+        onEvent = options.onEvent;
+        return parkedStream(_id, lastEventId, options);
+      },
+    },
+  });
+
+  assert.equal(await runtime.connect("presentation"), true);
+  assert.equal(runtime.getState().rosterOrder, "joined");
+  assert.equal(runtime.getState().roster[0].participant_id, "joined-first");
+
+  const transition = onEvent({
+    event_id: 2,
+    schema_version: 1,
+    session_id: "session",
+    state_version: 2,
+    name: "session.state_changed",
+    payload: {},
+    occurred_at: new Date().toISOString(),
+  });
+
+  for (let index = 0; index < 20 && !scoreRosterStarted; index += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  assert.equal(runtime.getState().snapshot.session.stage_view, "overall_ranking");
+  assert.equal(runtime.getState().rosterOrder, "score");
+  assert.deepEqual(runtime.getState().roster, []);
+
+  releaseScoreRoster();
+  await transition;
+
+  assert.equal(runtime.getState().roster[0].participant_id, "score-first");
+  runtime.destroy();
+});
+
 test("presence updates preserve score ordering while the manager is on a leaderboard", async () => {
   let onEvent = null;
   const rosterOrders = [];
@@ -844,6 +935,44 @@ test("older roster responses cannot overwrite a newer roster request", async () 
   assert.equal(runtime.getState().rosterOrder, "score");
   assert.equal(runtime.getState().roster[0].participant_id, "ranked");
 
+  runtime.destroy();
+});
+
+test("failed manager roster refresh retries and recovers without a new live event", async () => {
+  let rosterReads = 0;
+  const runtime = createLiveRuntime("manager", {
+    storage: null,
+    transport: {
+      createRequestId: () => "00000000-0000-4000-8000-000000000052",
+      createLiveSession: async () => managerSession("session"),
+      getLiveSnapshot: async () => managerSnapshot("session"),
+      getRosterPage: async (_id, order) => {
+        rosterReads += 1;
+        if (rosterReads === 1) throw new Error("temporary roster failure");
+        return {
+          ...emptyRoster(order),
+          items: [{
+            participant_id: "recovered",
+            display_name: "Recovered",
+            score: 10,
+            joined_at: new Date().toISOString(),
+          }],
+        };
+      },
+      streamLiveEvents: parkedStream,
+    },
+  });
+
+  assert.equal(await runtime.connect("presentation"), true);
+  assert.equal(runtime.getState().roster.length, 0);
+
+  for (let index = 0; index < 30 && rosterReads < 2; index += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+
+  assert.equal(rosterReads >= 2, true);
+  assert.equal(runtime.getState().roster[0].participant_id, "recovered");
+  assert.equal(runtime.getState().connectionError, null);
   runtime.destroy();
 });
 
@@ -1121,6 +1250,326 @@ test("participant runtime submits Text Activity responses through the same comma
   runtime.destroy();
 });
 
+test("participant rejoin preserves an already healthy event stream status", async () => {
+  const participantSnapshot = {
+    role: "participant",
+    session: {
+      id: "session",
+      presentation_id: "presentation",
+      state: "presenting",
+      state_version: 2,
+      active_item_id: "q1",
+      activity_phase: "accepting",
+      stage_view: "item",
+      ends_at: new Date(Date.now() + 30_000).toISOString(),
+      remaining_seconds: 30,
+    },
+    participant: {
+      id: "participant",
+      display_name: "Player",
+      avatar: "🙂",
+      score: 0,
+    },
+    participant_count: 1,
+    last_event_id: 2,
+  };
+
+  let streamStarts = 0;
+  const runtime = createLiveRuntime("player", {
+    storage: null,
+    transport: {
+      createRequestId: () => "00000000-0000-4000-8000-000000000043",
+      joinLiveSession: async () => ({
+        id: "participant",
+        display_name: "Player",
+        avatar: "🙂",
+      }),
+      getLiveSnapshot: async () => participantSnapshot,
+      streamLiveEvents: async (_id, _lastEventId, options) => {
+        streamStarts += 1;
+        return parkedStream(_id, _lastEventId, options);
+      },
+    },
+  });
+
+  assert.equal(await runtime.connect("session"), true);
+  assert.equal(
+    await runtime.joinParticipant({
+      name: "Player",
+      avatar: "🙂",
+      clientUserId: "00000000-0000-4000-8000-000000000044",
+    }),
+    true,
+  );
+
+  for (
+    let index = 0;
+    index < 20 && !runtime.getState().isStreamConnected;
+    index += 1
+  ) {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  assert.equal(runtime.getState().isStreamConnected, true);
+  assert.equal(streamStarts, 1);
+
+  assert.equal(
+    await runtime.joinParticipant({
+      name: "Player",
+      avatar: "🙂",
+      clientUserId: "00000000-0000-4000-8000-000000000044",
+    }),
+    true,
+  );
+
+  assert.equal(runtime.getState().isStreamConnected, true);
+  assert.equal(streamStarts, 1);
+
+  runtime.destroy();
+});
+
+test("repeating player connect for the same Session preserves a healthy stream", async () => {
+  const snapshot = {
+    role: "participant",
+    session: {
+      id: "session",
+      presentation_id: "presentation",
+      state: "lobby",
+      state_version: 1,
+      active_item_id: null,
+      activity_phase: null,
+      stage_view: "item",
+      ends_at: null,
+      remaining_seconds: null,
+    },
+    participant: { id: "participant", display_name: "Player", avatar: "🙂", score: 0 },
+    participant_count: 1,
+    last_event_id: 1,
+  };
+  let streamStarts = 0;
+  const runtime = createLiveRuntime("player", {
+    storage: null,
+    transport: {
+      createRequestId: () => "00000000-0000-4000-8000-000000000045",
+      joinLiveSession: async () => ({ id: "participant", display_name: "Player", avatar: "🙂" }),
+      getLiveSnapshot: async () => snapshot,
+      streamLiveEvents: async (_id, lastEventId, options) => {
+        streamStarts += 1;
+        return parkedStream(_id, lastEventId, options);
+      },
+    },
+  });
+
+  assert.equal(await runtime.connect("session"), true);
+  assert.equal(await runtime.joinParticipant({
+    name: "Player",
+    avatar: "🙂",
+    clientUserId: "00000000-0000-4000-8000-000000000046",
+  }), true);
+
+  for (let index = 0; index < 20 && !runtime.getState().isStreamConnected; index += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  assert.equal(runtime.getState().isStreamConnected, true);
+  assert.equal(await runtime.connect("session"), true);
+  assert.equal(runtime.getState().isStreamConnected, true);
+  assert.equal(streamStarts, 1);
+  runtime.destroy();
+});
+
+test("a failed participant rejoin cannot demote an existing healthy stream", async () => {
+  const snapshot = {
+    role: "participant",
+    session: {
+      id: "session",
+      presentation_id: "presentation",
+      state: "lobby",
+      state_version: 1,
+      active_item_id: null,
+      activity_phase: null,
+      stage_view: "item",
+      ends_at: null,
+      remaining_seconds: null,
+    },
+    participant: { id: "participant", display_name: "Player", avatar: "🙂", score: 0 },
+    participant_count: 1,
+    last_event_id: 1,
+  };
+  let joins = 0;
+  const runtime = createLiveRuntime("player", {
+    storage: null,
+    transport: {
+      createRequestId: () => "00000000-0000-4000-8000-000000000047",
+      joinLiveSession: async () => {
+        joins += 1;
+        if (joins > 1) throw new Error("temporary join failure");
+        return { id: "participant", display_name: "Player", avatar: "🙂" };
+      },
+      getLiveSnapshot: async () => snapshot,
+      streamLiveEvents: parkedStream,
+    },
+  });
+
+  assert.equal(await runtime.connect("session"), true);
+  assert.equal(await runtime.joinParticipant({
+    name: "Player",
+    avatar: "🙂",
+    clientUserId: "00000000-0000-4000-8000-000000000048",
+  }), true);
+
+  for (let index = 0; index < 20 && !runtime.getState().isStreamConnected; index += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  assert.equal(await runtime.joinParticipant({
+    name: "Player",
+    avatar: "🙂",
+    clientUserId: "00000000-0000-4000-8000-000000000048",
+  }), false);
+  assert.equal(runtime.getState().isConnected, true);
+  assert.equal(runtime.getState().isStreamConnected, true);
+  runtime.destroy();
+});
+
+test("state events are not acknowledged until the recovery snapshot catches up", async () => {
+  let snapshotReads = 0;
+  const streamCursors = [];
+  const runtime = createLiveRuntime("manager", {
+    storage: null,
+    random: () => 0.5,
+    sleep: async () => {},
+    transport: {
+      createRequestId: () => "00000000-0000-4000-8000-000000000049",
+      createLiveSession: async () => managerSession("session"),
+      getLiveSnapshot: async () => {
+        snapshotReads += 1;
+        if (snapshotReads === 1) {
+          return managerSnapshot("session", { eventId: 5, stateVersion: 1, state: "lobby" });
+        }
+        if (snapshotReads === 2) throw new Error("snapshot temporarily unavailable");
+        return managerSnapshot("session", { eventId: 6, stateVersion: 2, state: "presenting" });
+      },
+      getRosterPage: async (_id, order) => emptyRoster(order),
+      streamLiveEvents: async (_id, lastEventId, options) => {
+        streamCursors.push(lastEventId);
+        options.onOpen?.();
+        if (streamCursors.length === 1) {
+          await options.onEvent({
+            event_id: 6,
+            schema_version: 1,
+            session_id: "session",
+            state_version: 2,
+            name: "session.state_changed",
+            payload: {},
+            occurred_at: new Date().toISOString(),
+          });
+          return;
+        }
+        return parkedStream(_id, lastEventId, options);
+      },
+    },
+  });
+
+  assert.equal(await runtime.connect("presentation"), true);
+  for (let index = 0; index < 30 && streamCursors.length < 2; index += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  assert.deepEqual(streamCursors.slice(0, 2), [5, 6]);
+  assert.equal(snapshotReads >= 3, true);
+  assert.equal(runtime.getState().snapshot.last_event_id, 6);
+  assert.equal(runtime.getState().snapshot.session.state_version, 2);
+  assert.equal(runtime.getState().isStreamConnected, true);
+  runtime.destroy();
+});
+
+test("opening a recovered stream resets reconnect backoff before an event arrives", async () => {
+  const delays = [];
+  let streamAttempts = 0;
+  const runtime = createLiveRuntime("manager", {
+    storage: null,
+    random: () => 0.5,
+    sleep: async (milliseconds) => {
+      delays.push(milliseconds);
+    },
+    transport: {
+      createRequestId: () => "00000000-0000-4000-8000-000000000050",
+      createLiveSession: async () => managerSession("session"),
+      getLiveSnapshot: async () =>
+        managerSnapshot("session", { eventId: 5, stateVersion: 1 }),
+      getRosterPage: async (_id, order) => emptyRoster(order),
+      streamLiveEvents: async (_id, _lastEventId, options) => {
+        streamAttempts += 1;
+        if (streamAttempts === 1) throw new Error("first outage");
+        options.onOpen?.();
+        if (streamAttempts === 2) throw new Error("second outage after open");
+        return new Promise((resolve) => {
+          options.signal.addEventListener("abort", resolve, { once: true });
+        });
+      },
+    },
+  });
+
+  assert.equal(await runtime.connect("presentation"), true);
+  for (let index = 0; index < 30 && streamAttempts < 3; index += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  assert.equal(streamAttempts >= 3, true);
+  assert.deepEqual(delays.slice(0, 2), [500, 500]);
+  runtime.destroy();
+});
+
+test("explicit resync interrupts reconnect backoff and restarts from an authoritative cursor", async () => {
+  let snapshotReads = 0;
+  let streamAttempts = 0;
+  let releaseSleep = null;
+  const runtime = createLiveRuntime("manager", {
+    storage: null,
+    random: () => 0.5,
+    sleep: async (_milliseconds, signal) =>
+      new Promise((resolve) => {
+        releaseSleep = resolve;
+        signal.addEventListener("abort", resolve, { once: true });
+      }),
+    transport: {
+      createRequestId: () => "00000000-0000-4000-8000-000000000051",
+      createLiveSession: async () => managerSession("session"),
+      getLiveSnapshot: async () => {
+        snapshotReads += 1;
+        return snapshotReads === 1
+          ? managerSnapshot("session", { eventId: 5, stateVersion: 1 })
+          : managerSnapshot("session", { eventId: 9, stateVersion: 3, state: "presenting" });
+      },
+      getRosterPage: async (_id, order) => emptyRoster(order),
+      streamLiveEvents: async (_id, lastEventId, options) => {
+        streamAttempts += 1;
+        if (streamAttempts === 1) throw new Error("network interrupted");
+        assert.equal(lastEventId, 9);
+        return parkedStream(_id, lastEventId, options);
+      },
+    },
+  });
+
+  assert.equal(await runtime.connect("presentation"), true);
+  for (let index = 0; index < 20 && releaseSleep === null; index += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  assert.equal(runtime.getState().isStreamConnected, false);
+  assert.equal(await runtime.resync(), true);
+
+  for (let index = 0; index < 20 && streamAttempts < 2; index += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  assert.equal(streamAttempts, 2);
+  assert.equal(runtime.getState().snapshot.last_event_id, 9);
+  assert.equal(runtime.getState().isStreamConnected, true);
+  runtime.destroy();
+});
+
 test("participant answer HTTP remains available while SSE is reconnecting", async () => {
   let submissions = 0;
   const participantSnapshot = {
@@ -1230,6 +1679,124 @@ test("participant answer HTTP remains available while SSE is reconnecting", asyn
   runtime.destroy();
 });
 
+
+test("terminal participant stream failure clears the stale Activity projection", async () => {
+  const snapshot = {
+    role: "participant",
+    session: {
+      id: "session",
+      presentation_id: "presentation",
+      state: "presenting",
+      state_version: 4,
+      active_item_id: "q1",
+      activity_phase: "accepting",
+      stage_view: "item",
+      ends_at: new Date(Date.now() + 30_000).toISOString(),
+      remaining_seconds: 30,
+    },
+    active_item: {
+      id: "q1",
+      kind: "activity",
+      content: {
+        activity_kind: "choice",
+        prompt: { text: "Question" },
+        response: {
+          selection: "single",
+          options: [
+            { id: "a", text: "A" },
+            { id: "b", text: "B" },
+          ],
+        },
+        evaluation: { mode: "none" },
+        scoring: { mode: "none" },
+        timing: { duration_seconds: 30 },
+        results: {},
+      },
+    },
+    participant: {
+      id: "participant",
+      display_name: "Player",
+      avatar: "🙂",
+      score: 0,
+    },
+    participant_count: 1,
+    has_responded: false,
+    last_event_id: 4,
+  };
+
+  let rejectStream = null;
+  const runtime = createLiveRuntime("player", {
+    storage: null,
+    transport: {
+      createRequestId: () => "00000000-0000-4000-8000-000000000056",
+      joinLiveSession: async () => ({
+        id: "participant",
+        display_name: "Player",
+        avatar: "🙂",
+      }),
+      getLiveSnapshot: async () => snapshot,
+      streamLiveEvents: async (_id, _lastEventId, options) => {
+        options.onOpen?.();
+        await new Promise((resolve) => {
+          rejectStream = resolve;
+        });
+        throw new LiveAPIError(401, "participant_unauthorized");
+      },
+    },
+  });
+
+  assert.equal(await runtime.connect("session"), true);
+  assert.equal(
+    await runtime.joinParticipant({
+      name: "Player",
+      avatar: "🙂",
+      clientUserId: "00000000-0000-4000-8000-000000000057",
+    }),
+    true,
+  );
+
+  for (let index = 0; index < 20 && rejectStream === null; index += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+  assert.equal(runtime.getState().snapshot?.session.active_item_id, "q1");
+  assert.equal(runtime.getState().isStreamConnected, true);
+
+  rejectStream?.();
+  for (let index = 0; index < 20 && runtime.getState().isConnected; index += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  assert.equal(runtime.getState().isConnected, false);
+  assert.equal(runtime.getState().isStreamConnected, false);
+  assert.equal(runtime.getState().snapshot, null);
+  runtime.destroy();
+});
+
+test("participant join 404 is terminal and clears stale connection state", async () => {
+  const runtime = createLiveRuntime("player", {
+    storage: null,
+    transport: {
+      createRequestId: () => "00000000-0000-4000-8000-000000000054",
+      joinLiveSession: async () => {
+        throw new LiveAPIError(404, "session_not_found");
+      },
+    },
+  });
+
+  assert.equal(await runtime.connect("session"), true);
+  assert.equal(runtime.getState().isConnected, true);
+  assert.equal(
+    await runtime.joinParticipant({
+      name: "Player",
+      avatar: "🙂",
+      clientUserId: "00000000-0000-4000-8000-000000000055",
+    }),
+    "rejected",
+  );
+  assert.equal(runtime.getState().isConnected, false);
+  assert.equal(runtime.getState().isStreamConnected, false);
+  runtime.destroy();
+});
 
 test("participant join exposes precise retry outcomes for name conflicts and rate limits", async () => {
   const runtime = createLiveRuntime("player", {

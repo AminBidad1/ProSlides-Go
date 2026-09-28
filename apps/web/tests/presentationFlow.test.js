@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   EMPTY_PRESENTATION,
+  clearPlayerSeenActive,
   findContentSlideIndex,
   findQuestionSlideIndex,
   findSlideIndexById,
@@ -23,6 +24,9 @@ const memoryStorage = () => {
     setItem(key, value) {
       values.set(key, String(value));
     },
+    removeItem(key) {
+      values.delete(key);
+    },
   };
 };
 
@@ -40,6 +44,9 @@ test("player resume storage is scoped per room and validates persisted payloads"
   assert.equal(readPlayerSeenActive("room-a", session), false);
   persistPlayerSeenActive("room-a", session);
   assert.equal(readPlayerSeenActive("room-a", session), true);
+  assert.equal(readPlayerSeenActive("room-b", session), false);
+  clearPlayerSeenActive("room-a", session);
+  assert.equal(readPlayerSeenActive("room-a", session), false);
   assert.equal(readPlayerSeenActive("room-b", session), false);
 
   persistPlayerLastActive(

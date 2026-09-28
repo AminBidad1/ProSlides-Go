@@ -25,18 +25,27 @@ export function ManagerControls({
 }: ManagerControlsProps) {
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [ending, setEnding] = useState(false);
+  const [primaryPending, setPrimaryPending] = useState(false);
 
   const safeTotal = Math.max(totalSlides, 1);
   const safeCurrent = Math.min(Math.max(currentSlide, 1), safeTotal);
   const atEnd = endOnLastSlide && safeCurrent >= safeTotal;
   const progress = (safeCurrent / safeTotal) * 100;
 
-  const handlePrimary = () => {
+  const handlePrimary = async () => {
+    if (ending || primaryPending) return;
     if (atEnd) {
       setConfirmEnd(true);
       return;
     }
-    void onNext?.();
+    if (!onNext) return;
+
+    setPrimaryPending(true);
+    try {
+      await onNext();
+    } finally {
+      setPrimaryPending(false);
+    }
   };
 
   const confirmPresentationEnd = async () => {
@@ -55,6 +64,7 @@ export function ManagerControls({
         dir="rtl"
         className="fixed inset-x-0 bottom-0 z-30 flex min-h-16 items-center justify-between gap-3 border-t border-white/10 bg-black/25 px-3 py-2 text-[color:var(--live-fg)] backdrop-blur-md sm:px-5"
         aria-label="کنترل ارائه"
+        aria-busy={ending || primaryPending}
       >
         <div className="min-w-28">
           <p className="text-xs text-[color:var(--live-muted)]">آیتم</p>
@@ -74,7 +84,8 @@ export function ManagerControls({
             <button
               type="button"
               onClick={onShowLeaderboard}
-              className="min-h-11 rounded-xl bg-white/10 px-3 text-sm font-bold hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+              disabled={ending || primaryPending}
+              className="min-h-11 rounded-xl bg-white/10 px-3 text-sm font-bold hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
             >
               جدول امتیازات
             </button>
@@ -82,22 +93,27 @@ export function ManagerControls({
           <button
             type="button"
             onClick={() => setConfirmEnd(true)}
-            className="min-h-11 rounded-xl bg-danger/85 px-3 text-sm font-bold text-white hover:bg-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            disabled={ending || primaryPending}
+            className="min-h-11 rounded-xl bg-danger/85 px-3 text-sm font-bold text-white hover:bg-danger disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
           >
             پایان ارائه
           </button>
           <button
             type="button"
-            onClick={handlePrimary}
+            onClick={() => void handlePrimary()}
             aria-label={
               atEnd
                 ? "پایان از کنترل آیتم"
                 : primaryAriaLabel || primaryLabel || "آیتم بعدی"
             }
-            disabled={!atEnd && !onNext}
+            disabled={ending || primaryPending || (!atEnd && !onNext)}
             className="min-h-11 rounded-xl bg-brand px-5 text-sm font-black text-content-inverse hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
           >
-            {atEnd ? "پایان" : primaryLabel || "بعدی"}
+            {primaryPending
+              ? "در حال اعمال…"
+              : atEnd
+                ? "پایان"
+                : primaryLabel || "بعدی"}
           </button>
         </div>
       </footer>

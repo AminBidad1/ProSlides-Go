@@ -150,11 +150,11 @@ export function useStageProjection(sessionId: string | undefined) {
       }, 350);
     };
 
-    const handleEvent = (event: LiveEvent) => {
+    const handleEvent = async (event: LiveEvent) => {
       if (!shouldApplyLiveEvent(cursorRef.current, event)) return;
-      cursorRef.current = advanceLiveCursor(cursorRef.current, event);
 
       if (event.name === "presence.updated") {
+        cursorRef.current = advanceLiveCursor(cursorRef.current, event);
         const payload = eventRecord(event.payload);
         const participantDelta = Number(payload.participant_delta ?? 0);
         const activeParticipantDelta = Number(
@@ -191,11 +191,16 @@ export function useStageProjection(sessionId: string | undefined) {
         event.name === "session.state_changed" ||
         event.name === "ranking.updated"
       ) {
-        void refresh().catch((error) => {
-          if (!controller.signal.aborted) {
-            setState((value) => ({ ...value, error: errorText(error) }));
-          }
-        });
+        // Do not acknowledge a state transition until the Stage snapshot has
+        // caught up. A failed refresh then tears down this stream and replay
+        // resumes from the last fully applied cursor.
+        await refresh();
+        if (
+          cursorRef.current.eventId < Number(event.event_id || 0) ||
+          cursorRef.current.stateVersion < Number(event.state_version || 0)
+        ) {
+          throw new Error("stage_snapshot_behind_event");
+        }
       }
     };
 
@@ -222,18 +227,41 @@ export function useStageProjection(sessionId: string | undefined) {
         }
       }
 
+      let needsRecoverySnapshot = false;
       while (!controller.signal.aborted) {
+        if (needsRecoverySnapshot) {
+          try {
+            await refresh();
+            needsRecoverySnapshot = false;
+          } catch (snapshotError) {
+            if (controller.signal.aborted) return;
+            setState((value) => ({
+              ...value,
+              isConnected: false,
+              error: errorText(snapshotError),
+            }));
+            if (isFatalStageError(snapshotError)) return;
+            const retryAfterMs =
+              snapshotError instanceof LiveAPIError
+                ? snapshotError.retryAfterMs ?? 0
+                : 0;
+            await wait(Math.max(retry, retryAfterMs), controller.signal);
+            retry = Math.min(retry * 2, 10_000);
+            continue;
+          }
+        }
+
         try {
           setState((value) => ({
             ...value,
             isConnected: false,
-            error: null,
           }));
           await streamLiveEvents(sessionId, cursorRef.current.eventId, {
             signal: controller.signal,
             viewer: "stage",
             onOpen: () => {
               if (controller.signal.aborted) return;
+              retry = 500;
               setState((value) => ({
                 ...value,
                 isConnected: true,
@@ -254,23 +282,11 @@ export function useStageProjection(sessionId: string | undefined) {
           }));
           if (isFatalStageError(error)) return;
 
+          needsRecoverySnapshot = true;
           const retryAfterMs =
             error instanceof LiveAPIError ? error.retryAfterMs ?? 0 : 0;
           await wait(Math.max(retry, retryAfterMs), controller.signal);
           retry = Math.min(retry * 2, 10_000);
-          if (controller.signal.aborted) return;
-
-          try {
-            await refresh();
-            retry = 500;
-          } catch (snapshotError) {
-            if (!controller.signal.aborted) {
-              setState((value) => ({
-                ...value,
-                error: errorText(snapshotError),
-              }));
-            }
-          }
         }
       }
     })();

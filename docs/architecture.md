@@ -210,11 +210,21 @@ roster data. Manager and Stage snapshots read the same frozen presentation
 metadata; legacy Sessions created before the settings snapshot migration fall
 back to the current Presentation because their historical settings were never
 persisted. The client then joins over HTTP, applies the authoritative
-role-scoped snapshot, opens SSE
-with `Last-Event-ID`, and refreshes snapshot state before reconnecting. SSE
-reconnects honor server `Retry-After` in addition to bounded exponential
-backoff, and Stage snapshot refreshes are coalesced so clustered state/ranking
-events do not create redundant concurrent reads. Lobby presence changes keep
+role-scoped snapshot, opens SSE with `Last-Event-ID`, and refreshes snapshot
+state before reconnecting. The runtime treats HTTP/session reachability and SSE
+liveness as distinct states: a healthy SSE stream implies a usable session, but
+an HTTP command may remain usable while SSE is recovering. Rejoining or
+reconnecting to the same Session must never demote an already healthy stream.
+State-changing SSE events are acknowledged in the local cursor only after an
+authoritative snapshot has reached that event/state version; if the snapshot
+fails, reconnect replay starts from the last fully applied cursor instead of
+silently skipping the transition. After a stream failure, a fresh authoritative
+snapshot is required before SSE reopens. Browser `online`, foreground
+`visibilitychange`, and `pageshow` recovery trigger an explicit resync so
+mobile clients do not remain parked behind an old backoff timer. SSE reconnects
+honor server `Retry-After` in addition to bounded exponential backoff, and
+Stage snapshot refreshes are coalesced so clustered state/ranking events do not
+create redundant concurrent reads. Lobby presence changes keep
 aggregate counts in-memory immediately and trigger coalesced 350 ms bounded
 snapshot refreshes for the Stage and presenter recent-arrival compositions.
 The manager runtime avoids refreshing its paginated roster on every lobby join;
@@ -224,12 +234,16 @@ so a broken network cannot leave the UI waiting
 forever. Participant answer drafts and in-flight submissions are retained only
 in same-tab `sessionStorage`; refresh restores the draft, while an in-flight
 submission retains its original idempotency key until the authoritative
-participant snapshot confirms whether it was committed. The SSE client treats
-receipt of response headers as the connection boundary and uses the server
-heartbeat as a liveness signal; prolonged stream silence forces the normal
-snapshot-plus-replay recovery path. Manager roster
-pages are loaded in batches of at most 100; participant projections discard
-roster input and never hold a complete score map.
+participant snapshot confirms whether it was committed. Retryable participant
+answers are retried when SSE recovers or the browser reports that network access
+has returned, always with the original request ID and an in-flight guard against
+duplicate sends. The SSE client treats receipt of response headers as the
+connection boundary and uses the server heartbeat as a liveness signal;
+prolonged stream silence forces the normal snapshot-plus-replay recovery path.
+Manager roster pages are loaded in batches of at most 100; failed authoritative
+roster reads retry with bounded backoff instead of leaving a leaderboard empty
+until another unrelated event occurs. Participant projections discard roster
+input and never hold a complete score map.
 
 Per-Activity reports are owner-only and bounded. They derive option counts and
 `(score_delta DESC, submitted_at, answer_id)` keyset-ranked rows directly from
@@ -246,7 +260,10 @@ Redis loss must degrade latency/presence, never lose a durable event or answer.
 | duplicate HTTP request | original result, no second mutation |
 | stale manager version | `409 Conflict`, snapshot then retry with a new request ID |
 | answer after deadline/closure | `409 Conflict`, never scored |
-| SSE disconnect | exponential reconnect honoring `Retry-After`, snapshot, resume from `last_event_id` |
+| SSE disconnect | exponential reconnect honoring `Retry-After`, snapshot, resume from the last fully applied `last_event_id` |
+| browser returns online/foreground | immediate authoritative resync; interrupt stale reconnect backoff when the stream is already known disconnected |
+| state event snapshot refresh fails | do not acknowledge the event cursor; reconnect and replay after snapshot recovery |
+| participant rejoin while SSE is healthy | preserve the existing stream and its connected UI state; do not open a duplicate stream |
 | half-open/stalled SSE | heartbeat silence watchdog closes the client stream; snapshot then replay |
 | lost answer HTTP acknowledgement | snapshot `has_responded` confirms the durable response without pre-reveal disclosure |
 | slow SSE client | disconnect; bounded server memory; client recovers |

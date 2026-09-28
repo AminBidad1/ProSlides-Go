@@ -213,6 +213,7 @@ export class LiveRuntime {
   private rosterRequestVersion = 0;
   private rosterRefreshTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
   private pendingRosterRefreshOrder: RosterOrder | null = null;
+  private rosterRetryDelay = 500;
   private lobbySnapshotRefreshTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
   private destroyed = false;
 
@@ -263,6 +264,23 @@ export class LiveRuntime {
     }
   };
 
+  private invalidateTerminalPlayerProjection = (): Partial<LiveRuntimeState> => {
+    if (this.role !== "player") return {};
+
+    // A terminal participant authorization/session failure must not leave the
+    // last Activity projected forever. Clearing only the participant-facing
+    // projection lets the recovery hook either rejoin with its persisted
+    // identity or fall back to the editable join UI.
+    this.snapshotValue = null;
+    this.rosterValue = [];
+    this.rosterCursor = "";
+    return {
+      snapshot: null,
+      roster: [],
+      hasMoreRoster: false,
+    };
+  };
+
   private resetInternals = () => {
     this.lifecycleVersion += 1;
     this.rosterRequestVersion += 1;
@@ -275,6 +293,7 @@ export class LiveRuntime {
       this.lobbySnapshotRefreshTimer = null;
     }
     this.pendingRosterRefreshOrder = null;
+    this.rosterRetryDelay = 500;
     this.streamAbort?.abort();
     this.streamAbort = null;
     this.selectedSessionId = null;
@@ -302,6 +321,7 @@ export class LiveRuntime {
       this.lobbySnapshotRefreshTimer = null;
     }
     this.pendingRosterRefreshOrder = null;
+    this.rosterRetryDelay = 500;
     this.streamAbort?.abort();
     this.streamAbort = null;
     this.selectedSessionId = sessionId;
@@ -317,7 +337,9 @@ export class LiveRuntime {
     this.publish({
       sessionId,
       snapshot: null,
+      isConnected: false,
       isStreamConnected: false,
+      connectionError: null,
       roster: [],
       rosterOrder: "joined",
       hasMoreRoster: false,
@@ -326,7 +348,10 @@ export class LiveRuntime {
     });
   };
 
-  private storeSnapshot = (next: LiveSnapshot) => {
+  private storeSnapshot = (
+    next: LiveSnapshot,
+    patch: Partial<LiveRuntimeState> = {},
+  ) => {
     const preservedItems =
       next.role === "manager" &&
       next.items === undefined &&
@@ -350,6 +375,7 @@ export class LiveRuntime {
     this.publish({
       snapshot: normalized,
       sessionId: this.selectedSessionId,
+      ...patch,
     });
     return true;
   };
@@ -387,10 +413,17 @@ export class LiveRuntime {
       this.rosterValue = nextItems;
       this.rosterCursor = page.next_cursor || "";
       this.rosterOrderValue = order;
+      this.rosterRetryDelay = 500;
+      if (!append && this.rosterRefreshTimer !== null) {
+        globalThis.clearTimeout(this.rosterRefreshTimer);
+        this.rosterRefreshTimer = null;
+        this.pendingRosterRefreshOrder = null;
+      }
       this.publish({
         roster: nextItems,
         rosterOrder: order,
         hasMoreRoster: page.has_more,
+        ...(this.state.isStreamConnected ? { connectionError: null } : {}),
       });
       return true;
     } catch (error) {
@@ -400,6 +433,11 @@ export class LiveRuntime {
         requestVersion === this.rosterRequestVersion
       ) {
         this.publish({ connectionError: errorMessage(error) });
+        if (!append) {
+          const retryDelay = this.rosterRetryDelay;
+          this.rosterRetryDelay = Math.min(this.rosterRetryDelay * 2, 10_000);
+          this.scheduleRosterRefresh(order, retryDelay);
+        }
       }
       return false;
     } finally {
@@ -415,7 +453,10 @@ export class LiveRuntime {
 
   loadMoreRoster = () => this.loadRoster(this.rosterOrderValue, true);
 
-  private scheduleRosterRefresh = (order: RosterOrder) => {
+  private scheduleRosterRefresh = (
+    order: RosterOrder,
+    delay = 250,
+  ) => {
     this.pendingRosterRefreshOrder = order;
     if (this.rosterRefreshTimer !== null || this.destroyed) return;
 
@@ -424,7 +465,7 @@ export class LiveRuntime {
       const pendingOrder = this.pendingRosterRefreshOrder;
       this.pendingRosterRefreshOrder = null;
       if (pendingOrder) void this.loadRoster(pendingOrder, false);
-    }, 250);
+    }, delay);
   };
 
   private scheduleLobbySnapshotRefresh = () => {
@@ -493,19 +534,40 @@ export class LiveRuntime {
           throw new Error("Live session changed during refresh");
         }
 
-        if (!this.storeSnapshot(next)) {
+        let snapshotPatch: Partial<LiveRuntimeState> = {};
+        let desiredRosterOrder: RosterOrder | null = null;
+        if (next.role === "manager") {
+          desiredRosterOrder =
+            next.session.stage_view === "overall_ranking" ||
+            next.session.state === "ended"
+              ? "score"
+              : "joined";
+          if (desiredRosterOrder !== this.rosterOrderValue) {
+            this.rosterRequestVersion += 1;
+            if (this.rosterRefreshTimer !== null) {
+              globalThis.clearTimeout(this.rosterRefreshTimer);
+              this.rosterRefreshTimer = null;
+            }
+            this.pendingRosterRefreshOrder = null;
+            this.rosterCursor = "";
+            this.rosterOrderValue = desiredRosterOrder;
+            this.rosterValue = [];
+            snapshotPatch = {
+              roster: [],
+              rosterOrder: desiredRosterOrder,
+              hasMoreRoster: false,
+              isRosterLoading: false,
+            };
+          }
+        }
+
+        if (!this.storeSnapshot(next, snapshotPatch)) {
           this.refreshDirty = true;
           continue;
         }
 
-        if (next.role === "manager") {
-          await this.loadRoster(
-            next.session.stage_view === "overall_ranking" ||
-            next.session.state === "ended"
-              ? "score"
-              : "joined",
-            false,
-          );
+        if (next.role === "manager" && desiredRosterOrder) {
+          await this.loadRoster(desiredRosterOrder, false);
         } else {
           this.rosterValue = [];
           this.rosterCursor = "";
@@ -537,11 +599,11 @@ export class LiveRuntime {
     }
   };
 
-  private handleEvent = (event: LiveEvent) => {
+  private handleEvent = async (event: LiveEvent) => {
     if (!shouldApplyLiveEvent(this.cursor, event)) return;
-    this.cursor = advanceLiveCursor(this.cursor, event);
 
     if (event.name === "presence.updated") {
+      this.cursor = advanceLiveCursor(this.cursor, event);
       const payload = recordPayload(event.payload);
       const participantDelta = Number(payload.participant_delta || 0);
       const activeParticipantDelta = Number(
@@ -585,6 +647,7 @@ export class LiveRuntime {
     }
 
     if (event.name === "activity.result_updated") {
+      this.cursor = advanceLiveCursor(this.cursor, event);
       const result = normalizeActivityResult(event.payload);
       if (result && this.snapshotValue) {
         const next: LiveSnapshot = {
@@ -602,9 +665,19 @@ export class LiveRuntime {
         event.name,
       )
     ) {
-      void this.refreshAuthoritative().catch((error) => {
-        this.publish({ connectionError: errorMessage(error) });
-      });
+      // State-changing events are only acknowledged after the authoritative
+      // snapshot has caught up. If that refresh fails, keep the old cursor so
+      // reconnect replay cannot skip the transition that the UI failed to apply.
+      await this.refreshAuthoritative();
+      if (
+        this.cursor.eventId < Number(event.event_id || 0) ||
+        this.cursor.stateVersion < Number(event.state_version || 0)
+      ) {
+        throw new Error("live_snapshot_behind_event");
+      }
+      if (this.role === "player") {
+        this.publish({ connectionError: null });
+      }
     }
   };
 
@@ -619,25 +692,66 @@ export class LiveRuntime {
 
     void (async () => {
       let retry = 500;
+      let needsRecoverySnapshot = false;
       try {
         while (!controller.signal.aborted && id === this.selectedSessionId) {
+          if (needsRecoverySnapshot) {
+            try {
+              await this.refreshAuthoritative();
+              needsRecoverySnapshot = false;
+            } catch (snapshotError) {
+              if (
+                controller.signal.aborted ||
+                id !== this.selectedSessionId
+              ) {
+                return;
+              }
+              const terminalSnapshotFailure =
+                snapshotError instanceof LiveAPIError &&
+                [401, 404].includes(snapshotError.status);
+              this.publish({
+                ...(terminalSnapshotFailure
+                  ? {
+                      isConnected: false,
+                      ...this.invalidateTerminalPlayerProjection(),
+                    }
+                  : {}),
+                isStreamConnected: false,
+                connectionError: errorMessage(snapshotError),
+              });
+              if (terminalSnapshotFailure) {
+                return;
+              }
+              const jitter = 0.75 + this.random() * 0.5;
+              const retryAfterMs =
+                snapshotError instanceof LiveAPIError
+                  ? snapshotError.retryAfterMs ?? 0
+                  : 0;
+              await this.sleep!(
+                Math.max(Math.round(retry * jitter), retryAfterMs),
+                controller.signal,
+              );
+              retry = Math.min(retry * 2, 10_000);
+              continue;
+            }
+          }
+
           try {
-            this.publish({ connectionError: null });
             await this.transport.streamLiveEvents(id, this.cursor.eventId, {
               signal: controller.signal,
               viewer: this.role === "manager" ? "manager" : "participant",
               onOpen: () => {
                 if (id !== this.selectedSessionId) return;
+                retry = 500;
                 this.publish({
                   isConnected: true,
                   isStreamConnected: true,
                   connectionError: null,
                 });
               },
-              onEvent: (event) => {
+              onEvent: async (event) => {
                 if (id !== this.selectedSessionId) return;
-                retry = 500;
-                this.handleEvent(event);
+                await this.handleEvent(event);
               },
             });
             if (!controller.signal.aborted) {
@@ -652,7 +766,12 @@ export class LiveRuntime {
               error instanceof LiveAPIError &&
               [401, 404].includes(error.status);
             this.publish({
-              ...(terminalStreamFailure ? { isConnected: false } : {}),
+              ...(terminalStreamFailure
+                ? {
+                    isConnected: false,
+                    ...this.invalidateTerminalPlayerProjection(),
+                  }
+                : {}),
               isStreamConnected: false,
               connectionError: errorMessage(error),
             });
@@ -660,6 +779,7 @@ export class LiveRuntime {
               return;
             }
 
+            needsRecoverySnapshot = true;
             const jitter = 0.75 + this.random() * 0.5;
             const retryAfterMs =
               error instanceof LiveAPIError ? error.retryAfterMs ?? 0 : 0;
@@ -668,15 +788,6 @@ export class LiveRuntime {
               controller.signal,
             );
             retry = Math.min(retry * 2, 10_000);
-            if (controller.signal.aborted || id !== this.selectedSessionId) {
-              return;
-            }
-
-            try {
-              await this.refreshAuthoritative();
-            } catch (snapshotError) {
-              this.publish({ connectionError: errorMessage(snapshotError) });
-            }
           }
         }
       } finally {
@@ -698,7 +809,10 @@ export class LiveRuntime {
 
     try {
       if (this.role === "player") {
-        this.publish({ isConnected: true, isStreamConnected: false });
+        // Selecting a different Session already reset stream state. Repeating
+        // connect() for the same participant Session must not demote an
+        // existing healthy SSE connection.
+        this.publish({ isConnected: true });
         return true;
       }
 
@@ -782,6 +896,61 @@ export class LiveRuntime {
       this.publish({
         connectionError: errorMessage(error),
         isConnected: false,
+      });
+      return false;
+    }
+  };
+
+  resync = async () => {
+    const id = this.selectedSessionId;
+    const lifecycleVersion = this.lifecycleVersion;
+    if (!id || !this.snapshotValue || this.destroyed) return false;
+
+    // An explicit browser/network recovery should not wait behind an old
+    // exponential-backoff sleep. Abort only a stream that is already known to
+    // be disconnected; a healthy stream is left untouched.
+    if (!this.state.isStreamConnected && this.streamAbort) {
+      const staleController = this.streamAbort;
+      this.streamAbort = null;
+      staleController.abort();
+    }
+
+    try {
+      await this.refreshAuthoritative();
+      if (
+        id !== this.selectedSessionId ||
+        lifecycleVersion !== this.lifecycleVersion
+      ) {
+        return false;
+      }
+
+      this.publish({ isConnected: true, connectionError: null });
+      this.startStream();
+      return true;
+    } catch (error) {
+      if (
+        id !== this.selectedSessionId ||
+        lifecycleVersion !== this.lifecycleVersion
+      ) {
+        return false;
+      }
+
+      const terminal =
+        error instanceof LiveAPIError && [401, 404].includes(error.status);
+      if (terminal && this.streamAbort) {
+        const staleController = this.streamAbort;
+        this.streamAbort = null;
+        staleController.abort();
+      }
+      this.publish({
+        ...(terminal
+          ? {
+              isConnected: false,
+              isStreamConnected: false,
+              ...this.invalidateTerminalPlayerProjection(),
+            }
+          : {}),
+        connectionError: errorMessage(error),
       });
       return false;
     }
@@ -1016,7 +1185,12 @@ export class LiveRuntime {
       });
 
       await this.refreshAuthoritative();
-      this.publish({ isConnected: true, isStreamConnected: false });
+      // A re-join can happen while the participant's existing event stream is
+      // still healthy (for example after a view-level recovery/remount). Do
+      // not mark that live stream as disconnected before startStream(), because
+      // startStream intentionally reuses an existing stream and would leave
+      // the false flag stuck while events continue to arrive.
+      this.publish({ isConnected: true });
       this.startStream();
       return true;
     } catch (error) {
@@ -1025,7 +1199,19 @@ export class LiveRuntime {
         if (error.status === 409 && error.code === "display_name_taken") {
           return "name_taken" as const;
         }
-        if ([400, 409].includes(error.status)) {
+        if ([400, 404, 409].includes(error.status)) {
+          if (error.status === 404) {
+            if (this.streamAbort) {
+              const staleController = this.streamAbort;
+              this.streamAbort = null;
+              staleController.abort();
+            }
+            this.publish({
+              isConnected: false,
+              isStreamConnected: false,
+              ...this.invalidateTerminalPlayerProjection(),
+            });
+          }
           return "rejected" as const;
         }
         if (error.status === 429) {
@@ -1035,7 +1221,9 @@ export class LiveRuntime {
           };
         }
       }
-      this.publish({ isConnected: false });
+      if (!this.state.isStreamConnected) {
+        this.publish({ isConnected: false });
+      }
       return false;
     }
   };

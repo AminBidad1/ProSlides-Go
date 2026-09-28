@@ -29,7 +29,7 @@ export function ParticipantQuestion({
       showConnection
     >
       <section className="flex flex-1 flex-col py-3">
-        {controller.connectionError ? (
+        {!controller.isStreamConnected && controller.connectionError ? (
           <p
             role="alert"
             className="mb-3 rounded-xl border border-amber-300/30 bg-amber-950/25 px-4 py-3 text-center text-sm"

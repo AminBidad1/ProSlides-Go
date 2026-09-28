@@ -74,7 +74,7 @@ export function useParticipantAnswerController({
   const pendingRef = useRef<PendingAttempt | null>(null);
   const inFlightAttemptRef = useRef<string | null>(null);
   const restoredPendingRef = useRef(false);
-  const wasConnectedRef = useRef(isConnected);
+  const wasStreamConnectedRef = useRef(isStreamConnected);
   const timerRef = useRef({ anchorStartMs: Date.now(), totalSeconds: 0 });
   const remainingRef = useRef(0);
   const [selectedIndexes, setSelectedIndexes] = useState<number[]>([]);
@@ -298,8 +298,9 @@ export function useParticipantAnswerController({
   }, [sendAttempt]);
 
   useEffect(() => {
-    const reconnected = !wasConnectedRef.current && isConnected;
-    wasConnectedRef.current = isConnected;
+    const reconnected =
+      !wasStreamConnectedRef.current && isStreamConnected;
+    wasStreamConnectedRef.current = isStreamConnected;
 
     const restoredPending =
       restoredPendingRef.current &&
@@ -329,6 +330,38 @@ export function useParticipantAnswerController({
     activityItemId,
     identity,
     isConnected,
+    isStreamConnected,
+    sendAttempt,
+    snapshot,
+    submitState,
+  ]);
+
+  useEffect(() => {
+    const retryWhenOnline = () => {
+      if (
+        submitState !== "retryable" ||
+        snapshot?.role !== "participant" ||
+        snapshot.has_responded ||
+        String(snapshot.session.active_item_id ?? "") !== activityItemId
+      ) {
+        return;
+      }
+      const attempt = pendingRef.current;
+      if (
+        !attempt ||
+        attempt.identity !== identity ||
+        remainingRef.current <= 0
+      ) {
+        return;
+      }
+      void sendAttempt(attempt);
+    };
+
+    window.addEventListener("online", retryWhenOnline);
+    return () => window.removeEventListener("online", retryWhenOnline);
+  }, [
+    activityItemId,
+    identity,
     sendAttempt,
     snapshot,
     submitState,

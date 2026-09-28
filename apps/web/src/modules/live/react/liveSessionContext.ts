@@ -9,6 +9,7 @@ type RuntimeCommands = Pick<
   LiveRuntime,
   | "connect"
   | "disconnect"
+  | "resync"
   | "joinParticipant"
   | "submitAnswer"
   | "sendNavigation"

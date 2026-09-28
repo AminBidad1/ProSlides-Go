@@ -186,7 +186,10 @@ func (s *PostgresStore) Join(c context.Context, session, request, name, avatar s
 		}
 		return p, false, mapPG(e)
 	}
-	if e = insertEvent(c, tx, session, version, "presence.updated", map[string]any{"participant_delta": 1}); e != nil {
+	if e = insertEvent(c, tx, session, version, "presence.updated", map[string]any{
+		"participant_delta":        1,
+		"active_participant_delta": 0,
+	}); e != nil {
 		return p, false, e
 	}
 	if e = tx.Commit(c); e != nil {

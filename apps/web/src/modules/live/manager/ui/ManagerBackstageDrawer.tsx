@@ -355,7 +355,7 @@ export function ManagerBackstageDrawer({
                   <dd dir="ltr">{managerSnapshot?.last_event_id ?? "—"}</dd>
                 </div>
               </dl>
-              {connectionError ? (
+              {!isStreamConnected && connectionError ? (
                 <p className="mt-3 rounded-xl bg-warning/15 p-3 text-xs leading-6 text-warning" role="status">
                   ارتباط زنده در حال بازیابی است. snapshot معتبر قبل از ادامه event stream دوباره خوانده می‌شود.
                 </p>

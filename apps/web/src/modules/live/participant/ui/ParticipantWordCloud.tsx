@@ -75,7 +75,7 @@ export function ParticipantWordCloud({
   const pendingRef = useRef<PendingTextAttempt | null>(null);
   const inFlightAttemptRef = useRef<string | null>(null);
   const restoredPendingRef = useRef(false);
-  const wasConnectedRef = useRef(isConnected);
+  const wasStreamConnectedRef = useRef(isStreamConnected);
 
   useEffect(() => {
     const resolved = resolveQuestionTimer({
@@ -247,8 +247,9 @@ export function ParticipantWordCloud({
   };
 
   useEffect(() => {
-    const reconnected = !wasConnectedRef.current && isConnected;
-    wasConnectedRef.current = isConnected;
+    const reconnected =
+      !wasStreamConnectedRef.current && isStreamConnected;
+    wasStreamConnectedRef.current = isStreamConnected;
 
     const restoredPending =
       restoredPendingRef.current &&
@@ -272,7 +273,35 @@ export function ParticipantWordCloud({
 
     restoredPendingRef.current = false;
     void send(pendingRef.current);
-  }, [identity, isConnected, send, snapshot, submitState]);
+  }, [
+    identity,
+    isConnected,
+    isStreamConnected,
+    send,
+    snapshot,
+    submitState,
+    timerScope,
+  ]);
+
+  useEffect(() => {
+    const retryWhenOnline = () => {
+      if (
+        submitState !== "retryable" ||
+        !pendingRef.current ||
+        pendingRef.current.scope !== timerScope ||
+        remainingRef.current <= 0 ||
+        snapshot?.role !== "participant" ||
+        snapshot.has_responded ||
+        String(snapshot.session.active_item_id ?? "") !== identity
+      ) {
+        return;
+      }
+      void send(pendingRef.current);
+    };
+
+    window.addEventListener("online", retryWhenOnline);
+    return () => window.removeEventListener("online", retryWhenOnline);
+  }, [identity, send, snapshot, submitState, timerScope]);
 
   useEffect(() => {
     // The timer setup effect updates remainingRef before React commits the
@@ -299,7 +328,7 @@ export function ParticipantWordCloud({
   return (
     <ParticipantShell quiz={quiz} connected={isStreamConnected} showConnection>
       <section className="flex flex-1 flex-col py-3">
-        {connectionError ? (
+        {!isStreamConnected && connectionError ? (
           <p
             role="alert"
             className="mb-3 rounded-xl border border-amber-300/30 bg-amber-950/25 px-4 py-3 text-center text-sm"

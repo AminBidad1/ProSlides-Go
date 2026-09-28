@@ -39,6 +39,7 @@ export function ManagerJoinPage({
   );
   const [showQr, setShowQr] = useState(false);
   const [startError, setStartError] = useState("");
+  const [startPending, setStartPending] = useState(false);
 
   const sessionInProgress =
     snapshot?.session.state === "presenting" ||
@@ -98,6 +99,7 @@ export function ManagerJoinPage({
   };
 
   const handleStart = async () => {
+    if (startPending) return;
     setStartError("");
 
     const firstSlide = quiz.slides.find((slide) => slide !== null);
@@ -118,14 +120,19 @@ export function ManagerJoinPage({
       return;
     }
 
-    const started = await sendNavigation("start", {
-      slide: firstSlide,
-    });
-    if (!started) {
-      setStartError("شروع جلسه تأیید نشد. وضعیت اتصال را بررسی کنید.");
-      return;
+    setStartPending(true);
+    try {
+      const started = await sendNavigation("start", {
+        slide: firstSlide,
+      });
+      if (!started) {
+        setStartError("شروع جلسه تأیید نشد. وضعیت اتصال را بررسی کنید.");
+        return;
+      }
+      onNext();
+    } finally {
+      setStartPending(false);
     }
-    onNext();
   };
 
   const theme = participantTheme(quiz);
@@ -188,15 +195,20 @@ export function ManagerJoinPage({
             <button
               type="button"
               onClick={() => void handleStart()}
-              disabled={!isConnected}
+              disabled={!isConnected || startPending}
+              aria-busy={startPending}
               className="min-h-14 min-w-44 rounded-2xl bg-brand px-7 text-lg font-black text-content-inverse shadow-xl hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/50"
             >
-              {sessionInProgress ? "ادامه جلسه" : "شروع ارائه"}
+              {startPending
+                ? "در حال شروع…"
+                : sessionInProgress
+                  ? "ادامه جلسه"
+                  : "شروع ارائه"}
             </button>
             {startError ? <Notice tone="error">{startError}</Notice> : null}
-            {connectionError ? (
+            {!isStreamConnected && connectionError ? (
               <Notice tone="warning">
-                اتصال زنده برقرار نیست؛ شروع ارائه تا بازیابی اتصال غیرفعال است.
+                به‌روزرسانی زنده در حال بازیابی است؛ فرمان‌های جلسه همچنان از مسیر امن HTTP ثبت می‌شوند.
               </Notice>
             ) : null}
           </div>
