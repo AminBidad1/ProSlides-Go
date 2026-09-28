@@ -323,3 +323,70 @@ textarea::placeholder {
     transform: translateY(-50%);
   }
 }
+
+/* Marketing landing motion communicates live state and continuity. */
+@keyframes landingLivePulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-success) 34%, transparent);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 7px transparent;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes landingFloat {
+  0%,
+  100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes landingWordBreathe {
+  0%,
+  100% { transform: scale(1); }
+  50% { transform: scale(1.035); }
+}
+
+.landing-ambient {
+  background:
+    radial-gradient(circle at 20% 24%, color-mix(in srgb, var(--color-info-soft) 88%, transparent), transparent 30%),
+    radial-gradient(circle at 80% 18%, color-mix(in srgb, var(--color-brand-muted) 90%, transparent), transparent 32%),
+    radial-gradient(circle at 52% 58%, color-mix(in srgb, var(--color-brand-soft) 74%, transparent), transparent 36%);
+}
+
+.landing-demo-glow {
+  background: color-mix(in srgb, var(--color-brand-muted) 72%, transparent);
+  filter: blur(28px);
+}
+
+.landing-live-dot {
+  animation: landingLivePulse 1.8s var(--ease-interface) infinite;
+}
+
+.landing-float-card {
+  animation: landingFloat 4.6s var(--ease-interface) infinite;
+}
+
+.landing-word-chip {
+  animation: landingWordBreathe 4.2s var(--ease-interface) infinite;
+}
+
+.landing-word-chip:nth-child(2n) {
+  animation-delay: -1.4s;
+}
+
+.landing-dark-glow {
+  background:
+    radial-gradient(circle at 15% 10%, color-mix(in srgb, var(--color-brand) 24%, transparent), transparent 30%),
+    radial-gradient(circle at 86% 76%, color-mix(in srgb, var(--color-info) 18%, transparent), transparent 28%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-live-dot,
+  .landing-float-card,
+  .landing-word-chip {
+    animation: none !important;
+  }
+}

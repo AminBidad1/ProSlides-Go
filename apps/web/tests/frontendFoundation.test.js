@@ -123,6 +123,13 @@ test("marketing routes are typed, module-owned, RTL-safe and historically accura
   assert.match(landing, /aria-label="کد ورود"/);
   assert.match(landing, /dir="ltr"/);
   assert.match(landing, /prefers-reduced-motion: reduce/);
+  assert.match(landing, /LandingLiveDemo/);
+  assert.match(landing, /\^\[A-Z0-9\]\{5,12\}\$/);
+  assert.match(landing, /نمونه زنده را امتحان کنید/);
+  assert.match(source("src/modules/marketing/ui/LandingLiveDemo.tsx"), /aria-live="polite"/);
+  assert.match(source("src/modules/marketing/ui/LandingLiveDemo.tsx"), /prefers-reduced-motion: reduce/);
+  assert.match(landing, /normalizeAccessCode/);
+  assert.doesNotMatch(landing, /پاسخ باز|پرسش زنده|Q&A/);
   assert.doesNotMatch(landing, /94%|۹۴٪/);
   assert.doesNotMatch(landing, /#[0-9a-fA-F]{3,8}/);
 

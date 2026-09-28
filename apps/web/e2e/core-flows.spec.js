@@ -181,6 +181,19 @@ test("landing, protected navigation, and responsive auth layout @critical", asyn
   await expect(page).toHaveTitle(/ProSlides|پرو اسلایدز/i);
   await expect(page.locator("body")).toBeVisible();
   await expectAccessible(page, "landing");
+
+  const liveDemo = page.locator("#live-demo");
+  await expect(liveDemo).toBeVisible();
+  await liveDemo.getByRole("button", { name: "مشارکت مخاطب", exact: true }).click();
+  await expect(liveDemo.getByRole("status")).toContainText("پاسخ شما ثبت شد");
+
+  const joinCode = page.getByRole("textbox", { name: "کد ورود" });
+  await joinCode.fill("۱۲۳۴A");
+  await expect(joinCode).toHaveValue("1234A");
+  await joinCode.fill("ABC");
+  await joinCode.press("Enter");
+  await expect(page.getByRole("alert")).toContainText("۵ تا ۱۲");
+
   await page.waitForTimeout(500);
   const vitals = await page.evaluate(() => ({
     fcp: performance.getEntriesByName("first-contentful-paint")[0]?.startTime || 0,
@@ -197,6 +210,13 @@ test("landing, protected navigation, and responsive auth layout @critical", asyn
       () => document.getAnimations().filter(({ playState }) => playState === "running").length,
     ),
   ).toBe(0);
+
+  await expectResponsiveSurface(page, async () => {
+    await expect(page.getByRole("heading", {
+      name: "ارائه‌ای بسازید که مخاطب فقط تماشاگر آن نباشد",
+    })).toBeVisible();
+    await expect(page.locator("#live-demo")).toBeVisible();
+  });
 
   await page.goto("/team");
   await expect(page.getByRole("heading", { name: "تیم ما", exact: true })).toBeVisible();
