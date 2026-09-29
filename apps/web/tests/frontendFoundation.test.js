@@ -135,7 +135,17 @@ test("marketing routes are typed, module-owned, RTL-safe and deliberately concis
   assert.match(landing, /LandingUseCaseShowcase/);
   assert.match(landing, /\^\[A-Z0-9\]\{5,12\}\$/);
   assert.match(landing, /همین حالا امتحان کنید/);
+  assert.match(landing, /نتیجه را در زمان مناسب روی Stage نمایش می‌دهید/);
+  assert.doesNotMatch(landing, /Stage همان لحظه تغییر می‌کند/);
+  assert.match(liveDemo, /دموی تعاملی/);
+  assert.match(liveDemo, /BASE_COUNTS = \[4, 3, 2\]/);
+  assert.match(liveDemo, /aria-pressed=\{active\}/);
+  assert.match(liveDemo, /data-live-demo-surface="participant"/);
+  assert.match(liveDemo, /data-live-demo-surface="stage"/);
+  assert.match(liveDemo, /نمایش نتیجه/);
+  assert.match(liveDemo, /نتیجه تا زمان نمایش ارائه‌دهنده/);
   assert.match(liveDemo, /aria-live="polite"/);
+  assert.doesNotMatch(liveDemo, /پاسخ شما رسید|درصدها فقط تصویر/);
   assert.doesNotMatch(liveDemo, /setInterval|setTimeout/);
   assert.match(playground, /ابر واژه.*کوئیز.*نظرسنجی/s);
   assert.doesNotMatch(playground, /useState|onClick/);

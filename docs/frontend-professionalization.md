@@ -138,7 +138,13 @@ speculative feature count.
 - Marketing claims stay within shipped product capability. Future Session
   channels such as Q&A are not marketed as current features.
 - Demo values are deterministic fixtures and are labelled as demo/sample data.
-  They must not resemble real customer or usage proof.
+  They must not resemble real customer or usage proof. Small fixture populations
+  are preferred when they make one visitor action visibly legible; they are not
+  capacity claims.
+- The hero demo preserves the shipped presenter-paced contract: participant
+  submission is acknowledged immediately, aggregate results remain hidden until
+  an explicit presenter reveal, and the public Stage never presents a
+  participant-specific "your answer" state.
 - Informational counts/results do not update indefinitely on their own. Motion is
   event-driven and normally follows user input; reduced-motion users receive the
   same state change without path/scale choreography.

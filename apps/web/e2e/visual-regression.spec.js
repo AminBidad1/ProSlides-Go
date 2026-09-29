@@ -49,6 +49,16 @@ test("landing mobile responsive layout contract", async ({ page }) => {
   expect(liveDemoBox).not.toBeNull();
   expect(liveDemoBox.width).toBeLessThanOrEqual(390);
 
+  const participantSurface = liveDemo.locator('[data-live-demo-surface="participant"]');
+  const stageSurface = liveDemo.locator('[data-live-demo-surface="stage"]');
+  const [participantBox, stageBox] = await Promise.all([
+    participantSurface.boundingBox(),
+    stageSurface.boundingBox(),
+  ]);
+  expect(participantBox).not.toBeNull();
+  expect(stageBox).not.toBeNull();
+  expect(participantBox.y).toBeLessThan(stageBox.y);
+
   const journey = page.locator("#journey");
   const productScene = journey.locator("#landing-product-scene");
   await expect(productScene).toHaveCount(1);

@@ -204,7 +204,7 @@ export default function LandingRoute() {
     <div className="min-h-screen overflow-x-clip bg-canvas text-content" dir="rtl">
       <Seo
         title="پرو اسلایدز | ارائه تعاملی با مشارکت زنده مخاطبان"
-        description="مخاطبان با موبایل وارد می‌شوند، پاسخ می‌دهند و نتیجه همان لحظه روی Stage تغییر می‌کند؛ از نظرسنجی و کوئیز تا ابر واژه و گزارش جلسه."
+        description="مخاطبان با موبایل وارد می‌شوند، پاسخ می‌دهند و شما نتیجه را در زمان مناسب روی Stage نمایش می‌دهید؛ از نظرسنجی و کوئیز تا ابر واژه و گزارش جلسه."
         canonical="https://proslides.ir/"
       />
 
@@ -366,7 +366,7 @@ export default function LandingRoute() {
                 ارائه‌ای بسازید که مخاطب فقط تماشاگر آن نباشد
               </h1>
               <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-content-muted md:text-lg lg:mx-0">
-                مخاطبان با موبایل وارد می‌شوند، پاسخ می‌دهند و نتیجه همان لحظه روی Stage تغییر می‌کند؛ از نظرسنجی و کوئیز تا ابر واژه، رتبه‌بندی و گزارش جلسه.
+                مخاطبان با موبایل وارد می‌شوند، پاسخ می‌دهند و شما نتیجه را در زمان مناسب روی Stage نمایش می‌دهید؛ از نظرسنجی و کوئیز تا ابر واژه، رتبه‌بندی و گزارش جلسه.
               </p>
               <div className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
                 <Link
@@ -387,21 +387,6 @@ export default function LandingRoute() {
             </div>
 
             <LandingLiveDemo />
-          </div>
-
-          <div className="mt-10 grid gap-3 rounded-[28px] border border-border-subtle bg-surface/85 p-4 shadow-sm backdrop-blur sm:grid-cols-3 sm:p-5">
-            {[
-              ["۱", "مخاطب پاسخ می‌دهد"],
-              ["۲", "Stage همان لحظه تغییر می‌کند"],
-              ["۳", "نتیجه برای مرور باقی می‌ماند"],
-            ].map(([number, text]) => (
-              <div key={number} className="flex items-center gap-3 rounded-2xl bg-canvas px-4 py-3">
-                <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-black text-content-inverse">
-                  {number}
-                </span>
-                <span className="text-sm font-black text-content">{text}</span>
-              </div>
-            ))}
           </div>
         </section>
 

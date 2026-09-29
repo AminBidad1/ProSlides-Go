@@ -243,8 +243,15 @@ test("landing, protected navigation, and responsive auth layout @critical", asyn
 
   const liveDemo = page.locator("#live-demo");
   await expect(liveDemo).toBeVisible();
-  await liveDemo.getByRole("button", { name: "مشارکت مخاطب", exact: true }).click();
-  await expect(liveDemo.getByRole("status")).toContainText("پاسخ شما ثبت شد");
+  const firstOption = liveDemo.getByRole("button", { name: "مشارکت مخاطب", exact: true });
+  await firstOption.click();
+  await expect(firstOption).toHaveAttribute("aria-pressed", "true");
+  await expect(liveDemo.getByText("پاسخ ثبت شد ✓", { exact: true })).toBeVisible();
+  await expect(liveDemo.getByRole("button", { name: "نمایش نتیجه" })).toBeVisible();
+  await expect(liveDemo.getByText("نتیجه نظرسنجی", { exact: true })).toHaveCount(0);
+  await liveDemo.getByRole("button", { name: "نمایش نتیجه" }).click();
+  await expect(liveDemo.getByText("نتیجه نظرسنجی", { exact: true })).toBeVisible();
+  await expect(liveDemo.getByText("۱۰ پاسخ ثبت‌شده", { exact: true })).toBeVisible();
   await expect(liveDemo.getByRole("button", { name: "دوباره امتحان کنید" })).toBeVisible();
 
   await expect(page.getByRole("heading", { name: "ابر واژه", exact: true })).toBeVisible();
