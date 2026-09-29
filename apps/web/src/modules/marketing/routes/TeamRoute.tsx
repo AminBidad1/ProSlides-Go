@@ -75,14 +75,10 @@ export default function TeamRoute() {
           aria-hidden="true"
         />
 
-        <header className="mx-auto max-w-xl text-center">
-          <p className="text-xs font-black text-brand">تیم ما</p>
-          <h1 className="mt-3 text-4xl font-black leading-tight tracking-tight text-content sm:text-5xl">
-            آدم‌های پشت ProSlides
+        <header className="text-center">
+          <h1 className="text-4xl font-black leading-tight tracking-tight text-content sm:text-5xl">
+            تیم ProSlides
           </h1>
-          <p className="mt-4 text-sm leading-7 text-content-muted sm:text-base">
-            تیمی که ProSlides را می‌سازد.
-          </p>
         </header>
 
         <ul
@@ -101,7 +97,6 @@ export default function TeamRoute() {
                     alt={"تصویر " + member.name}
                     width={480}
                     height={480}
-                    loading="lazy"
                     decoding="async"
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02] motion-reduce:transform-none"
                   />

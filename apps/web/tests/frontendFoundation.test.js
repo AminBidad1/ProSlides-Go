@@ -156,6 +156,8 @@ test("marketing routes are typed, module-owned, RTL-safe and deliberately concis
   assert.match(team, /مهندسی فرانت‌اند/);
   assert.match(team, /aria-label="اعضای تیم ProSlides"/);
   assert.match(team, /aspect-square/);
+  assert.match(team, /تیم ProSlides/);
+  assert.doesNotMatch(team, /loading="lazy"/);
   assert.doesNotMatch(team, /description:\s*"/);
   assert.doesNotMatch(team, /<aside|TeamSection|dotGrid|badgeClassName|ringClassName|coverClassName/);
   assert.doesNotMatch(team, /backend فعال ProSlides اکنون بر Go استوار است/);

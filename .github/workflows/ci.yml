@@ -275,6 +275,17 @@ jobs:
         working-directory: apps/web
         run: npm run test:e2e
 
+      - name: Reset browser rate-limit state
+        if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          docker compose exec -T redis sh -c '
+            redis-cli --scan --pattern "proslides:rate:*" |
+            while read -r key; do
+              redis-cli DEL "$key" >/dev/null
+            done
+          '
+
       - name: Repeat critical browser E2E
         if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
         working-directory: apps/web
