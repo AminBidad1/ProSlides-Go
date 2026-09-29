@@ -349,13 +349,14 @@ export default function WordCloudInspector({
 
             <section>
               <div className="flex items-center justify-between gap-3">
-                <div>
+                <div className="min-w-0">
                   <h3 className="text-sm font-semibold">تصویر پرسش</h3>
                   <p className="mt-1 text-xs text-content-muted">اختیاری</p>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
+                  className="shrink-0"
                   disabled={saving || conflictPending}
                   onClick={() => setImageDialogOpen(true)}
                 >

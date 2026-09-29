@@ -408,7 +408,7 @@ export default function DesignInspector({
 
             <section aria-labelledby="design-image-heading">
               <div className="flex items-start justify-between gap-3">
-                <div>
+                <div className="min-w-0">
                   <h3
                     id="design-image-heading"
                     className="text-sm font-semibold"
@@ -422,6 +422,7 @@ export default function DesignInspector({
                 <Button
                   variant="outline"
                   size="sm"
+                  className="shrink-0"
                   disabled={saving || conflictPending}
                   onClick={() => setImageDialogOpen(true)}
                 >

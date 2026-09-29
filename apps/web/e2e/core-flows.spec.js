@@ -1857,6 +1857,25 @@ test("content editor projects unsaved draft and preserves it across edit conflic
   await expect(preview).toBeVisible();
   await expectAccessible(page, "content editor");
 
+  const imageAction = inspector.getByRole("button", {
+    name: "افزودن تصویر",
+    exact: true,
+  });
+  await expect(imageAction).toBeVisible();
+  expect(
+    await imageAction.evaluate((button) => {
+      const buttonRect = button.getBoundingClientRect();
+      const range = document.createRange();
+      range.selectNodeContents(button);
+      const contentRect = range.getBoundingClientRect();
+      return (
+        button.scrollWidth <= button.clientWidth + 1 &&
+        contentRect.left >= buttonRect.left - 1 &&
+        contentRect.right <= buttonRect.right + 1
+      );
+    }),
+  ).toBe(true);
+
   const titleInput = inspector.getByRole("textbox", {
     name: "عنوان",
     exact: true,

@@ -343,7 +343,7 @@ export default function ContentInspector({
 
             <section aria-labelledby="content-image-heading">
               <div className="flex items-center justify-between gap-3">
-                <div>
+                <div className="min-w-0">
                   <h3 id="content-image-heading" className="text-sm font-semibold">
                     تصویر
                   </h3>
@@ -355,6 +355,7 @@ export default function ContentInspector({
                   id="content-editor-image"
                   variant="outline"
                   size="sm"
+                  className="shrink-0"
                   disabled={saving || conflictPending}
                   onClick={() => setImageDialogOpen(true)}
                 >
