@@ -153,29 +153,12 @@ func (s *PostgresStore) Join(c context.Context, session, request, name, avatar s
 	if e != nil {
 		return p, false, e
 	}
-	// Rejoin restore: within the same session, a participant whose last SSE
-	// stream closed (disconnected_at is set and no active SSE connection remains)
-	// can reclaim their existing record
-	// and score by rejoining with the same display name, even with a new
-	// credential. The credential is rotated so the rejoined device remains
-	// authorized, and participant_count is unchanged because no new row commits.
-	// A display name still held by an actively connected participant is never
-	// taken over; that join falls through to the INSERT and conflicts on name.
-	e = tx.QueryRow(c, `UPDATE participants
-		SET request_id=$3, token_hash=$4, avatar=$5, disconnected_at=NULL, active_sse_connections=0
-		WHERE session_id=$1
-		  AND display_name=$2
-		  AND disconnected_at IS NOT NULL
-		  AND active_sse_connections=0
-		RETURNING id::text, display_name, COALESCE(avatar,'')`, session, name, request, hash, avatar).Scan(&p.ID, &p.DisplayName, &p.Avatar)
-	if e == nil {
-		if err := tx.Commit(c); err != nil {
-			return p, false, err
-		}
-		return p, true, nil
-	} else if !errors.Is(e, pgx.ErrNoRows) {
-		return p, false, mapPG(e)
-	}
+	// Reconnects must prove participant identity with the original high-entropy
+	// request credential. A display name is public presentation data and is not
+	// authentication material, even after every SSE stream for that participant
+	// has disconnected. The idempotent request-id lookup above restores the same
+	// participant safely; a different credential using the same name must remain
+	// a name conflict rather than inheriting score or answer history.
 	e = tx.QueryRow(c, `INSERT INTO participants(session_id,display_name,avatar,request_id,token_hash) VALUES($1,$2,$3,$4,$5) RETURNING id::text,display_name,COALESCE(avatar,'')`, session, name, avatar, request, hash).Scan(&p.ID, &p.DisplayName, &p.Avatar)
 	if e != nil {
 		if isUniqueViolation(e) {
@@ -335,6 +318,9 @@ func (s *PostgresStore) ApplyAction(c context.Context, session, host, request st
 		}
 		if e != nil {
 			return out, false, e
+		}
+		if validationErr := presentations.ValidateLiveItemDefinition(kind, content); validationErr != nil {
+			return out, false, ErrInvalid
 		}
 
 		to = Presenting
@@ -1129,7 +1115,10 @@ func scanSession(row pgx.Row, x *Session) error {
 }
 
 func insertEvent(c context.Context, tx pgx.Tx, session string, version int64, name string, payload any) error {
-	b, _ := json.Marshal(payload)
+	b, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
 	schemaVersion := 1
 	if name == "activity.result_updated" || name == "ranking.updated" {
 		schemaVersion = 2

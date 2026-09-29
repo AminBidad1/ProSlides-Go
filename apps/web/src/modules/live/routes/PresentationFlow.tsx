@@ -14,7 +14,8 @@ import { PresentationErrorBoundary } from "./PresentationErrorBoundary.tsx";
 import { useLivePresentationModel } from "./useLivePresentationModel.ts";
 
 export function AppPresentation({
-  roomId,
+  presentationId,
+  sessionId,
   role,
   initialQuizData = null,
 }: AppPresentationProps) {
@@ -27,7 +28,11 @@ export function AppPresentation({
   } = useLiveSession();
 
   useEffect(() => {
-    if (role !== "manager" || !roomId || snapshot?.role === "manager") return;
+    if (
+      role !== "manager" ||
+      !presentationId ||
+      snapshot?.role === "manager"
+    ) return;
 
     let cancelled = false;
     let retry = 750;
@@ -46,7 +51,7 @@ export function AppPresentation({
 
     void (async () => {
       while (!cancelled) {
-        const connected = await connect(roomId);
+        const connected = await connect(presentationId);
         if (cancelled || connected) return;
         await wait(retry);
         retry = Math.min(retry * 2, 10_000);
@@ -58,10 +63,10 @@ export function AppPresentation({
       if (timer) window.clearTimeout(timer);
       wake?.();
     };
-  }, [role, roomId, snapshot?.role, connect]);
+  }, [role, presentationId, snapshot?.role, connect]);
 
   const { quiz, isRemoteReady } = useLivePresentationModel({
-    roomId,
+    presentationId,
     role,
     initialQuizData,
     snapshot,
@@ -69,8 +74,11 @@ export function AppPresentation({
 
   const { setQuizMusic } = useAudio();
   useEffect(() => {
-    setQuizMusic(quiz.music_url);
-  }, [quiz.music_url, setQuizMusic]);
+    // Presentation audio belongs to the host output. Participant devices must
+    // remain silent in a shared room; otherwise one authored music track can
+    // become dozens of unsynchronized mobile speakers.
+    setQuizMusic(role === "manager" ? quiz.music_url : "");
+  }, [quiz.music_url, role, setQuizMusic]);
 
   const {
     currentQuestion,
@@ -84,7 +92,7 @@ export function AppPresentation({
 
   const playerRecovery = usePlayerSessionRecovery({
     enabled: role === "player",
-    roomId,
+    roomId: sessionId,
     currentQuestion,
     currentContent,
     hasLeaderboard,
@@ -98,7 +106,6 @@ export function AppPresentation({
     quiz,
     currentQuestion,
     currentContent,
-    isConnected,
     sessionState: snapshot?.session?.state,
     sessionStageView: snapshot?.session?.stage_view,
     activeItemId: snapshot?.session?.active_item_id ?? null,
@@ -118,9 +125,13 @@ export function AppPresentation({
     }
 
     return (
-      <PresentationErrorBoundary key={`manager-${roomId ?? "unknown"}`}>
+      <PresentationErrorBoundary
+        key={`manager-${presentationId ?? "unknown"}`}
+      >
         <ManagerPresentationView
-          roomId={roomId}
+          sessionId={
+            snapshot?.role === "manager" ? snapshot.session.id : undefined
+          }
           quiz={quiz}
           controller={managerController}
           isRemoteReady={isRemoteReady}
@@ -135,9 +146,9 @@ export function AppPresentation({
 
   if (role === "player") {
     return (
-      <PresentationErrorBoundary key={`player-${roomId ?? "unknown"}`}>
+      <PresentationErrorBoundary key={`player-${sessionId ?? "unknown"}`}>
         <PlayerPresentationView
-          roomId={roomId}
+          roomId={sessionId}
           quiz={quiz}
           currentQuestion={currentQuestion}
           currentContent={currentContent}

@@ -141,7 +141,6 @@ describe("live React lifecycle resilience", () => {
           release = () => resolve(true);
         }),
     );
-    const onNext = vi.fn();
     const lobbySnapshot = {
       ...managerSnapshot("session-a", "item"),
       session: {
@@ -174,7 +173,7 @@ describe("live React lifecycle resilience", () => {
             })}
           >
             <ServerDataProvider>
-              <ManagerJoinPage quiz={lobbyQuiz} onNext={onNext} />
+              <ManagerJoinPage quiz={lobbyQuiz} />
             </ServerDataProvider>
           </LiveSessionContext.Provider>
         </AudioProvider>
@@ -194,7 +193,7 @@ describe("live React lifecycle resilience", () => {
       await Promise.resolve();
     });
 
-    await waitFor(() => expect(onNext).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect((start as HTMLButtonElement).disabled).toBe(false));
   });
 
   test("cached manager leaderboard never leaks into a different Session", async () => {

@@ -916,8 +916,8 @@ components:
       additionalProperties: false
       required: [max_length, max_words]
       properties:
-        max_length: { type: integer, minimum: 1, maximum: 500 }
-        max_words: { type: integer, minimum: 1, maximum: 10 }
+        max_length: { type: integer, minimum: 1, maximum: 40 }
+        max_words: { type: integer, minimum: 1, maximum: 5 }
     EntryTextResponsePolicy:
       type: object
       additionalProperties: false
@@ -949,8 +949,8 @@ components:
       additionalProperties: false
       required: [title, text, image_url]
       properties:
-        title: { type: string, maxLength: 500 }
-        text: { type: string, minLength: 1, maxLength: 10000 }
+        title: { type: string, maxLength: 80 }
+        text: { type: string, minLength: 1, maxLength: 180 }
         image_url: { type: string, maxLength: 4096 }
     ChoiceResponsePolicy:
       type: object
@@ -970,7 +970,7 @@ components:
       required: [id, text, image_url, order]
       properties:
         id: { type: string, minLength: 1, maxLength: 128 }
-        text: { type: string, minLength: 1, maxLength: 2000 }
+        text: { type: string, minLength: 1, maxLength: 75 }
         image_url: { type: string, maxLength: 4096 }
         order: { type: integer, minimum: 1 }
     ChoiceEvaluationPolicy:
@@ -999,7 +999,7 @@ components:
       additionalProperties: false
       required: [duration_seconds]
       properties:
-        duration_seconds: { type: integer, minimum: 1, maximum: 86400 }
+        duration_seconds: { type: integer, minimum: 5, maximum: 1200 }
     ActivityResultPolicy:
       type: object
       additionalProperties: false
@@ -1012,8 +1012,8 @@ components:
       minProperties: 1
       description: At least one of title, text, or image_url must be non-empty.
       properties:
-        title: { type: string, maxLength: 500 }
-        text: { type: string, maxLength: 20000 }
+        title: { type: string, maxLength: 120 }
+        text: { type: string, maxLength: 600 }
         image_url: { type: string, maxLength: 4096 }
     AnswerRequest:
       type: object
@@ -1103,7 +1103,7 @@ components:
       required: [request_id, display_name]
       properties:
         request_id: { type: string, format: uuid, description: Also acts as the opaque participant credential and must be generated securely. }
-        display_name: { type: string, minLength: 1, maxLength: 100 }
+        display_name: { type: string, minLength: 2, maxLength: 100 }
         avatar: { type: string, maxLength: 100 }
     LiveActionRequest:
       type: object

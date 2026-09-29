@@ -217,12 +217,13 @@ func validateActivityDefinition(value ActivityDefinition) error {
 		return errInvalidSlideDefinition
 	}
 	if strings.TrimSpace(value.Prompt.Text) == "" ||
-		utf8.RuneCountInString(value.Prompt.Text) > 10000 ||
-		utf8.RuneCountInString(value.Prompt.Title) > 500 ||
+		utf8.RuneCountInString(value.Prompt.Text) > maxStoredActivityPromptRunes ||
+		utf8.RuneCountInString(value.Prompt.Title) > maxStoredActivityTitleRunes ||
 		utf8.RuneCountInString(value.Prompt.ImageURL) > 4096 {
 		return errInvalidSlideDefinition
 	}
-	if value.Timing.DurationSeconds < 1 || value.Timing.DurationSeconds > 86400 {
+	if value.Timing.DurationSeconds < minStoredDurationSeconds ||
+		value.Timing.DurationSeconds > maxStoredDurationSeconds {
 		return errInvalidSlideDefinition
 	}
 
@@ -248,11 +249,8 @@ func validateChoiceActivityDefinition(value ActivityDefinition) error {
 		value.Response.Selection != ChoiceSelectionMultiple {
 		return errInvalidSlideDefinition
 	}
-	maxOptions := MaxPollChoiceOptions
-	if value.Evaluation.Mode == EvaluationModeCorrectness {
-		maxOptions = MaxQuizChoiceOptions
-	}
-	if len(value.Response.Options) < 2 || len(value.Response.Options) > maxOptions {
+	if len(value.Response.Options) < 2 ||
+		len(value.Response.Options) > maxStoredChoiceOptions {
 		return errInvalidSlideDefinition
 	}
 
@@ -263,7 +261,7 @@ func validateChoiceActivityDefinition(value ActivityDefinition) error {
 		if id == "" ||
 			utf8.RuneCountInString(id) > 128 ||
 			strings.TrimSpace(option.Text) == "" ||
-			utf8.RuneCountInString(option.Text) > 2000 ||
+			utf8.RuneCountInString(option.Text) > maxStoredChoiceOptionTextRunes ||
 			utf8.RuneCountInString(option.ImageURL) > 4096 ||
 			option.Order < 1 ||
 			option.Order > len(value.Response.Options) {
@@ -329,6 +327,53 @@ func validateChoiceActivityDefinition(value ActivityDefinition) error {
 	if value.Results.ShowOverallLeaderboardAfter &&
 		value.Scoring.Mode != ScoringModePoints {
 		return errInvalidSlideDefinition
+	}
+	return nil
+}
+
+func validateActivityAuthoringPolicy(value ActivityDefinition) error {
+	if utf8.RuneCountInString(value.Prompt.Text) > maxActivityPromptRunes ||
+		utf8.RuneCountInString(value.Prompt.Title) > maxActivityTitleRunes ||
+		authoredLineCount(value.Prompt.Title) > maxActivityTitleLines ||
+		authoredLineCount(value.Prompt.Text) > maxActivityPromptLines ||
+		!validOptionalRemoteURL(value.Prompt.ImageURL, 4096) ||
+		value.Timing.DurationSeconds < minLiveDurationSeconds ||
+		value.Timing.DurationSeconds > maxLiveDurationSeconds {
+		return errInvalidSlideDefinition
+	}
+
+	if value.ActivityKind == ActivityKindText {
+		switch value.Results.Aggregation {
+		case TextAggregationWordFrequency:
+			if value.Response.MaxLength > 40 ||
+				value.Response.MaxWords > 5 {
+				return errInvalidSlideDefinition
+			}
+		case TextAggregationEntryFrequency:
+			if value.Response.MaxEntryLength > 40 ||
+				value.Response.MaxEntries > 5 {
+				return errInvalidSlideDefinition
+			}
+		}
+		return nil
+	}
+	if value.ActivityKind != ActivityKindChoice {
+		return nil
+	}
+
+	maxOptions := MaxPollChoiceOptions
+	if value.Evaluation.Mode == EvaluationModeCorrectness {
+		maxOptions = MaxQuizChoiceOptions
+	}
+	if len(value.Response.Options) > maxOptions {
+		return errInvalidSlideDefinition
+	}
+	for _, option := range value.Response.Options {
+		if utf8.RuneCountInString(option.Text) > maxChoiceOptionTextRunes ||
+			authoredLineCount(option.Text) > maxChoiceOptionTextLines ||
+			!validOptionalRemoteURL(option.ImageURL, 4096) {
+			return errInvalidSlideDefinition
+		}
 	}
 	return nil
 }

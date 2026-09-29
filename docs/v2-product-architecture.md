@@ -379,9 +379,12 @@ height.
 The Manager presentation surface follows the same no-document-scroll contract
 because single-screen rooms commonly mirror or screen-share the presenter
 device. Stage remains the preferred audience-only projection when a separate
-display/browser is available. Private Backstage drawers and long manager-only
-lists may scroll internally, but their scrolling must never move the projected
-presentation chrome or hide the primary live controls.
+display/browser is available. The shared Manager tab is also treated as
+audience-safe: opening Backstage launches a separate presenter window/tab rather
+than overlaying private results or controls on the projected surface. The
+Backstage window and long manager-only lists may scroll internally without
+moving the projected presentation chrome or exposing private insight to the
+shared tab.
 
 Choice density is bounded for projection readability: correctness-evaluated
 Quiz Activities support at most 8 options, while unscored Poll Activities

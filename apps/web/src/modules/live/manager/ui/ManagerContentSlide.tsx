@@ -4,6 +4,7 @@ import { isContentSlide } from "../../model/presentationFlow.ts";
 import type { LegacyContentSlide } from "../../model/serverData.ts";
 import { participantTheme } from "../../participant/theme.ts";
 import { useLiveSession } from "../../react/useLiveSession.ts";
+import { ProjectedContentCard } from "../../ui/ProjectedContentCard.tsx";
 import { ManagerControls } from "./ManagerControls.tsx";
 import { ManagerQrPanel } from "./ManagerQrPanel.tsx";
 import { ManagerTopBar } from "./ManagerTopBar.tsx";
@@ -18,8 +19,6 @@ export function ManagerContentSlide({
   content,
   currentSlide,
   totalSlides,
-  onNext,
-  onEndGame,
 }: ManagerContentSlideProps) {
   const {
     isStreamConnected,
@@ -35,16 +34,15 @@ export function ManagerContentSlide({
   const handleNext = async () => {
     const nextSlide = quiz.slides[currentSlide];
     if (!nextSlide) {
-      if (await sendEnd()) onEndGame();
+      await sendEnd();
       return;
     }
 
-    if (!(await sendNavigation("next", { slide: nextSlide }))) return;
-    onNext();
+    await sendNavigation("next", { slide: nextSlide });
   };
 
   const handleEnd = async () => {
-    if (await sendEnd()) onEndGame();
+    await sendEnd();
   };
 
   const theme = participantTheme(quiz);
@@ -72,36 +70,16 @@ export function ManagerContentSlide({
           showQr ? "sm:ps-84" : ""
         }`}
       >
-        <article className="mx-auto flex max-h-full w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-[color:var(--live-surface)] p-5 text-center shadow-2xl backdrop-blur sm:p-8">
-          {!source ? (
-            <p role="status" className="text-[color:var(--live-muted)]">
-              در حال همگام‌سازی محتوای اسلاید…
-            </p>
-          ) : (
-            <>
-              {source.title ? (
-                <h1 className="line-clamp-2 shrink-0 text-3xl font-black sm:text-5xl" dir="auto">
-                  {source.title}
-                </h1>
-              ) : null}
-              {source.content_text ? (
-                <p
-                  className="mx-auto mt-4 max-h-[28dvh] max-w-3xl overflow-hidden whitespace-pre-wrap text-base leading-7 text-[color:var(--live-muted)] sm:text-lg sm:leading-8"
-                  dir="auto"
-                >
-                  {source.content_text}
-                </p>
-              ) : null}
-              {source.content_image_url ? (
-                <img
-                  src={source.content_image_url}
-                  alt={source.title || "تصویر اسلاید توضیحی"}
-                  className="mx-auto mt-5 min-h-0 max-h-[44dvh] max-w-full rounded-2xl object-contain shadow-xl"
-                />
-              ) : null}
-            </>
-          )}
-        </article>
+        {!source ? (
+          <div
+            className="mx-auto rounded-2xl border border-white/10 bg-[color:var(--live-surface)] px-6 py-5 text-center text-[color:var(--live-muted)]"
+            role="status"
+          >
+            در حال همگام‌سازی محتوای اسلاید…
+          </div>
+        ) : (
+          <ProjectedContentCard content={source} />
+        )}
       </main>
 
       <ManagerControls

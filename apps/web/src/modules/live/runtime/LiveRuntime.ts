@@ -845,6 +845,7 @@ export class LiveRuntime {
         lifecycleVersion = this.lifecycleVersion;
         next = await this.transport.getLiveSnapshot(created.id, {
           includeItems: true,
+          viewer: "manager",
         });
         if (!isCurrent()) return false;
       }

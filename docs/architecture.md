@@ -164,15 +164,15 @@ normalize retained pre-v2 payloads before replay.
 Participant SSE presence is tracked in PostgreSQL with both a nullable
 `participants.disconnected_at` marker and an active-stream reference count.
 Opening a participant stream increments the count; closing one decrements it,
-and `disconnected_at` is set only when the last active stream is gone. This
-prevents one tab or an overlapping reconnect from making an otherwise connected
-participant eligible for display-name takeover. Once the last stream closes, a
-participant can restore their existing record by rejoining the same session:
-the server rotates the credential to the new `request_id`, clears the
-disconnect marker, and keeps the row, answers, and score untouched, so
-`participant_count` never increases for a restore. An actively connected
-display name continues to be rejected with `409 display_name_taken`; a new run
-is a new session, so the name joins fresh there. A host reconnection recreates
+and `disconnected_at` is set only when the last active stream is gone. Presence
+is not participant identity: a public display name never authorizes restoration
+of a previous row, score, or answers. Participant continuity requires the
+original high-entropy per-session request credential persisted by the client;
+replaying that credential is idempotent and returns the original participant.
+A different credential using an existing display name is rejected with
+`409 display_name_taken` even after every SSE stream for that participant has
+closed. A new run is a new session, so the name joins fresh there. A host
+reconnection recreates
 or resolves the same non-ended session idempotently (`request_id` or
 host+presentation lookup), so the run resumes at the exact live point.
 
@@ -200,8 +200,11 @@ fetch roster/leaderboard rows separately with `limit <= 100` and stable keyset
 cursors. Joined order uses `(joined_at, id)`; score order uses
 `(score DESC, joined_at, id)`.
 
-The React live runtime mirrors this boundary with narrow TypeScript types. A
-public join code resolves directly to the active Go live-session ID. New
+The React live runtime mirrors this boundary with narrow TypeScript types.
+Presentation background audio is host-output-only; participant devices never
+play the authored music track, which avoids unsynchronized multi-device audio
+in shared rooms. A public join code resolves directly to the active Go
+live-session ID. New
 Sessions freeze both the ordered Item manifest and display-safe Presentation
 metadata (title, background, image, music and text color) at creation time, so
 later authoring edits cannot change an in-progress run. The public resolver

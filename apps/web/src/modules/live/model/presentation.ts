@@ -18,7 +18,8 @@ export interface LivePresentationModel {
 }
 
 export interface AppPresentationProps {
-  roomId?: string;
+  presentationId?: string;
+  sessionId?: string;
   role: LiveClientRole;
   initialQuizData?: LivePresentationModel | null;
 }

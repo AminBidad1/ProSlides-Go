@@ -48,11 +48,11 @@ type QuestionEditorProps = {
 };
 
 export default function EditorPage() {
-  const { roomId } = useParams();
+  const { presentationId } = useParams();
   const location = useLocation();
   const navigation = useNavigation();
   const navigate = useNavigate();
-  const quizId = roomId?.trim() || "";
+  const quizId = presentationId?.trim() || "";
 
   const [quiz, setQuiz] = useState<EditorPresentation | null>(null);
   const [loading, setLoading] = useState(true);

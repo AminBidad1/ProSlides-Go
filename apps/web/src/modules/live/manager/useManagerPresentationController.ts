@@ -1,18 +1,9 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-
 import type { LiveState, StageView } from "../api/types.ts";
 import type { LivePresentationModel } from "../model/presentation.ts";
 import {
   findContentSlideIndex,
   findQuestionSlideIndex,
   findSlideIndexById,
-  isContentSlide,
-  isQuestionSlide,
   type ManagerPresentationView,
 } from "../model/presentationFlow.ts";
 import type {
@@ -25,20 +16,66 @@ type UseManagerPresentationControllerOptions = {
   quiz: LivePresentationModel;
   currentQuestion: LegacyQuestionSlide | null;
   currentContent: LegacyContentSlide | null;
-  isConnected: boolean;
   sessionState?: LiveState;
   sessionStageView?: StageView;
   activeItemId?: string | null;
 };
+
+export const isManagerProjectionReady = ({
+  enabled,
+  sessionState,
+  sessionStageView,
+  currentQuestion,
+  currentContent,
+}: Pick<
+  UseManagerPresentationControllerOptions,
+  | "enabled"
+  | "sessionState"
+  | "sessionStageView"
+  | "currentQuestion"
+  | "currentContent"
+>): boolean =>
+  !enabled ||
+  sessionState === "draft" ||
+  sessionState === "lobby" ||
+  sessionState === "ended" ||
+  sessionStageView === "overall_ranking" ||
+  currentQuestion !== null ||
+  currentContent !== null;
 
 export type ManagerPresentationController = {
   view: ManagerPresentationView;
   currentSlide: number;
   totalSlides: number;
   isSynced: boolean;
-  handleNext: () => void;
-  handlePrevious: () => void;
-  handleEndGame: () => void;
+};
+
+const resolvedSlideNumber = ({
+  quiz,
+  activeItemId,
+  currentQuestion,
+  currentContent,
+}: Pick<
+  UseManagerPresentationControllerOptions,
+  "quiz" | "activeItemId" | "currentQuestion" | "currentContent"
+>): number => {
+  const activeIndex = findSlideIndexById(quiz.slides, activeItemId);
+  if (activeIndex >= 0) return activeIndex + 1;
+
+  if (currentQuestion?.question_id != null) {
+    const questionIndex = findQuestionSlideIndex(
+      quiz.slides,
+      currentQuestion.question_id,
+    );
+    if (questionIndex >= 0) return questionIndex + 1;
+  }
+
+  if (currentContent) {
+    const contentIndex = findContentSlideIndex(quiz.slides, currentContent);
+    if (contentIndex >= 0) return contentIndex + 1;
+  }
+
+  return 1;
 };
 
 export function useManagerPresentationController({
@@ -46,176 +83,42 @@ export function useManagerPresentationController({
   quiz,
   currentQuestion,
   currentContent,
-  isConnected,
   sessionState,
   sessionStageView,
   activeItemId,
 }: UseManagerPresentationControllerOptions): ManagerPresentationController {
-  const [fallbackView, setFallbackView] =
-    useState<ManagerPresentationView>("ManagerJoinPage");
-  const [currentSlide, setCurrentSlide] = useState(1);
-  const [isSynced, setIsSynced] = useState(!enabled);
-
   const totalSlides = quiz.slides.length;
-  const isOverallRanking = sessionStageView === "overall_ranking";
-
-  useEffect(() => {
-    if (!enabled) {
-      setIsSynced(true);
-      setFallbackView("ManagerJoinPage");
-      setCurrentSlide(1);
-      return;
-    }
-
-    setIsSynced(false);
-  }, [enabled]);
-
-  useEffect(() => {
-    if (!enabled || isSynced) return;
-
-    if (currentQuestion || currentContent || isOverallRanking) {
-      setIsSynced(true);
-      return;
-    }
-
-    const timer = window.setTimeout(
-      () => setIsSynced(true),
-      isConnected ? 2500 : 3500,
-    );
-
-    return () => window.clearTimeout(timer);
-  }, [
-    enabled,
-    isSynced,
-    currentQuestion,
-    currentContent,
-    isOverallRanking,
-    isConnected,
-  ]);
-
-  useEffect(() => {
-    if (!enabled || !activeItemId || quiz.slides.length === 0) return;
-
-    const index = findSlideIndexById(quiz.slides, activeItemId);
-    if (index >= 0) {
-      setCurrentSlide(index + 1);
-    }
-  }, [enabled, activeItemId, quiz.slides]);
-
-  useEffect(() => {
-    if (!enabled || !currentQuestion || quiz.slides.length === 0) return;
-
-    const index = findQuestionSlideIndex(
-      quiz.slides,
-      currentQuestion.question_id,
-    );
-
-    if (index >= 0) {
-      setCurrentSlide(index + 1);
-    }
-
-    setFallbackView("ManagerPickAnswerQuestion");
-  }, [enabled, currentQuestion, quiz.slides]);
-
-  useEffect(() => {
-    if (!enabled || !currentContent) return;
-
-    const index = findContentSlideIndex(quiz.slides, currentContent);
-    if (index >= 0) {
-      setCurrentSlide(index + 1);
-    }
-
-    setFallbackView("ManagerContentSlide");
-  }, [enabled, currentContent, quiz.slides]);
-
-  useEffect(() => {
-    if (!enabled || !isOverallRanking) return;
-
-    const index = findSlideIndexById(quiz.slides, activeItemId);
-    if (index >= 0) {
-      setCurrentSlide(index + 1);
-    }
-
-    setFallbackView("ManagerLeaderBoard");
-  }, [
-    enabled,
-    isOverallRanking,
-    quiz.slides,
+  const currentSlide = resolvedSlideNumber({
+    quiz,
     activeItemId,
-  ]);
-
-  const handleNext = useCallback(() => {
-    if (fallbackView === "ManagerJoinPage") {
-      if (isOverallRanking) {
-        setFallbackView("ManagerLeaderBoard");
-        return;
-      }
-      if (currentContent) {
-        setFallbackView("ManagerContentSlide");
-        return;
-      }
-
-      setFallbackView("ManagerPickAnswerQuestion");
-      return;
-    }
-
-    const nextSlide = quiz.slides[currentSlide];
-    if (!nextSlide) return;
-
-    if (isContentSlide(nextSlide)) {
-      setFallbackView("ManagerContentSlide");
-    } else if (isQuestionSlide(nextSlide)) {
-      setFallbackView("ManagerPickAnswerQuestion");
-    } else {
-      return;
-    }
-
-    setCurrentSlide((previous) =>
-      Math.min(previous + 1, totalSlides),
-    );
-  }, [
-    fallbackView,
-    isOverallRanking,
-    currentContent,
-    quiz.slides,
-    currentSlide,
-    totalSlides,
-  ]);
-
-  const handlePrevious = useCallback(() => {
-    // Product requirement: presentation flow is forward-only.
-  }, []);
-
-  const handleEndGame = useCallback(() => {
-    setFallbackView("ManagerFinalLeaderboard");
-  }, []);
-
-  const view = useMemo<ManagerPresentationView>(() => {
-    if (
-      fallbackView === "ManagerFinalLeaderboard" ||
-      sessionState === "ended"
-    ) {
-      return "ManagerFinalLeaderboard";
-    }
-    if (isOverallRanking) return "ManagerLeaderBoard";
-    if (currentContent) return "ManagerContentSlide";
-    if (currentQuestion) return "ManagerPickAnswerQuestion";
-    return fallbackView;
-  }, [
-    fallbackView,
-    sessionState,
-    isOverallRanking,
-    currentContent,
     currentQuestion,
-  ]);
+    currentContent,
+  });
+  const isSynced = isManagerProjectionReady({
+    enabled,
+    sessionState,
+    sessionStageView,
+    currentQuestion,
+    currentContent,
+  });
+
+  let view: ManagerPresentationView = "ManagerJoinPage";
+  if (sessionState === "ended") {
+    view = "ManagerFinalLeaderboard";
+  } else if (sessionState === "draft" || sessionState === "lobby") {
+    view = "ManagerJoinPage";
+  } else if (sessionStageView === "overall_ranking") {
+    view = "ManagerLeaderBoard";
+  } else if (currentContent) {
+    view = "ManagerContentSlide";
+  } else if (currentQuestion) {
+    view = "ManagerPickAnswerQuestion";
+  }
 
   return {
     view,
     currentSlide,
     totalSlides,
     isSynced,
-    handleNext,
-    handlePrevious,
-    handleEndGame,
   };
 }

@@ -417,10 +417,21 @@ export const projectLiveSnapshot = (
 ): ProjectedServerData | null => {
   if (!snapshot?.session) return null;
 
-  const active = normalizeLiveSlide(
+  const normalizedActive = normalizeLiveSlide(
     snapshot.active_item,
     snapshot.session,
   );
+  const normalizedActiveId =
+    normalizedActive?.item_kind === "activity"
+      ? normalizedActive.question_id ?? normalizedActive.slide_id
+      : normalizedActive?.slide_id;
+  const active =
+    normalizedActive != null &&
+    snapshot.session.active_item_id != null &&
+    String(normalizedActiveId ?? "") ===
+      String(snapshot.session.active_item_id)
+      ? normalizedActive
+      : null;
   const managerRows =
     snapshot.role === "manager"
       ? roster.map(rosterEntryToLegacy)

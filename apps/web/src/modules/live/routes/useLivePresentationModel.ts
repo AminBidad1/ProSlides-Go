@@ -10,7 +10,7 @@ import { presentationSlideToLegacy } from "../runtime/protocol.ts";
 import { EMPTY_PRESENTATION } from "../model/presentationFlow.ts";
 
 type UseLivePresentationModelOptions = {
-  roomId?: string;
+  presentationId?: string;
   role: LiveClientRole;
   initialQuizData?: LivePresentationModel | null;
   snapshot: LiveSnapshot | null;
@@ -85,7 +85,7 @@ export const isLivePresentationDefinitionReady = ({
   (snapshot?.role === "manager" && Array.isArray(snapshot.items));
 
 export function useLivePresentationModel({
-  roomId,
+  presentationId,
   role,
   initialQuizData = null,
   snapshot,
@@ -99,7 +99,7 @@ export function useLivePresentationModel({
   }, [initialQuizData, role]);
 
   useEffect(() => {
-    if (role !== "manager" || !roomId) return;
+    if (role !== "manager" || !presentationId) return;
     if (snapshot?.role === "manager" && Array.isArray(snapshot.items)) return;
 
     let stopped = false;
@@ -127,7 +127,7 @@ export function useLivePresentationModel({
 
         try {
           const presentation = await getPresentationForLive(
-            roomId,
+            presentationId,
             controller.signal,
           );
           if (!stopped) {
@@ -159,7 +159,7 @@ export function useLivePresentationModel({
       if (retryTimer) window.clearTimeout(retryTimer);
       wakeRetry?.();
     };
-  }, [role, roomId, snapshot]);
+  }, [role, presentationId, snapshot]);
 
   const quiz = useMemo<LivePresentationModel>(() => {
     const baseQuiz = remoteQuiz ?? EMPTY_PRESENTATION;

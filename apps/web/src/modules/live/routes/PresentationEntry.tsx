@@ -180,7 +180,7 @@ function AccessCodeResolver() {
         >
           <ServerDataProvider>
             <AppPresentation
-              roomId={resolvedData.session_id}
+              sessionId={resolvedData.session_id}
               role="player"
               initialQuizData={resolvedMeta}
             />
@@ -198,18 +198,26 @@ function PresentationRouter({
 }: {
   explicitRole?: LiveClientRole;
 }) {
-  const { roomId } = useParams<{ roomId: string }>();
+  const { presentationId, sessionId } = useParams<{
+    presentationId?: string;
+    sessionId?: string;
+  }>();
   const role: LiveClientRole =
     explicitRole === "player" ? "player" : "manager";
+  const identity = role === "manager" ? presentationId : sessionId;
 
   return (
     <AudioProvider>
       <LiveSessionProvider
-        key={`${role}:${roomId || "unknown"}`}
+        key={`${role}:${identity || "unknown"}`}
         role={role}
       >
         <ServerDataProvider>
-          <AppPresentation roomId={roomId} role={role} />
+          <AppPresentation
+            presentationId={role === "manager" ? presentationId : undefined}
+            sessionId={role === "player" ? sessionId : undefined}
+            role={role}
+          />
         </ServerDataProvider>
       </LiveSessionProvider>
     </AudioProvider>

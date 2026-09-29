@@ -2,7 +2,6 @@ package live
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -76,10 +75,11 @@ func (s *rejoinStore) AuthorizeViewer(context.Context, string, string, []byte) e
 	return nil
 }
 
-// Join mirrors the PostgresStore contract: idempotent replay always wins, an
-// away participant is restored by display name (same record, new credential,
-// count unchanged), an active display name survives as a fresh INSERT conflict,
-// and non-joinable sessions reject everyone but the original retry.
+// Join mirrors the PostgresStore contract: idempotent replay with the original
+// credential always wins, while a display name never proves identity. A
+// different credential using an existing name is rejected regardless of
+// presence state, and non-joinable sessions reject everyone but the original
+// retry.
 func (s *rejoinStore) Join(_ context.Context, session, request, name, avatar string, _ []byte) (Participant, bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -89,16 +89,8 @@ func (s *rejoinStore) Join(_ context.Context, session, request, name, avatar str
 	if !s.joinable {
 		return Participant{}, false, ErrConflict
 	}
-	if existing := s.byName[name]; existing != nil {
-		if !existing.disconnected || existing.connections != 0 {
-			return Participant{}, false, ErrNameTaken
-		}
-		existing.requestID = request
-		existing.participant.Avatar = avatar
-		existing.disconnected = false
-		existing.connections = 0
-		s.byRequest[request] = existing
-		return existing.participant, true, nil
+	if s.byName[name] != nil {
+		return Participant{}, false, ErrNameTaken
 	}
 	participant := Participant{ID: name + "-participant-id", DisplayName: name, Avatar: avatar}
 	record := &rejoinParticipant{
@@ -151,30 +143,17 @@ func joinRequest(path, request, name string) *http.Request {
 	return req
 }
 
-func TestJoinRestoresDisconnectedParticipantWithSameName(t *testing.T) {
+func TestJoinRejectsDisconnectedNameTakeover(t *testing.T) {
 	store := newRejoinStore(true, rejoinParticipant{participant: Participant{ID: "existing-id", DisplayName: "Player", Avatar: "A"}, requestID: "11111111-1111-4111-8111-111111111111", disconnected: true})
 	handler := rejoinHandler(store)
 
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, joinRequest("/api/v1/live/sessions/"+testSessionID+"/join", "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", "Player"))
-	if response.Code != http.StatusOK {
-		t.Fatalf("restore status = %d, body = %s", response.Code, response.Body.String())
+	if response.Code != http.StatusConflict {
+		t.Fatalf("takeover status = %d, body = %s", response.Code, response.Body.String())
 	}
-	var payload map[string]any
-	if err := json.Unmarshal(response.Body.Bytes(), &payload); err != nil {
-		t.Fatal(err)
-	}
-	if payload["id"] != "existing-id" {
-		t.Fatalf("restore returned a participant other than the original: %s", response.Body.String())
-	}
-	updated := false
-	for _, cookie := range response.Result().Cookies() {
-		if cookie.Name == "proslides_participant" && cookie.Value == "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" {
-			updated = true
-		}
-	}
-	if !updated {
-		t.Fatal("participant cookie was not rotated to the rejoining credential")
+	if !strings.Contains(response.Body.String(), `"display_name_taken"`) {
+		t.Fatalf("expected display_name_taken, body = %s", response.Body.String())
 	}
 }
 
@@ -200,6 +179,21 @@ func TestJoinIdempotentRetryReturnsOriginal(t *testing.T) {
 	handler.ServeHTTP(response, joinRequest("/api/v1/live/sessions/"+testSessionID+"/join", "11111111-1111-4111-8111-111111111111", "Player"))
 	if response.Code != http.StatusOK {
 		t.Fatalf("retry status = %d, body = %s", response.Code, response.Body.String())
+	}
+}
+
+func TestServiceJoinRejectsOneRuneDisplayName(t *testing.T) {
+	store := newRejoinStore(true, rejoinParticipant{})
+	service := NewService(store, DeductionPolicy{})
+
+	if _, _, err := service.Join(
+		context.Background(),
+		testSessionID,
+		"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+		"P",
+		"",
+	); !errors.Is(err, ErrInvalid) {
+		t.Fatalf("one-rune display name error = %v, want ErrInvalid", err)
 	}
 }
 
@@ -241,7 +235,7 @@ func TestServiceSetParticipantPresence(t *testing.T) {
 	}
 }
 
-func TestParticipantPresenceRequiresLastStreamToCloseBeforeRestore(t *testing.T) {
+func TestParticipantPresenceNeverTurnsDisplayNameIntoARecoveryCredential(t *testing.T) {
 	store := newRejoinStore(true, rejoinParticipant{
 		participant: Participant{ID: "existing-id", DisplayName: "Player", Avatar: "A"},
 		requestID: testParticipantToken,
@@ -258,13 +252,6 @@ func TestParticipantPresenceRequiresLastStreamToCloseBeforeRestore(t *testing.T)
 		t.Fatal(err)
 	}
 
-	store.mu.Lock()
-	record := store.byName["Player"]
-	if record.connections != 1 || record.disconnected {
-		t.Fatalf("presence after one close = connections=%d disconnected=%v", record.connections, record.disconnected)
-	}
-	store.mu.Unlock()
-
 	if _, _, err := service.Join(
 		context.Background(),
 		testSessionID,
@@ -272,7 +259,7 @@ func TestParticipantPresenceRequiresLastStreamToCloseBeforeRestore(t *testing.T)
 		"Player",
 		"B",
 	); !errors.Is(err, ErrNameTaken) {
-		t.Fatalf("join while one stream remains = %v, want ErrNameTaken", err)
+		t.Fatalf("name takeover while one stream remains = %v, want ErrNameTaken", err)
 	}
 
 	if err := service.SetParticipantPresence(context.Background(), testSessionID, testParticipantToken, true); err != nil {
@@ -280,37 +267,47 @@ func TestParticipantPresenceRequiresLastStreamToCloseBeforeRestore(t *testing.T)
 	}
 
 	store.mu.Lock()
-	record = store.byName["Player"]
+	record := store.byName["Player"]
 	if record.connections != 0 || !record.disconnected {
 		t.Fatalf("presence after last close = connections=%d disconnected=%v", record.connections, record.disconnected)
 	}
 	store.mu.Unlock()
 
-	participant, restored, err := service.Join(
+	if _, _, err := service.Join(
 		context.Background(),
 		testSessionID,
 		"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
 		"Player",
 		"C",
+	); !errors.Is(err, ErrNameTaken) {
+		t.Fatalf("name takeover after disconnect = %v, want ErrNameTaken", err)
+	}
+
+	participant, reused, err := service.Join(
+		context.Background(),
+		testSessionID,
+		testParticipantToken,
+		"Player",
+		"A",
 	)
-	if err != nil || !restored || participant.ID != "existing-id" {
-		t.Fatalf("restore after last close = participant=%+v restored=%v err=%v", participant, restored, err)
+	if err != nil || !reused || participant.ID != "existing-id" {
+		t.Fatalf("credential reuse = participant=%+v reused=%v err=%v", participant, reused, err)
 	}
 }
 
-func TestJoinMetricsCountRestoredAndJoined(t *testing.T) {
+func TestJoinMetricsCountReusedAndJoined(t *testing.T) {
 	store := newRejoinStore(true, rejoinParticipant{participant: Participant{ID: "existing-id", DisplayName: "Player", Avatar: "A"}, requestID: "11111111-1111-4111-8111-111111111111", disconnected: true})
 	service := NewService(store, DeductionPolicy{})
 
-	if _, restored, err := service.Join(context.Background(), testSessionID, "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", "Player", "A"); err != nil || !restored {
-		t.Fatalf("restore = %v, %v", restored, err)
+	if _, reused, err := service.Join(context.Background(), testSessionID, "11111111-1111-4111-8111-111111111111", "Player", "A"); err != nil || !reused {
+		t.Fatalf("credential reuse = %v, %v", reused, err)
 	}
-	if _, restored, err := service.Join(context.Background(), testSessionID, "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", "Second", "B"); err != nil || restored {
-		t.Fatalf("new join = %v, %v", restored, err)
+	if _, reused, err := service.Join(context.Background(), testSessionID, "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", "Second", "B"); err != nil || reused {
+		t.Fatalf("new join = %v, %v", reused, err)
 	}
 	var metrics strings.Builder
 	service.WritePrometheus(&metrics)
-	for _, want := range []string{`proslides_live_joins_total{outcome="restored"} 1`, `proslides_live_joins_total{outcome="joined"} 1`} {
+	for _, want := range []string{`proslides_live_joins_total{outcome="reused"} 1`, `proslides_live_joins_total{outcome="joined"} 1`} {
 		if !strings.Contains(metrics.String(), want) {
 			t.Fatalf("metrics missing %q:\n%s", want, metrics.String())
 		}

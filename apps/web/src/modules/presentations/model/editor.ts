@@ -73,34 +73,21 @@ export interface EditorPresentation {
   last_update: string;
 }
 
+import {
+  LIVE_CONTENT_LIMITS,
+  LIVE_QUESTION_LIMITS,
+  LIVE_TEXT_ACTIVITY_LIMITS,
+  isOptionalLiveHttpUrl,
+  liveTextLength,
+  liveTextLineCount,
+} from "../../../shared/presentation/liveAuthoringPolicy.ts";
+
 type QuestionLike = Omit<Partial<EditorQuestion>, "options"> & {
   options?: Array<Partial<EditorOption> & { option_text?: string }>;
 };
 
-export const QUESTION_LIMITS = {
-  title: 500,
-  text: 10_000,
-  optionText: 2_000,
-  optionId: 128,
-  imageUrl: 4_096,
-  minOptions: 2,
-  maxQuizOptions: 8,
-  maxPollOptions: 12,
-  minDurationSeconds: 1,
-  maxDurationSeconds: 86_400,
-} as const;
-
-export const TEXT_ACTIVITY_LIMITS = {
-  title: 500,
-  promptText: 10_000,
-  imageUrl: 4_096,
-  minResponseLength: 1,
-  maxResponseLength: 40,
-  minWords: 1,
-  maxWords: 5,
-  minDurationSeconds: 1,
-  maxDurationSeconds: 86_400,
-} as const;
+export const QUESTION_LIMITS = LIVE_QUESTION_LIMITS;
+export const TEXT_ACTIVITY_LIMITS = LIVE_TEXT_ACTIVITY_LIMITS;
 
 type TextActivityValidationField =
   | "text_activity"
@@ -152,6 +139,12 @@ export const validateEditorTextActivity = (
       field: "prompt_text",
       message: "متن پرسش ابر واژه بیش از حد طولانی است.",
     });
+  } else if (textLineCount(prompt) > TEXT_ACTIVITY_LIMITS.promptMaxLines) {
+    issues.push({
+      code: "prompt_too_many_lines",
+      field: "prompt_text",
+      message: "پرسش ابر واژه حداکثر می‌تواند ۴ خط داشته باشد.",
+    });
   }
   if (textLength(title) > TEXT_ACTIVITY_LIMITS.title) {
     issues.push({
@@ -159,12 +152,24 @@ export const validateEditorTextActivity = (
       field: "prompt_text",
       message: "عنوان ابر واژه بیش از حد طولانی است.",
     });
+  } else if (textLineCount(title) > TEXT_ACTIVITY_LIMITS.titleMaxLines) {
+    issues.push({
+      code: "title_too_many_lines",
+      field: "prompt_text",
+      message: "عنوان ابر واژه باید در یک خط قرار بگیرد.",
+    });
   }
   if (textLength(imageUrl) > TEXT_ACTIVITY_LIMITS.imageUrl) {
     issues.push({
       code: "image_too_long",
       field: "prompt_image",
       message: "آدرس تصویر ابر واژه بیش از حد طولانی است.",
+    });
+  } else if (!validOptionalHttpUrl(imageUrl)) {
+    issues.push({
+      code: "image_url_invalid",
+      field: "prompt_image",
+      message: "آدرس تصویر ابر واژه باید یک لینک معتبر http یا https باشد.",
     });
   }
   if (
@@ -197,7 +202,7 @@ export const validateEditorTextActivity = (
     issues.push({
       code: "duration_invalid",
       field: "duration",
-      message: "زمان پاسخ‌گویی باید بین ۱ ثانیه تا ۲۴ ساعت باشد.",
+      message: "زمان پاسخ‌گویی باید بین ۵ ثانیه تا ۲۰ دقیقه باشد.",
     });
   }
   if (
@@ -218,11 +223,7 @@ export const getTextActivityValidationError = (
   activity: Partial<EditorTextActivity> | null | undefined,
 ): string | null => validateEditorTextActivity(activity)[0]?.message ?? null;
 
-export const CONTENT_LIMITS = {
-  title: 500,
-  text: 20_000,
-  imageUrl: 4_096,
-} as const;
+export const CONTENT_LIMITS = LIVE_CONTENT_LIMITS;
 
 type ContentLike = {
   title?: string | null;
@@ -261,8 +262,9 @@ export type QuestionValidationIssue = {
   optionId?: string;
 };
 
-const textLength = (value: unknown): number =>
-  Array.from(String(value ?? "")).length;
+const textLength = liveTextLength;
+const textLineCount = liveTextLineCount;
+const validOptionalHttpUrl = isOptionalLiveHttpUrl;
 
 export const validateEditorQuestion = (
   question: QuestionLike | null | undefined,
@@ -292,6 +294,12 @@ export const validateEditorQuestion = (
       field: "question_text",
       message: `متن سؤال نمی‌تواند بیشتر از ${QUESTION_LIMITS.text.toLocaleString("fa-IR")} نویسه باشد.`,
     });
+  } else if (textLineCount(text) > QUESTION_LIMITS.maxLines) {
+    issues.push({
+      code: "question_text_too_many_lines",
+      field: "question_text",
+      message: "متن سؤال حداکثر می‌تواند ۴ خط داشته باشد.",
+    });
   }
 
   if (textLength(title) > QUESTION_LIMITS.title) {
@@ -300,6 +308,12 @@ export const validateEditorQuestion = (
       field: "question_text",
       message: `عنوان سؤال نمی‌تواند بیشتر از ${QUESTION_LIMITS.title.toLocaleString("fa-IR")} نویسه باشد.`,
     });
+  } else if (textLineCount(title) > QUESTION_LIMITS.titleMaxLines) {
+    issues.push({
+      code: "question_title_too_many_lines",
+      field: "question_text",
+      message: "عنوان سؤال باید در یک خط قرار بگیرد.",
+    });
   }
 
   if (textLength(imageUrl) > QUESTION_LIMITS.imageUrl) {
@@ -307,6 +321,12 @@ export const validateEditorQuestion = (
       code: "question_image_too_long",
       field: "question_image",
       message: "آدرس تصویر سؤال بیش از حد طولانی است.",
+    });
+  } else if (!validOptionalHttpUrl(imageUrl)) {
+    issues.push({
+      code: "question_image_invalid",
+      field: "question_image",
+      message: "آدرس تصویر سؤال باید یک لینک معتبر http یا https باشد.",
     });
   }
 
@@ -357,6 +377,13 @@ export const validateEditorQuestion = (
         optionId: id || undefined,
         message: `متن هر گزینه حداکثر ${QUESTION_LIMITS.optionText.toLocaleString("fa-IR")} نویسه می‌تواند باشد.`,
       });
+    } else if (textLineCount(optionText) > QUESTION_LIMITS.optionMaxLines) {
+      issues.push({
+        code: "option_text_too_many_lines",
+        field: "option_text",
+        optionId: id || undefined,
+        message: "متن هر گزینه حداکثر می‌تواند ۴ خط داشته باشد.",
+      });
     }
 
     if (!id || textLength(id) > QUESTION_LIMITS.optionId) {
@@ -374,6 +401,13 @@ export const validateEditorQuestion = (
         field: "option_image",
         optionId: id || undefined,
         message: "آدرس تصویر گزینه بیش از حد طولانی است.",
+      });
+    } else if (!validOptionalHttpUrl(optionImage)) {
+      issues.push({
+        code: "option_image_invalid",
+        field: "option_image",
+        optionId: id || undefined,
+        message: "آدرس تصویر گزینه باید یک لینک معتبر http یا https باشد.",
       });
     }
   }
@@ -474,7 +508,7 @@ export const validateEditorQuestion = (
     issues.push({
       code: "question_time_invalid",
       field: "question_time",
-      message: "زمان سؤال باید بین ۱ ثانیه تا ۲۴ ساعت باشد.",
+      message: "زمان سؤال باید بین ۵ ثانیه تا ۲۰ دقیقه باشد.",
     });
   }
 
@@ -545,6 +579,12 @@ export const validateEditorContent = (
       field: "title",
       message: `عنوان نمی‌تواند بیشتر از ${CONTENT_LIMITS.title.toLocaleString("fa-IR")} نویسه باشد.`,
     });
+  } else if (textLineCount(title) > CONTENT_LIMITS.titleMaxLines) {
+    issues.push({
+      code: "content_title_too_many_lines",
+      field: "title",
+      message: "عنوان اسلاید محتوا حداکثر می‌تواند دو خط داشته باشد.",
+    });
   }
 
   if (textLength(text) > CONTENT_LIMITS.text) {
@@ -553,6 +593,12 @@ export const validateEditorContent = (
       field: "content_text",
       message: `متن نمی‌تواند بیشتر از ${CONTENT_LIMITS.text.toLocaleString("fa-IR")} نویسه باشد.`,
     });
+  } else if (textLineCount(text) > CONTENT_LIMITS.maxLines) {
+    issues.push({
+      code: "content_text_too_many_lines",
+      field: "content_text",
+      message: "متن اسلاید محتوا حداکثر می‌تواند ۱۰ خط داشته باشد.",
+    });
   }
 
   if (textLength(imageUrl) > CONTENT_LIMITS.imageUrl) {
@@ -560,6 +606,12 @@ export const validateEditorContent = (
       code: "content_image_too_long",
       field: "content_image",
       message: "آدرس تصویر بیش از حد طولانی است.",
+    });
+  } else if (!validOptionalHttpUrl(imageUrl)) {
+    issues.push({
+      code: "content_image_invalid",
+      field: "content_image",
+      message: "آدرس تصویر باید یک لینک معتبر http یا https باشد.",
     });
   }
 

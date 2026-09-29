@@ -2,6 +2,8 @@ package presentations
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -181,7 +183,7 @@ func TestWordCloudTextActivityNormalizesAsCanonicalText(t *testing.T) {
 			Text:  "این جلسه را با چه واژه‌هایی توصیف می‌کنید؟",
 		},
 		Response: ActivityResponsePolicy{
-			MaxLength: 80,
+			MaxLength: 40,
 			MaxWords:  3,
 		},
 		Evaluation: ActivityEvaluationPolicy{Mode: EvaluationModeNone},
@@ -208,7 +210,7 @@ func TestWordCloudTextActivityNormalizesAsCanonicalText(t *testing.T) {
 		t.Fatalf("decode normalized Word Cloud: %v", err)
 	}
 	if decoded.ActivityKind != ActivityKindText ||
-		decoded.Response.MaxLength != 80 ||
+		decoded.Response.MaxLength != 40 ||
 		decoded.Response.MaxWords != 3 ||
 		decoded.Results.Aggregation != TextAggregationWordFrequency ||
 		decoded.Evaluation.Mode != EvaluationModeNone ||
@@ -227,8 +229,36 @@ func TestWordCloudTextActivityNormalizesAsCanonicalText(t *testing.T) {
 		t.Fatal("normalized Text scoring leaked Choice-only fields")
 	}
 	responseJSON := textJSON["response"].(map[string]any)
-	if responseJSON["max_length"] != float64(80) || responseJSON["max_words"] != float64(3) {
+	if responseJSON["max_length"] != float64(40) || responseJSON["max_words"] != float64(3) {
 		t.Fatalf("normalized Text response = %#v", responseJSON)
+	}
+}
+
+func TestStoredLegacyWordCloudResponseBoundsRemainDecodable(t *testing.T) {
+	activity := ActivityDefinition{
+		SchemaVersion: ActivitySchemaVersion1,
+		ActivityKind:  ActivityKindText,
+		Prompt:        ActivityPrompt{Text: "Legacy words"},
+		Response: ActivityResponsePolicy{
+			MaxLength: 80,
+			MaxWords:  8,
+		},
+		Evaluation: ActivityEvaluationPolicy{Mode: EvaluationModeNone},
+		Scoring:    ActivityScoringPolicy{Mode: ScoringModeNone},
+		Timing:     ActivityTimingPolicy{DurationSeconds: 30},
+		Results: ActivityResultPolicy{
+			Aggregation: TextAggregationWordFrequency,
+		},
+	}
+	raw, err := json.Marshal(activity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := DecodeActivityDefinition(raw); err != nil {
+		t.Fatalf("stored legacy Word Cloud should remain decodable: %v", err)
+	}
+	if _, _, err := normalizeSlideDefinition(ItemKindActivity, raw); err == nil {
+		t.Fatal("new authoring write unexpectedly accepted legacy Word Cloud response bounds")
 	}
 }
 
@@ -338,6 +368,84 @@ func TestChoiceActivityRejectsInvalidCrossPolicyCombinations(t *testing.T) {
 		if err := validateActivityDefinition(value); err == nil {
 			t.Fatalf("case %d unexpectedly valid", index)
 		}
+	}
+}
+
+func TestStoredV1ActivityRemainsDecodableWhenItExceedsNewAuthoringPolicy(t *testing.T) {
+	options := make([]ChoiceOptionDefinition, 9)
+	for index := range options {
+		options[index] = ChoiceOptionDefinition{
+			ID:    fmt.Sprintf("option-%d", index+1),
+			Text:  strings.Repeat("x", 100),
+			Order: index + 1,
+		}
+	}
+	activity := ActivityDefinition{
+		SchemaVersion: ActivitySchemaVersion1,
+		ActivityKind:  ActivityKindChoice,
+		Prompt: ActivityPrompt{
+			Title: "Legacy",
+			Text:  strings.Repeat("q", 300),
+		},
+		Response: ActivityResponsePolicy{
+			Selection: ChoiceSelectionSingle,
+			Options:   options,
+		},
+		Evaluation: ActivityEvaluationPolicy{
+			Mode:             EvaluationModeCorrectness,
+			CorrectOptionIDs: []string{options[0].ID},
+		},
+		Scoring: ActivityScoringPolicy{
+			Mode:      ScoringModePoints,
+			MaxPoints: 100,
+		},
+		Timing: ActivityTimingPolicy{DurationSeconds: 4},
+	}
+	raw, err := json.Marshal(activity)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := DecodeActivityDefinition(raw); err != nil {
+		t.Fatalf("stored v1 definition should remain decodable: %v", err)
+	}
+	if _, _, err := normalizeSlideDefinition(ItemKindActivity, raw); err == nil {
+		t.Fatal("new authoring write unexpectedly accepted legacy-overdense definition")
+	}
+}
+
+func TestStoredV1ActivityWithLegacyMediaURLRemainsDecodable(t *testing.T) {
+	activity := ActivityDefinition{
+		SchemaVersion: ActivitySchemaVersion1,
+		ActivityKind:  ActivityKindChoice,
+		Prompt: ActivityPrompt{
+			Text:     "Legacy media",
+			ImageURL: "data:image/png;base64,AAAA",
+		},
+		Response: ActivityResponsePolicy{
+			Selection: ChoiceSelectionSingle,
+			Options: []ChoiceOptionDefinition{
+				{ID: "a", Text: "A", Order: 1},
+				{ID: "b", Text: "B", Order: 2},
+			},
+		},
+		Evaluation: ActivityEvaluationPolicy{
+			Mode:             EvaluationModeCorrectness,
+			CorrectOptionIDs: []string{"a"},
+		},
+		Scoring: ActivityScoringPolicy{Mode: ScoringModePoints, MaxPoints: 100},
+		Timing:  ActivityTimingPolicy{DurationSeconds: 30},
+	}
+	raw, err := json.Marshal(activity)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := DecodeActivityDefinition(raw); err != nil {
+		t.Fatalf("legacy stored media should remain decodable: %v", err)
+	}
+	if _, _, err := normalizeSlideDefinition(ItemKindActivity, raw); err == nil {
+		t.Fatal("new authoring write unexpectedly accepted legacy media URL")
 	}
 }
 

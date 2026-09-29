@@ -70,18 +70,18 @@ test("content draft validates unicode character limits used by the backend", () 
   assert.equal(
     validateContentDraft({
       ...draft,
-      title: "ع".repeat(500),
-      text: "م".repeat(20_000),
+      title: "ع".repeat(120),
+      text: "م".repeat(600),
     }).length,
     0,
   );
 
   assert.ok(
-    validateContentDraft({ ...draft, title: "ع".repeat(501) })
+    validateContentDraft({ ...draft, title: "ع".repeat(121) })
       .some((issue) => issue.code === "content_title_too_long"),
   );
   assert.ok(
-    validateContentDraft({ ...draft, text: "م".repeat(20_001) })
+    validateContentDraft({ ...draft, text: "م".repeat(601) })
       .some((issue) => issue.code === "content_text_too_long"),
   );
 });

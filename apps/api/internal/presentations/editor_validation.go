@@ -9,9 +9,17 @@ import (
 
 var errInvalidSlideDefinition = errors.New("invalid slide definition")
 
-func validateSlideContent(kind string, raw json.RawMessage) error {
+// ValidateLiveItemDefinition enforces the current presenter-paced authoring
+// policy on a canonical frozen item before it enters a new live run. Stored v1
+// definitions remain decodable separately for reports and already-running
+// sessions.
+func ValidateLiveItemDefinition(kind string, raw json.RawMessage) error {
 	_, _, err := normalizeSlideDefinition(kind, raw)
 	return err
+}
+
+func validateSlideContent(kind string, raw json.RawMessage) error {
+	return ValidateLiveItemDefinition(kind, raw)
 }
 
 func decodeStrictObject(raw json.RawMessage, target any) error {

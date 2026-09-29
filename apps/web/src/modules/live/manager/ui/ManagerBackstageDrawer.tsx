@@ -1,5 +1,6 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 import { getColorForUser } from "../../../../shared/lib/playerColor.ts";
 import { ConfirmDialog } from "../../../../shared/ui/primitives/ConfirmDialog.tsx";
@@ -15,8 +16,6 @@ import { ManagerLeaderboardDialog } from "./ManagerLeaderboardDialog.tsx";
 type ManagerBackstageDrawerProps = {
   quiz: LivePresentationModel;
   currentSlide: number;
-  onAdvance: () => void;
-  onEndGame: () => void;
 };
 
 type PrimaryControl =
@@ -57,10 +56,11 @@ const phaseLabel = (phase: string | null | undefined) => {
 export function ManagerBackstageDrawer({
   quiz,
   currentSlide,
-  onAdvance,
-  onEndGame,
 }: ManagerBackstageDrawerProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
+  const backstageMode =
+    new URLSearchParams(location.search).get("backstage") === "1";
+  const [isOpen, setIsOpen] = useState(backstageMode);
   const [showRanking, setShowRanking] = useState(false);
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [commandPending, setCommandPending] = useState(false);
@@ -180,7 +180,6 @@ export function ManagerBackstageDrawer({
           applied = firstSlide
             ? await sendNavigation("start", { slide: firstSlide })
             : false;
-          if (applied) onAdvance();
           break;
         case "close":
           applied = await sendManagerAction("close_activity");
@@ -195,7 +194,6 @@ export function ManagerBackstageDrawer({
           applied = nextSlide
             ? await sendNavigation("next", { slide: nextSlide })
             : false;
-          if (applied) onAdvance();
           break;
       }
       if (!applied) {
@@ -215,7 +213,6 @@ export function ManagerBackstageDrawer({
       const ended = await sendEnd();
       if (ended) {
         setConfirmEnd(false);
-        onEndGame();
       } else {
         setCommandError("پایان جلسه تأیید نشد. وضعیت اتصال را بررسی کنید.");
       }
@@ -229,17 +226,24 @@ export function ManagerBackstageDrawer({
     void loadRoster("score", false);
   };
 
+  const privateBackstageHref =
+    `/manager/presentation/${encodeURIComponent(quiz.quiz_id)}?backstage=1`;
+
   return (
     <>
+      {!backstageMode ? (
+        <a
+          href={privateBackstageHref}
+          target="_blank"
+          rel="noreferrer"
+          className="fixed end-4 top-20 z-40 grid min-h-11 place-items-center rounded-2xl border border-white/15 bg-slate-950/90 px-4 text-sm font-black text-white shadow-xl backdrop-blur hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+          aria-label="باز کردن پشت‌صحنه خصوصی در پنجره جدا"
+        >
+          پشت‌صحنه خصوصی
+        </a>
+      ) : null}
+
       <DialogPrimitive.Root open={isOpen} onOpenChange={setIsOpen}>
-        <DialogPrimitive.Trigger asChild>
-          <button
-            type="button"
-            className="fixed end-4 top-20 z-40 min-h-11 rounded-2xl border border-white/15 bg-slate-950/90 px-4 text-sm font-black text-white shadow-xl backdrop-blur hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-          >
-            پشت‌صحنه
-          </button>
-        </DialogPrimitive.Trigger>
 
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay className="fixed inset-0 z-[60] bg-black/55" />

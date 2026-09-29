@@ -12,6 +12,7 @@ import {
   shouldApplyLiveEvent,
 } from "../src/modules/live/runtime/protocol.ts";
 import { getLiveSnapshot, resolveLiveSession, streamLiveEvents } from "../src/modules/live/api/liveApi.ts";
+import { isManagerProjectionReady } from "../src/modules/live/manager/useManagerPresentationController.ts";
 
 const choiceItem = ({
   id = "activity-1",
@@ -113,6 +114,39 @@ const entryWordCloudItem = () => ({
 });
 
 
+test("manager projection readiness is immediate for lobby and strict during item transitions", () => {
+  assert.equal(
+    isManagerProjectionReady({
+      enabled: true,
+      sessionState: "lobby",
+      sessionStageView: "item",
+      currentQuestion: null,
+      currentContent: null,
+    }),
+    true,
+  );
+  assert.equal(
+    isManagerProjectionReady({
+      enabled: true,
+      sessionState: "presenting",
+      sessionStageView: "item",
+      currentQuestion: null,
+      currentContent: null,
+    }),
+    false,
+  );
+  assert.equal(
+    isManagerProjectionReady({
+      enabled: true,
+      sessionState: "presenting",
+      sessionStageView: "overall_ranking",
+      currentQuestion: null,
+      currentContent: null,
+    }),
+    true,
+  );
+});
+
 test("equal state versions are accepted when event_id advances", () => {
   const cursor = { eventId: 10, stateVersion: 4 };
   const event = { event_id: 11, state_version: 4 };
@@ -153,6 +187,26 @@ test("participant projection ignores supplied roster and exposes only self on ov
   assert.deepEqual(projection.leaderboardResults.map((row) => row.user_id), ["self"]);
   assert.equal(projection.leaderboardResults[0].rank, 3);
   assert.equal(projection.participantCount, 10_000);
+});
+
+test("projection suppresses stale active_item while command state already points at the next item", () => {
+  const projection = projectLiveSnapshot({
+    role: "manager",
+    session: {
+      state: "presenting",
+      state_version: 5,
+      active_item_id: "content-2",
+      activity_phase: null,
+      stage_view: "item",
+    },
+    // runAction can publish the new Session immediately while the authoritative
+    // snapshot refresh still carries the previous item for a brief interval.
+    active_item: choiceItem({ id: "activity-1" }),
+    participant_count: 3,
+  });
+
+  assert.equal(projection.currentQuestion, null);
+  assert.equal(projection.currentContent, null);
 });
 
 test("closed Activities are not projected as a fresh participant question", () => {

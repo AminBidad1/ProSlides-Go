@@ -3,6 +3,11 @@ import { useParams } from "react-router-dom";
 import QRCode from "qrcode";
 
 import { getColorForUser } from "../../../shared/lib/playerColor.ts";
+import {
+  choiceOptionProjectionTextClass,
+  choiceProjectionGridClass,
+  questionProjectionTextClass,
+} from "../model/projectionLayout.ts";
 import { presentationTheme } from "../../../shared/styles/presentationTheme.ts";
 import { WordCloudView } from "../../../shared/ui/WordCloudView.tsx";
 import type {
@@ -16,6 +21,8 @@ import type {
 import { normalizeLiveSlide } from "../runtime/protocol.ts";
 import { useStageProjection } from "../stage/useStageProjection.ts";
 import { LiveLobbyCrowd } from "../ui/LiveLobbyCrowd.tsx";
+import { LiveMediaImage } from "../ui/LiveMediaImage.tsx";
+import { ProjectedContentCard } from "../ui/ProjectedContentCard.tsx";
 import Waiting from "../ui/WaitingScreen.tsx";
 
 const statusText = (snapshot: StageSnapshot) => {
@@ -159,25 +166,7 @@ function StageLobby({ snapshot }: { snapshot: StageSnapshot }) {
 function StageContent({ content }: { content: LegacyContentSlide }) {
   return (
     <main className="flex h-full min-h-0 items-center overflow-hidden px-5 pb-4 pt-[4.5rem] sm:px-8">
-      <article className="mx-auto flex max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-[2.5rem] border border-white/10 bg-[color:var(--live-surface)] p-6 text-center shadow-2xl backdrop-blur sm:p-8">
-        {content.title ? (
-          <h1 className="line-clamp-3 shrink-0 text-3xl font-black leading-tight sm:text-5xl xl:text-6xl" dir="auto">
-            {content.title}
-          </h1>
-        ) : null}
-        {content.content_text ? (
-          <p className="mx-auto mt-4 max-h-[36dvh] max-w-4xl overflow-hidden whitespace-pre-wrap text-lg leading-8 text-[color:var(--live-muted)] sm:text-xl sm:leading-9 xl:text-2xl" dir="auto">
-            {content.content_text}
-          </p>
-        ) : null}
-        {content.content_image_url ? (
-          <img
-            src={content.content_image_url}
-            alt={content.title || "تصویر محتوای ارائه"}
-            className="mx-auto mt-5 min-h-0 max-h-[44dvh] max-w-full rounded-3xl object-contain shadow-2xl"
-          />
-        ) : null}
-      </article>
+      <ProjectedContentCard content={content} />
     </main>
   );
 }
@@ -243,12 +232,10 @@ function StageActivity({
       : [];
   const total = Number(result?.response_count ?? 0);
   const options = question.options ?? [];
-  const optionGridColumns =
-    options.length <= 4
-      ? "lg:grid-cols-2"
-      : options.length <= 6
-        ? "lg:grid-cols-3"
-        : "lg:grid-cols-4";
+  const optionGridColumns = choiceProjectionGridClass(options.length);
+  const questionTextClass = questionProjectionTextClass(
+    question.question_text ?? "",
+  );
   const isPoll =
     !isWordCloud &&
     question.has_correct_answer === false &&
@@ -282,7 +269,7 @@ function StageActivity({
             </p>
           ) : null}
           <h1
-            className="mx-auto mt-1 line-clamp-3 max-w-5xl text-2xl font-black leading-tight sm:text-4xl xl:text-5xl"
+            className={`mx-auto mt-1 max-w-5xl font-black ${questionTextClass}`}
             dir="auto"
           >
             {question.question_text || "فعالیت"}
@@ -305,9 +292,9 @@ function StageActivity({
         {isWordCloud ? (
           <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/5 p-4 shadow-2xl sm:p-5">
             {question.image_url ? (
-              <img
+              <LiveMediaImage
                 src={question.image_url}
-                alt=""
+                alt="تصویر سؤال"
                 className="mx-auto mb-3 max-h-[18dvh] max-w-full rounded-2xl object-contain"
               />
             ) : null}
@@ -330,7 +317,17 @@ function StageActivity({
             )}
           </div>
         ) : (
-          <div className={`mt-4 grid min-h-0 flex-1 auto-rows-fr grid-cols-2 gap-3 overflow-hidden ${optionGridColumns}`}>
+          <div className="mt-4 flex min-h-0 flex-1 gap-4 overflow-hidden">
+            {question.image_url ? (
+              <div className="flex w-[20%] min-w-40 shrink-0 items-center justify-center">
+                <LiveMediaImage
+                  src={question.image_url}
+                  alt="تصویر سؤال"
+                  className="max-h-[42dvh] max-w-full rounded-2xl object-contain shadow-xl"
+                />
+              </div>
+            ) : null}
+            <div className={`grid min-h-0 min-w-0 flex-1 auto-rows-fr grid-cols-2 gap-3 overflow-hidden ${optionGridColumns}`}>
             {options.map((option, index) => {
               const count = counts.get(index) ?? 0;
               const percentage = total > 0 ? (count / total) * 100 : 0;
@@ -346,13 +343,19 @@ function StageActivity({
                   }
                 >
                   {option.image_url ? (
-                    <img
+                    <LiveMediaImage
                       src={option.image_url}
                       alt=""
                       className="mx-auto mb-2 max-h-[8dvh] max-w-full rounded-xl object-contain"
                     />
                   ) : null}
-                  <p className="line-clamp-2 text-center text-sm font-black sm:text-base xl:text-lg" dir="auto">
+                  <p
+                    className={`text-center font-black ${choiceOptionProjectionTextClass(
+                      options.length,
+                      option.option_text ?? "",
+                    )}`}
+                    dir="auto"
+                  >
                     {option.option_text}
                   </p>
                   {revealed ? (
@@ -385,6 +388,7 @@ function StageActivity({
                 </article>
               );
             })}
+            </div>
           </div>
         )}
       </section>
@@ -544,8 +548,8 @@ function StageFinal({ snapshot }: { snapshot: StageSnapshot }) {
 }
 
 export default function StageRoute() {
-  const { roomId } = useParams<{ roomId: string }>();
-  const { snapshot, isConnected, isLoading, error } = useStageProjection(roomId);
+  const { sessionId } = useParams<{ sessionId: string }>();
+  const { snapshot, isConnected, isLoading, error } = useStageProjection(sessionId);
 
   if (isLoading && !snapshot) {
     return <Waiting message="در حال آماده‌سازی Stage…" />;

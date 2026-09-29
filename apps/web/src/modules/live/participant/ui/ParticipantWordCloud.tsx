@@ -5,6 +5,7 @@ import type { LivePresentationModel } from "../../model/presentation.ts";
 import type { LegacyQuestionSlide } from "../../model/serverData.ts";
 import { resolveQuestionTimer } from "../../model/questionTimer.ts";
 import { useLiveSession } from "../../react/useLiveSession.ts";
+import { LiveMediaImage } from "../../ui/LiveMediaImage.tsx";
 import { ParticipantShell } from "../ParticipantShell.tsx";
 import {
   clearAnswerDraft,
@@ -165,10 +166,7 @@ export function ParticipantWordCloud({
 
   useEffect(() => {
     if (!identity || totalSeconds <= 0) return;
-    let frame = 0;
-    let stopped = false;
     const tick = () => {
-      if (stopped) return;
       const elapsed = (Date.now() - timerRef.current.anchorStartMs) / 1000;
       const remaining = Math.max(
         0,
@@ -176,13 +174,10 @@ export function ParticipantWordCloud({
       );
       remainingRef.current = remaining;
       setTimeLeft(remaining);
-      if (remaining > 0) frame = window.requestAnimationFrame(tick);
     };
     tick();
-    return () => {
-      stopped = true;
-      if (frame) window.cancelAnimationFrame(frame);
-    };
+    const interval = window.setInterval(tick, 250);
+    return () => window.clearInterval(interval);
   }, [identity, totalSeconds]);
 
   const terms = useMemo(() => responseTerms(value), [value]);
@@ -457,9 +452,9 @@ export function ParticipantWordCloud({
             {question.question_text || "ابر واژه"}
           </h1>
           {question.image_url ? (
-            <img
+            <LiveMediaImage
               src={question.image_url}
-              alt=""
+              alt="تصویر سؤال"
               className="mx-auto mt-4 max-h-48 w-auto max-w-full rounded-2xl object-contain"
             />
           ) : null}

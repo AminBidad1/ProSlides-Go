@@ -31,23 +31,6 @@ const eventRecord = (payload: unknown): Record<string, unknown> =>
     ? (payload as Record<string, unknown>)
     : {};
 
-const wait = (milliseconds: number, signal: AbortSignal) =>
-  new Promise<void>((resolve) => {
-    if (signal.aborted) {
-      resolve();
-      return;
-    }
-    const timer = window.setTimeout(resolve, milliseconds);
-    signal.addEventListener(
-      "abort",
-      () => {
-        window.clearTimeout(timer);
-        resolve();
-      },
-      { once: true },
-    );
-  });
-
 const isFatalStageError = (error: unknown) =>
   error instanceof LiveAPIError && [401, 404].includes(error.status);
 
@@ -114,6 +97,29 @@ export function useStageProjection(sessionId: string | undefined) {
     let refreshPromise: Promise<StageSnapshot> | null = null;
     let refreshDirty = false;
     let lobbyRefreshTimer = 0;
+    let wakeRetry: (() => void) | null = null;
+
+    const waitForRetry = (milliseconds: number) =>
+      new Promise<void>((resolve) => {
+        if (controller.signal.aborted) {
+          resolve();
+          return;
+        }
+
+        let settled = false;
+        let timer = 0;
+        const finish = () => {
+          if (settled) return;
+          settled = true;
+          if (timer) window.clearTimeout(timer);
+          if (wakeRetry === finish) wakeRetry = null;
+          controller.signal.removeEventListener("abort", finish);
+          resolve();
+        };
+        timer = window.setTimeout(finish, milliseconds);
+        wakeRetry = finish;
+        controller.signal.addEventListener("abort", finish, { once: true });
+      });
     const refresh = async (): Promise<StageSnapshot> => {
       if (refreshPromise) {
         refreshDirty = true;
@@ -204,6 +210,40 @@ export function useStageProjection(sessionId: string | undefined) {
       }
     };
 
+    const recoverIfReachable = () => {
+      if (
+        controller.signal.aborted ||
+        (typeof navigator !== "undefined" && navigator.onLine === false)
+      ) {
+        return;
+      }
+
+      // Returning online/foreground should not sit behind an old exponential
+      // backoff. Wake the retry loop and refresh the authoritative Stage
+      // snapshot immediately; the SSE stream then resumes from that cursor.
+      wakeRetry?.();
+      if (snapshotRef.current) {
+        void refresh().catch((error) => {
+          if (!controller.signal.aborted && !isFatalStageError(error)) {
+            setState((value) => ({
+              ...value,
+              isConnected: false,
+              error: errorText(error),
+            }));
+          }
+        });
+      }
+    };
+    const recoverWhenVisible = () => {
+      if (document.visibilityState === "visible") {
+        recoverIfReachable();
+      }
+    };
+
+    window.addEventListener("online", recoverIfReachable);
+    window.addEventListener("pageshow", recoverIfReachable);
+    document.addEventListener("visibilitychange", recoverWhenVisible);
+
     void (async () => {
       let retry = 500;
 
@@ -222,7 +262,7 @@ export function useStageProjection(sessionId: string | undefined) {
           if (isFatalStageError(error)) return;
           const retryAfterMs =
             error instanceof LiveAPIError ? error.retryAfterMs ?? 0 : 0;
-          await wait(Math.max(retry, retryAfterMs), controller.signal);
+          await waitForRetry(Math.max(retry, retryAfterMs));
           retry = Math.min(retry * 2, 10_000);
         }
       }
@@ -245,7 +285,7 @@ export function useStageProjection(sessionId: string | undefined) {
               snapshotError instanceof LiveAPIError
                 ? snapshotError.retryAfterMs ?? 0
                 : 0;
-            await wait(Math.max(retry, retryAfterMs), controller.signal);
+            await waitForRetry(Math.max(retry, retryAfterMs));
             retry = Math.min(retry * 2, 10_000);
             continue;
           }
@@ -285,14 +325,18 @@ export function useStageProjection(sessionId: string | undefined) {
           needsRecoverySnapshot = true;
           const retryAfterMs =
             error instanceof LiveAPIError ? error.retryAfterMs ?? 0 : 0;
-          await wait(Math.max(retry, retryAfterMs), controller.signal);
+          await waitForRetry(Math.max(retry, retryAfterMs));
           retry = Math.min(retry * 2, 10_000);
         }
       }
     })();
 
     return () => {
+      window.removeEventListener("online", recoverIfReachable);
+      window.removeEventListener("pageshow", recoverIfReachable);
+      document.removeEventListener("visibilitychange", recoverWhenVisible);
       if (lobbyRefreshTimer) window.clearTimeout(lobbyRefreshTimer);
+      wakeRetry?.();
       controller.abort();
     };
   }, [applySnapshot, sessionId]);

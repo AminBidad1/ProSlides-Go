@@ -101,7 +101,10 @@ func main() {
 			identity.NewHTTP(identityService, cfg.Environment == "production", redisClient).WithTrustedProxyCIDRs(cfg.TrustedProxyCIDRs).Register(m)
 			presentations.NewHTTP(identityService, presentations.NewPostgresStore(postgresClient.Pool())).Register(m)
 			reports.NewHTTP(identityService, reports.NewPostgresStore(postgresClient.Pool())).Register(m)
-			live.NewHTTP(liveService, liveBroker, identityService, cfg.Environment == "production", redisClient).WithRequestTimeout(cfg.LiveRequestTimeout).Register(m)
+			live.NewHTTP(liveService, liveBroker, identityService, cfg.Environment == "production", redisClient).
+				WithTrustedProxyCIDRs(cfg.TrustedProxyCIDRs).
+				WithRequestTimeout(cfg.LiveRequestTimeout).
+				Register(m)
 			return []platformhttp.MetricSource{postgresClient, liveBroker, liveService}
 		}),
 		ReadHeaderTimeout: 10 * time.Second,

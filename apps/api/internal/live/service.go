@@ -26,7 +26,7 @@ type Service struct {
 	answerInternal     atomic.Uint64
 	answerNanos        atomic.Uint64
 	joinNew            atomic.Uint64
-	joinRestored       atomic.Uint64
+	joinReused         atomic.Uint64
 }
 
 func NewService(store Store, scoring ScoringPolicy) *Service {
@@ -52,16 +52,16 @@ func (s *Service) ResolveSession(c context.Context, code string) (SessionLocator
 }
 func (s *Service) Join(c context.Context, session, request, name, avatar string) (Participant, bool, error) {
 	name = strings.TrimSpace(name)
-	if !validUUID(session) || !validUUID(request) || name == "" || len([]rune(name)) > 100 || len([]rune(avatar)) > 100 {
+	if !validUUID(session) || !validUUID(request) || len([]rune(name)) < 2 || len([]rune(name)) > 100 || len([]rune(avatar)) > 100 {
 		return Participant{}, false, ErrInvalid
 	}
-	participant, restored, err := s.store.Join(c, session, request, name, avatar, tokenHash(request))
-	if restored {
-		s.joinRestored.Add(1)
+	participant, reused, err := s.store.Join(c, session, request, name, avatar, tokenHash(request))
+	if reused {
+		s.joinReused.Add(1)
 	} else if err == nil {
 		s.joinNew.Add(1)
 	}
-	return participant, restored, err
+	return participant, reused, err
 }
 func (s *Service) Action(c context.Context, session, host, request string, version int64, action, item string) (Session, bool, error) {
 	if !validUUID(session) || !validUUID(host) || !validUUID(request) || version < 1 || (item != "" && !validUUID(item)) {
@@ -189,9 +189,9 @@ func (s *Service) WritePrometheus(w io.Writer) {
 	fmt.Fprintln(w, "# TYPE proslides_live_answer_duration_seconds_count counter")
 	fmt.Fprintf(w, "proslides_live_answer_duration_seconds_count %d\n", total)
 	joined := s.joinNew.Load()
-	restored := s.joinRestored.Load()
+	reused := s.joinReused.Load()
 	fmt.Fprintln(w, "# TYPE proslides_live_joins_total counter")
-	for outcome, value := range map[string]uint64{"joined": joined, "restored": restored} {
+	for outcome, value := range map[string]uint64{"joined": joined, "reused": reused} {
 		fmt.Fprintf(w, "proslides_live_joins_total{outcome=%q} %d\n", outcome, value)
 	}
 }

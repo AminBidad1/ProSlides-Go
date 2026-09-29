@@ -13,8 +13,9 @@ traffic to the old API replicas, drain or terminate their long-lived SSE
 connections, then route traffic to the new version. Clients reconnect
 automatically and the new runtime registers each stream in
 `active_sse_connections`. Streams created by the pre-0024 runtime cannot be
-retroactively counted, so a mixed-version rollout would temporarily weaken the
-same-name restore invariant this migration is intended to enforce.
+retroactively counted, so a mixed-version rollout would temporarily make
+active-participant presence counts inaccurate. Participant identity recovery is
+credential-bound and must never depend on the public display name.
 
 ## PostgreSQL backup
 

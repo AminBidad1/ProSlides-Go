@@ -1,6 +1,7 @@
 import type { LivePresentationModel } from "../../model/presentation.ts";
 import type { LegacyQuestionSlide } from "../../model/serverData.ts";
 import { isMultipleChoiceQuestion } from "../answerAttempt.ts";
+import { LiveMediaImage } from "../../ui/LiveMediaImage.tsx";
 import { ParticipantShell } from "../ParticipantShell.tsx";
 import { useParticipantAnswerController } from "../useParticipantAnswerController.ts";
 
@@ -89,7 +90,7 @@ export function ParticipantQuestion({
           </h1>
 
           {question.image_url ? (
-            <img
+            <LiveMediaImage
               src={question.image_url}
               alt="تصویر سؤال"
               className="mx-auto my-4 max-h-44 max-w-full rounded-2xl border border-[color:var(--live-border)] object-contain shadow-lg"
@@ -117,7 +118,7 @@ export function ParticipantQuestion({
                     {selected ? "✓" : ""}
                   </span>
                   {option.image_url ? (
-                    <img
+                    <LiveMediaImage
                       src={option.image_url}
                       alt=""
                       className="h-12 w-12 shrink-0 rounded-xl object-cover"

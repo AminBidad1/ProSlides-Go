@@ -37,20 +37,27 @@ func validatePresentationSettings(raw json.RawMessage) error {
 			continue
 		}
 		var resourceURL string
-		if json.Unmarshal(value, &resourceURL) != nil || utf8.RuneCountInString(resourceURL) > 4096 {
-			return errInvalidPresentationSettings
-		}
-		resourceURL = strings.TrimSpace(resourceURL)
-		if resourceURL == "" {
-			continue
-		}
-		parsed, err := url.ParseRequestURI(resourceURL)
-		if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
+		if json.Unmarshal(value, &resourceURL) != nil ||
+			!validOptionalRemoteURL(resourceURL, 4096) {
 			return errInvalidPresentationSettings
 		}
 	}
 
 	return nil
+}
+
+func validOptionalRemoteURL(value string, maxRunes int) bool {
+	if utf8.RuneCountInString(value) > maxRunes {
+		return false
+	}
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return true
+	}
+	parsed, err := url.ParseRequestURI(value)
+	return err == nil &&
+		(parsed.Scheme == "http" || parsed.Scheme == "https") &&
+		parsed.Host != ""
 }
 
 func validHexColor(value string) bool {

@@ -55,7 +55,7 @@ const wordCloud = {
       text: "این موضوع را با چه واژه‌هایی توصیف می‌کنید؟",
       image_url: "",
     },
-    response: { max_words: 3, max_length: 80 },
+    response: { max_words: 3, max_length: 40 },
     evaluation: { mode: "none" },
     scoring: { mode: "none" },
     timing: { duration_seconds: 30 },
@@ -149,6 +149,8 @@ test("Choice validation remains strict while Poll does not require correctness",
     activity_kind: "choice",
     question_text: "سؤال",
     question_type: "single",
+    question_time: 10,
+    image_url: "",
     has_correct_answer: true,
     options: [
       { option_id: 0, option_text: "الف", answer: false },
@@ -179,6 +181,8 @@ test("legacy Choice activities respect quiz and poll projection caps", () => {
       activity_kind: "choice",
       question_text: "سؤال شلوغ",
       question_type: "single",
+      question_time: 10,
+      image_url: "",
       has_correct_answer: true,
       options: quizOptions,
     }),
@@ -196,10 +200,67 @@ test("legacy Choice activities respect quiz and poll projection caps", () => {
       activity_kind: "choice",
       question_text: "نظرسنجی شلوغ",
       question_type: "single",
+      question_time: 10,
+      image_url: "",
       has_correct_answer: false,
       options: pollOptions,
     }),
     "choice_options_too_many",
+  );
+});
+
+test("preflight blocks legacy slides that violate current projection policy", () => {
+  assert.equal(
+    getLiveActivityStartIssue({
+      item_kind: "activity",
+      activity_kind: "choice",
+      question_text: "س".repeat(181),
+      question_time: 10,
+      image_url: "",
+      question_type: "single",
+      has_correct_answer: true,
+      options: [
+        { option_id: "a", option_text: "الف", image_url: "", answer: true },
+        { option_id: "b", option_text: "ب", image_url: "", answer: false },
+      ],
+    }),
+    "choice_prompt_invalid",
+  );
+
+  assert.equal(
+    getLiveActivityStartIssue({
+      item_kind: "activity",
+      activity_kind: "text",
+      question_text: "ابر واژه",
+      question_time: 30,
+      image_url: "",
+      response_aggregation: "word_frequency",
+      response_max_length: 80,
+      response_max_words: 3,
+      options: [],
+      has_correct_answer: false,
+    }),
+    "text_response_invalid",
+  );
+
+  assert.equal(
+    getLiveActivityStartIssue({
+      item_kind: "content",
+      title: "محتوا",
+      content_text: "خط\n".repeat(11),
+      content_image_url: "",
+    }),
+    "content_density_invalid",
+  );
+
+  assert.equal(
+    getLiveActivityStartIssue({
+      item_kind: "content",
+      title: "محتوا",
+      content_text: "",
+      content_image_url: "data:image/png;base64,AAAA",
+    }),
+    "content_media_invalid",
   );
 });
 

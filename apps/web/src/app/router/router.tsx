@@ -65,13 +65,13 @@ export const appRouter = createBrowserRouter([
         ),
       },
       {
-        path: "manager/presentation/:roomId",
+        path: "manager/presentation/:presentationId",
         loader: requireManagerSession,
         ErrorBoundary: ManagerRouteErrorBoundary,
         lazy: lazyPresentationEntry("presentation", "manager"),
       },
       {
-        path: "manager/stage/:roomId",
+        path: "manager/stage/:sessionId",
         loader: requireManagerSession,
         ErrorBoundary: ManagerRouteErrorBoundary,
         lazy: lazyComponent(() =>
@@ -79,7 +79,7 @@ export const appRouter = createBrowserRouter([
         ),
       },
       {
-        path: "player/presentation/:roomId",
+        path: "player/presentation/:sessionId",
         lazy: lazyPresentationEntry("presentation", "player"),
       },
       {
@@ -96,7 +96,7 @@ export const appRouter = createBrowserRouter([
             ),
           },
           {
-            path: "manager/panel/:roomId",
+            path: "manager/panel/:presentationId",
             lazy: lazyComponent(() =>
               import("../../modules/presentations/editor/routes/EditorRoute.tsx"),
             ),

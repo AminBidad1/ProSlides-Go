@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"net"
 	"net/http"
 	"net/netip"
 	"strconv"
 	"strings"
 	"time"
+
+	platformhttp "github.com/proslides/proslides/internal/platform/http"
 )
 
 type RateLimiter interface {
@@ -257,32 +258,7 @@ func (h *HTTP) allow(w http.ResponseWriter, r *http.Request, scope string, limit
 }
 
 func (h *HTTP) clientAddress(r *http.Request) string {
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		host = r.RemoteAddr
-	}
-	peer, err := netip.ParseAddr(strings.TrimSpace(host))
-	if err != nil || !containsAddress(h.trustedProxyCIDRs, peer) {
-		return host
-	}
-
-	chain := strings.Split(r.Header.Get("X-Forwarded-For"), ",")
-	for i := len(chain) - 1; i >= 0; i-- {
-		candidate, parseErr := netip.ParseAddr(strings.TrimSpace(chain[i]))
-		if parseErr == nil && !containsAddress(h.trustedProxyCIDRs, candidate) {
-			return candidate.String()
-		}
-	}
-	return host
-}
-
-func containsAddress(prefixes []netip.Prefix, address netip.Addr) bool {
-	for _, prefix := range prefixes {
-		if prefix.Contains(address) {
-			return true
-		}
-	}
-	return false
+	return platformhttp.ClientAddress(r, h.trustedProxyCIDRs)
 }
 func (h *HTTP) me(w http.ResponseWriter, r *http.Request) {
 	c, e := r.Cookie("proslides_session")

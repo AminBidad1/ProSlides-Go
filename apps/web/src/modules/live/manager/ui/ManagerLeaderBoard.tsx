@@ -20,8 +20,6 @@ export function ManagerLeaderBoard({
   currentSlide,
   totalSlides,
   quiz,
-  onNext,
-  onEndGame,
 }: ManagerStageProps) {
   const {
     isStreamConnected,
@@ -84,16 +82,15 @@ export function ManagerLeaderBoard({
   const handleNext = async () => {
     const nextSlide = quiz.slides[currentSlide];
     if (!nextSlide) {
-      if (await sendEnd()) onEndGame();
+      await sendEnd();
       return;
     }
 
-    if (!(await sendNavigation("next", { slide: nextSlide }))) return;
-    onNext();
+    await sendNavigation("next", { slide: nextSlide });
   };
 
   const handleEnd = async () => {
-    if (await sendEnd()) onEndGame();
+    await sendEnd();
   };
 
   const theme = participantTheme(quiz);

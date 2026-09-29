@@ -147,10 +147,7 @@ export function useParticipantAnswerController({
   useEffect(() => {
     if (!identity || totalSeconds <= 0) return;
 
-    let frame = 0;
-    let stopped = false;
     const tick = () => {
-      if (stopped) return;
       const elapsed = (Date.now() - timerRef.current.anchorStartMs) / 1000;
       const remaining = Math.max(
         0,
@@ -158,14 +155,11 @@ export function useParticipantAnswerController({
       );
       remainingRef.current = remaining;
       setTimeLeft(remaining);
-      if (remaining > 0) frame = window.requestAnimationFrame(tick);
     };
 
     tick();
-    return () => {
-      stopped = true;
-      if (frame) window.cancelAnimationFrame(frame);
-    };
+    const interval = window.setInterval(tick, 250);
+    return () => window.clearInterval(interval);
   }, [identity, totalSeconds]);
 
   useEffect(() => {

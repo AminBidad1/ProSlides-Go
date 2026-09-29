@@ -141,7 +141,8 @@ Current route ownership:
 |   |-- /manager/panel/:presentationId
 |   `-- /manager/panel/:presentationId/report
 |-- live layout
-|   |-- /manager/presentation/:sessionId
+|   |-- /manager/presentation/:presentationId
+|   |-- /manager/stage/:sessionId
 |   |-- /player/presentation/:sessionId
 |   `-- /:accessCode
 `-- not found

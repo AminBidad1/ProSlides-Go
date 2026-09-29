@@ -13,7 +13,7 @@ import { ManagerLeaderBoard } from "../manager/ui/ManagerLeaderBoard.tsx";
 import { ManagerPickAnswerQuestion } from "../manager/ui/ManagerPickAnswerQuestion.tsx";
 
 type ManagerViewProps = {
-  roomId?: string;
+  sessionId?: string;
   quiz: LivePresentationModel;
   controller: ManagerPresentationController;
   isRemoteReady: boolean;
@@ -24,7 +24,7 @@ type ManagerViewProps = {
 };
 
 export function ManagerPresentationView({
-  roomId,
+  sessionId,
   quiz,
   controller,
   isRemoteReady,
@@ -39,8 +39,6 @@ export function ManagerPresentationView({
     currentSlide,
     totalSlides,
     isSynced,
-    handleNext,
-    handleEndGame,
   } = controller;
 
   if (!isSynced) {
@@ -48,12 +46,10 @@ export function ManagerPresentationView({
   }
 
   const stageProps = {
-    roomId,
-    onNext: handleNext,
+    sessionId,
     currentSlide,
     totalSlides,
     quiz,
-    onEndGame: handleEndGame,
   };
 
   const withBackstage = (content: ReactNode) => (
@@ -63,8 +59,6 @@ export function ManagerPresentationView({
         <ManagerBackstageDrawer
           quiz={quiz}
           currentSlide={currentSlide}
-          onAdvance={handleNext}
-          onEndGame={handleEndGame}
         />
       ) : null}
     </>
@@ -73,11 +67,7 @@ export function ManagerPresentationView({
   switch (view) {
     case "ManagerJoinPage":
       return withBackstage(
-        <ManagerJoinPage
-          roomId={roomId}
-          onNext={handleNext}
-          quiz={quiz}
-        />,
+        <ManagerJoinPage quiz={quiz} />,
       );
     case "ManagerPickAnswerQuestion":
       return withBackstage(

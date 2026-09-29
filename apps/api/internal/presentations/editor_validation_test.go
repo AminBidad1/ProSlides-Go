@@ -180,17 +180,55 @@ func TestValidateChoiceActivityLengthsCountUnicodeCharacters(t *testing.T) {
 		return raw
 	}
 
-	if err := validateSlideContent(ItemKindActivity, makeActivity(strings.Repeat("س", 10000), strings.Repeat("گ", 2000))); err != nil {
+	if err := validateSlideContent(ItemKindActivity, makeActivity(strings.Repeat("س", 180), strings.Repeat("گ", 75))); err != nil {
 		t.Fatalf("unicode Choice Activity at documented limits rejected: %v", err)
 	}
-	if err := validateSlideContent(ItemKindActivity, makeActivity(strings.Repeat("س", 10001), "گزینه")); err == nil {
+	if err := validateSlideContent(ItemKindActivity, makeActivity(strings.Repeat("س", 181), "گزینه")); err == nil {
 		t.Fatal("Choice prompt over documented character limit accepted")
 	}
-	if err := validateSlideContent(ItemKindActivity, makeActivity("پرسش", strings.Repeat("گ", 2001))); err == nil {
+	if err := validateSlideContent(ItemKindActivity, makeActivity("پرسش", strings.Repeat("گ", 76))); err == nil {
 		t.Fatal("Choice option over documented character limit accepted")
 	}
 }
 
+
+func TestValidateActivityAndContentRejectUnsafeMediaURLs(t *testing.T) {
+	activity := ActivityDefinition{
+		SchemaVersion: ActivitySchemaVersion1,
+		ActivityKind:  ActivityKindChoice,
+		Prompt: ActivityPrompt{
+			Text:     "Choose",
+			ImageURL: "javascript:alert(1)",
+		},
+		Response: ActivityResponsePolicy{
+			Selection: ChoiceSelectionSingle,
+			Options: []ChoiceOptionDefinition{
+				{ID: "a", Text: "A", Order: 1},
+				{ID: "b", Text: "B", Order: 2},
+			},
+		},
+		Evaluation: ActivityEvaluationPolicy{
+			Mode:             EvaluationModeCorrectness,
+			CorrectOptionIDs: []string{"a"},
+		},
+		Scoring: ActivityScoringPolicy{Mode: ScoringModePoints, MaxPoints: 100},
+		Timing:  ActivityTimingPolicy{DurationSeconds: 30},
+	}
+	raw, err := json.Marshal(activity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := validateSlideContent(ItemKindActivity, raw); err == nil {
+		t.Fatal("unsafe Activity image URL accepted")
+	}
+
+	if err := validateSlideContent(
+		"content",
+		json.RawMessage(`{"title":"Intro","text":"","image_url":"data:image/svg+xml;base64,AAAA"}`),
+	); err == nil {
+		t.Fatal("unsafe Content image URL accepted")
+	}
+}
 
 func TestValidateContentSlideLengthsCountUnicodeCharacters(t *testing.T) {
 	makeContent := func(title, text, imageURL string) json.RawMessage {
@@ -206,13 +244,13 @@ func TestValidateContentSlideLengthsCountUnicodeCharacters(t *testing.T) {
 		return raw
 	}
 
-	if err := validateSlideContent("content", makeContent(strings.Repeat("ع", 500), strings.Repeat("م", 20000), "")); err != nil {
+	if err := validateSlideContent("content", makeContent(strings.Repeat("ع", 120), strings.Repeat("م", 600), "")); err != nil {
 		t.Fatalf("unicode content at documented limits rejected: %v", err)
 	}
-	if err := validateSlideContent("content", makeContent(strings.Repeat("ع", 501), "متن", "")); err == nil {
+	if err := validateSlideContent("content", makeContent(strings.Repeat("ع", 121), "متن", "")); err == nil {
 		t.Fatal("content title over documented character limit accepted")
 	}
-	if err := validateSlideContent("content", makeContent("عنوان", strings.Repeat("م", 20001), "")); err == nil {
+	if err := validateSlideContent("content", makeContent("عنوان", strings.Repeat("م", 601), "")); err == nil {
 		t.Fatal("content text over documented character limit accepted")
 	}
 }

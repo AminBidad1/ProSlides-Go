@@ -1,6 +1,7 @@
 import type { LivePresentationModel } from "../../model/presentation.ts";
 import type { LegacyContentSlide } from "../../model/serverData.ts";
 import { useLiveSession } from "../../react/useLiveSession.ts";
+import { LiveMediaImage } from "../../ui/LiveMediaImage.tsx";
 import { ParticipantShell } from "../ParticipantShell.tsx";
 
 type ParticipantContentSlideProps = {
@@ -32,7 +33,7 @@ export function ParticipantContentSlide({
           </h1>
 
           {image ? (
-            <img
+            <LiveMediaImage
               src={image}
               alt={title ? "تصویر " + title : "تصویر اسلاید توضیحی"}
               className="mx-auto mt-6 max-h-[42dvh] w-auto max-w-full rounded-2xl border border-[color:var(--live-border)] object-contain shadow-xl"

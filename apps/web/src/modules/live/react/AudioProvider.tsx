@@ -97,6 +97,30 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (isMuted || !musicUrl) return;
+
+    const resumeOnGesture = () => {
+      const audio = audioElementRef.current;
+      if (!audio || !audio.paused) return;
+      void audio.play().catch((error: unknown) => {
+        if (import.meta.env.DEV) {
+          console.info(
+            "[Audio] Playback is still blocked or the source is not playable.",
+            error,
+          );
+        }
+      });
+    };
+
+    window.addEventListener("pointerdown", resumeOnGesture);
+    window.addEventListener("keydown", resumeOnGesture);
+    return () => {
+      window.removeEventListener("pointerdown", resumeOnGesture);
+      window.removeEventListener("keydown", resumeOnGesture);
+    };
+  }, [isMuted, musicUrl]);
+
+  useEffect(() => {
     return () => {
       const audio = audioElementRef.current;
       if (!audio) return;

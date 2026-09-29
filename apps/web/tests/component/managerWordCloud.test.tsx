@@ -161,13 +161,11 @@ test("manager primary surface renders revealed Word Cloud terms", async () => {
         <LiveSessionContext.Provider value={context}>
           <ServerDataProvider>
             <ManagerPickAnswerQuestion
-              roomId="presentation-1"
+              sessionId="session-1"
               currentSlide={2}
               totalSlides={3}
               quiz={quiz}
               isRemoteReady
-              onNext={vi.fn()}
-              onEndGame={vi.fn()}
             />
           </ServerDataProvider>
         </LiveSessionContext.Provider>

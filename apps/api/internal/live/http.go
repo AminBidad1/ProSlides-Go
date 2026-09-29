@@ -8,10 +8,12 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/netip"
 	"strconv"
 	"time"
 
 	"github.com/proslides/proslides/internal/identity"
+	platformhttp "github.com/proslides/proslides/internal/platform/http"
 )
 
 type ManagerAuth interface {
@@ -27,7 +29,8 @@ type HTTP struct {
 	auth    ManagerAuth
 	secure  bool
 	timeout time.Duration
-	limiter RateLimiter
+	limiter           RateLimiter
+	trustedProxyCIDRs []netip.Prefix
 }
 
 func NewHTTP(service *Service, broker *EventBroker, auth ManagerAuth, secure bool, limiter ...RateLimiter) *HTTP {
@@ -37,6 +40,11 @@ func NewHTTP(service *Service, broker *EventBroker, auth ManagerAuth, secure boo
 	}
 	return h
 }
+func (h *HTTP) WithTrustedProxyCIDRs(prefixes []netip.Prefix) *HTTP {
+	h.trustedProxyCIDRs = append([]netip.Prefix(nil), prefixes...)
+	return h
+}
+
 func (h *HTTP) WithRequestTimeout(timeout time.Duration) *HTTP {
 	if timeout > 0 {
 		h.timeout = timeout
@@ -57,6 +65,16 @@ func (h *HTTP) Register(m *http.ServeMux) {
 func (h *HTTP) resolveSession(w http.ResponseWriter, r *http.Request) {
 	r, cancel := h.bounded(r)
 	defer cancel()
+	if !h.allow(
+		w,
+		r,
+		"live_resolve_session",
+		h.clientAddress(r),
+		12_000,
+		time.Minute,
+	) {
+		return
+	}
 	x, e := h.service.ResolveSession(r.Context(), r.URL.Query().Get("join_code"))
 	if e != nil {
 		returnError(w, e)
@@ -491,6 +509,10 @@ func (h *HTTP) bounded(r *http.Request) (*http.Request, context.CancelFunc) {
 	ctx, cancel := context.WithTimeout(r.Context(), h.timeout)
 	return r.WithContext(ctx), cancel
 }
+func (h *HTTP) clientAddress(r *http.Request) string {
+	return platformhttp.ClientAddress(r, h.trustedProxyCIDRs)
+}
+
 func (h *HTTP) allow(w http.ResponseWriter, r *http.Request, scope, identity string, limit int, window time.Duration) bool {
 	if h.limiter == nil {
 		return true

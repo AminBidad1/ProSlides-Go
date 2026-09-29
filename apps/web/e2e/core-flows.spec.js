@@ -898,20 +898,32 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
     await expect(qrDialog).toBeHidden();
     await expect(qrTrigger).toBeFocused();
 
-    const backstageTrigger = manager.getByRole("button", { name: "پشت‌صحنه" });
-    await backstageTrigger.click();
-    const backstageDialog = manager.getByRole("dialog", { name: "پشت‌صحنه" });
-    const closeBackstage = backstageDialog.getByRole("button", {
-      name: "بستن پشت‌صحنه",
+    const backstageTrigger = manager.getByRole("link", {
+      name: "باز کردن پشت‌صحنه خصوصی در پنجره جدا",
     });
-    await expect(backstageDialog).toBeVisible();
-    await expect(closeBackstage).toBeFocused();
+    await expect(backstageTrigger).toHaveAttribute(
+      "href",
+      `/manager/presentation/${fixture.presentationId}?backstage=1`,
+    );
+    await expect(backstageTrigger).toHaveAttribute("target", "_blank");
+    const backstagePagePromise = managerContext.waitForEvent("page");
+    await backstageTrigger.click();
+    const backstagePage = await backstagePagePromise;
+    await backstagePage.setViewportSize({ width: 1180, height: 820 });
+    backstagePage.setDefaultTimeout(15000);
+    const backstageFailures = watchRuntime(backstagePage);
+    const backstageDialog = backstagePage.getByRole("dialog", {
+      name: "پشت‌صحنه",
+    });
+    await expect(backstageDialog).toBeVisible({ timeout: 15000 });
     await expect(
       backstageDialog.getByRole("link", { name: "باز کردن Stage در پنجره جدید" }),
     ).toHaveAttribute("href", `/manager/stage/${sessionId}`);
-    await manager.keyboard.press("Escape");
+    await backstagePage.keyboard.press("Escape");
     await expect(backstageDialog).toBeHidden();
-    await expect(backstageTrigger).toBeFocused();
+    await expect(
+      manager.getByRole("dialog", { name: "پشت‌صحنه" }),
+    ).toBeHidden();
 
     await stage.goto(`/manager/stage/${sessionId}`);
     await expect(
@@ -1010,9 +1022,9 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
     expect(answerRequestIds[0]).toBe(answerRequestIds[1]);
     await participant.unroute("**/api/v1/live/sessions/*/answers");
 
-    await backstageTrigger.click();
-    const backstage = manager.locator('[data-backstage-surface="presenter"]');
-    await expect(backstage).toBeVisible();
+    await backstagePage.reload();
+    const backstage = backstagePage.locator('[data-backstage-surface="presenter"]');
+    await expect(backstage).toBeVisible({ timeout: 15000 });
     await backstage.getByRole("button", { name: "بستن پاسخ‌گویی" }).click();
     await expect(
       backstage.getByRole("heading", { name: "نتیجه خصوصی فعالیت" }),
@@ -1022,7 +1034,7 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
     ).toBeVisible();
     await expect(backstage.getByText("شرکت‌کننده تست")).toBeVisible();
     await expect(backstage.getByText("+۱۰۰", { exact: true })).toBeVisible();
-    await expectAccessible(manager, "manager backstage activity result");
+    await expectAccessible(backstagePage, "manager backstage activity result");
 
     await expect(
       participant.getByText("پاسخ‌گویی پایان یافت", { exact: true }),
@@ -1058,7 +1070,7 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
     });
     await expect(privateRankingTrigger).toBeEnabled();
     await privateRankingTrigger.click();
-    const privateRankingDialog = manager.getByRole("dialog", {
+    const privateRankingDialog = backstagePage.getByRole("dialog", {
       name: "جدول امتیازات",
     });
     const closePrivateRanking = privateRankingDialog.getByRole("button", {
@@ -1066,7 +1078,7 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
     });
     await expect(privateRankingDialog).toBeVisible();
     await expect(closePrivateRanking).toBeFocused();
-    await manager.keyboard.press("Escape");
+    await backstagePage.keyboard.press("Escape");
     await expect(privateRankingDialog).toBeHidden();
     await expect(privateRankingTrigger).toBeFocused();
 
@@ -1108,8 +1120,8 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
     await backstage.getByRole("button", { name: "بستن پشت‌صحنه" }).click();
     await expect(backstage).toBeHidden();
     await expectProjectorViewports(manager);
-    await backstageTrigger.click();
-    await expect(backstage).toBeVisible();
+    await backstagePage.reload();
+    await expect(backstage).toBeVisible({ timeout: 15000 });
 
     await stage.reload();
     await expect(
@@ -1204,10 +1216,10 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
       participant.getByText("در حال بازیابی ارتباط", { exact: true }),
     ).toBeHidden();
 
-    await backstageTrigger.click();
-    await expect(backstage).toBeVisible();
+    await backstagePage.reload();
+    await expect(backstage).toBeVisible({ timeout: 15000 });
     await backstage.getByRole("button", { name: "پایان جلسه", exact: true }).click();
-    const endDialog = manager.getByRole("alertdialog");
+    const endDialog = backstagePage.getByRole("alertdialog");
     await expect(endDialog).toBeVisible();
     await endDialog.getByRole("button", { name: "پایان جلسه", exact: true }).click();
     await expect(
@@ -1243,6 +1255,7 @@ test("manager, audience Stage, and participant complete the live lifecycle with 
     expect(managerFailures).toEqual([]);
     expect(stageFailures).toEqual([]);
     expect(participantFailures).toEqual([]);
+    expect(backstageFailures).toEqual([]);
   } finally {
     await managerContext.close();
   }

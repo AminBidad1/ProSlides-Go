@@ -354,8 +354,8 @@ test("manager and player routes are explicit and reports use the session-first t
 
   assert.match(router, /path: "manager\/panel"/);
   assert.match(router, /path: "manager\/panel\/:presentationId\/report"/);
-  assert.match(router, /path: "manager\/presentation\/:roomId"/);
-  assert.match(router, /path: "player\/presentation\/:roomId"/);
+  assert.match(router, /path: "manager\/presentation\/:presentationId"/);
+  assert.match(router, /path: "player\/presentation\/:sessionId"/);
   assert.doesNotMatch(router, /:\s*role|\/:role/);
 
   assert.match(report, /useInfiniteQuery/);
@@ -404,6 +404,10 @@ test("Backstage owns explicit presenter controls and keeps Activity performance 
   assert.match(backstage, /نتیجه خصوصی فعالیت/);
   assert.match(backstage, /برترین‌های این فعالیت/);
   assert.match(backstage, /مشاهده خصوصی رتبه‌بندی کلی/);
+  assert.match(backstage, /\?backstage=1/);
+  assert.match(backstage, /target="_blank"/);
+  assert.match(backstage, /backstageMode/);
+  assert.doesNotMatch(backstage, /<DialogPrimitive\.Trigger/);
   assert.match(runtime, /LiveManagerControlAction/);
   assert.match(runtime, /sendManagerAction/);
   assert.match(context, /sendManagerAction/);
@@ -417,7 +421,7 @@ test("audience Stage owns a read-only projection boundary", () => {
   const router = source("src/app/router/router.tsx");
   const lobbyCrowd = source("src/modules/live/ui/LiveLobbyCrowd.tsx");
 
-  assert.match(router, /manager\/stage\/:roomId/);
+  assert.match(router, /manager\/stage\/:sessionId/);
   assert.match(route, /useStageProjection/);
   assert.doesNotMatch(route, /useLiveSession|useServerData|ManagerControls/);
   assert.match(hook, /getLiveStageSnapshot/);
@@ -581,7 +585,7 @@ test("live presentation route owns a typed role composition without a legacy bri
   assert.match(flow, /AppPresentationProps/);
   assert.match(flow, /<ManagerPresentationView/);
   assert.match(flow, /<PlayerPresentationView/);
-  assert.match(flow, /setQuizMusic\(quiz\.music_url\)/);
+  assert.match(flow, /setQuizMusic\(role === "manager" \? quiz\.music_url : ""\)/);
   assert.doesNotMatch(flow, /setQuizMusic\(remoteQuiz/);
   assert.match(managerView, /useNavigate/);
   assert.match(managerView, /\.\.\/manager\/ui\/ManagerJoinPage\.tsx/);
@@ -627,7 +631,7 @@ test("live presentation loading uses the shared REST boundary with bounded retry
   assert.match(flow, /useLivePresentationModel/);
   assert.doesNotMatch(flow, /getPresentation|presentationSlideToLegacy|setRemoteQuiz/);
   assert.match(loader, /new AbortController\(\)/);
-  assert.match(loader, /getPresentationForLive\([\s\S]*roomId,[\s\S]*controller\.signal/);
+  assert.match(loader, /getPresentationForLive\([\s\S]*presentationId,[\s\S]*controller\.signal/);
   assert.match(loader, /presentationSlideToLegacy/);
   assert.match(loader, /window\.setTimeout\(\(\) => controller\.abort\(\), 15_000\)/);
   assert.match(loader, /retry = Math\.min\(retry \* 2, 10_000\)/);
@@ -652,8 +656,65 @@ test("live manager synchronization is owned by a typed manager controller", () =
   assert.match(controller, /findSlideIndexById/);
   assert.match(controller, /activeItemId/);
   assert.doesNotMatch(controller, /findLeaderboardSlideIndex|isLeaderboardSlide/);
+  assert.match(controller, /isManagerProjectionReady/);
   assert.match(controller, /sessionState === "ended"/);
-  assert.match(controller, /Product requirement: presentation flow is forward-only/);
+  assert.doesNotMatch(controller, /setTimeout|useState|useEffect|fallbackView/);
+  assert.match(controller, /resolvedSlideNumber/);
+});
+
+test("live authored media uses a shared failure-tolerant boundary", () => {
+  const media = source("src/modules/live/ui/LiveMediaImage.tsx");
+  const stage = source("src/modules/live/routes/StageRoute.tsx");
+  const managerQuestion = source("src/modules/live/manager/ui/ManagerPickAnswerQuestion.tsx");
+  const participantQuestion = source("src/modules/live/participant/ui/ParticipantQuestion.tsx");
+
+  assert.match(media, /onError=\{\(\) => setFailedSrc\(src\)\}/);
+  assert.match(media, /referrerPolicy="no-referrer"/);
+  assert.match(media, /تصویر بارگذاری نشد/);
+  for (const surface of [stage, managerQuestion, participantQuestion]) {
+    assert.match(surface, /LiveMediaImage/);
+  }
+});
+
+test("projected Content uses one shared split-safe renderer", () => {
+  const projected = source("src/modules/live/ui/ProjectedContentCard.tsx");
+  const stage = source("src/modules/live/routes/StageRoute.tsx");
+  const manager = source("src/modules/live/manager/ui/ManagerContentSlide.tsx");
+
+  assert.match(projected, /md:grid-cols-2/);
+  assert.match(projected, /LiveMediaImage/);
+  assert.match(projected, /contentProjectionTextClass/);
+  assert.doesNotMatch(projected, /overflow-y-auto/);
+  assert.match(stage, /ProjectedContentCard/);
+  assert.match(manager, /ProjectedContentCard/);
+});
+
+test("editor and live preflight consume one shared authoring policy", () => {
+  const policy = source("src/shared/presentation/liveAuthoringPolicy.ts");
+  const editor = source("src/modules/presentations/model/editor.ts");
+  const flow = source("src/modules/live/model/presentationFlow.ts");
+
+  assert.match(policy, /LIVE_QUESTION_LIMITS/);
+  assert.match(policy, /LIVE_TEXT_ACTIVITY_LIMITS/);
+  assert.match(policy, /LIVE_CONTENT_LIMITS/);
+  assert.match(editor, /liveAuthoringPolicy/);
+  assert.match(flow, /liveAuthoringPolicy/);
+  assert.match(flow, /content_density_invalid/);
+  assert.match(flow, /text_response_invalid/);
+});
+
+test("participant live timers use bounded render cadence", () => {
+  const answer = source(
+    "src/modules/live/participant/useParticipantAnswerController.ts",
+  );
+  const wordCloud = source(
+    "src/modules/live/participant/ui/ParticipantWordCloud.tsx",
+  );
+
+  for (const timer of [answer, wordCloud]) {
+    assert.match(timer, /setInterval\(tick, 250\)/);
+    assert.doesNotMatch(timer, /requestAnimationFrame/);
+  }
 });
 
 test("participant interaction controllers own join retries and answer attempts", () => {
@@ -683,6 +744,18 @@ test("participant interaction controllers own join retries and answer attempts",
   assert.match(attempt, /selected_option_indexes/);
   assert.match(attempt, /isMultipleChoiceQuestion/);
   assert.doesNotMatch(attempt, /user_id|submit_time/);
+});
+
+test("presentation audio recovers from browser autoplay blocking on host gesture", () => {
+  const audio = source("src/modules/live/react/AudioProvider.tsx");
+  assert.match(audio, /addEventListener\("pointerdown", resumeOnGesture\)/);
+  assert.match(audio, /addEventListener\("keydown", resumeOnGesture\)/);
+  assert.match(audio, /if \(!audio \|\| !audio\.paused\) return/);
+});
+
+test("presentation audio is host-scoped and participant devices stay silent", () => {
+  const flow = source("src/modules/live/routes/PresentationFlow.tsx");
+  assert.match(flow, /role === "manager" \? quiz\.music_url : ""/);
 });
 
 test("live player recovery is owned by a typed participant controller", () => {
@@ -718,7 +791,7 @@ test("live projection is derived directly from authoritative snapshot and roster
   assert.doesNotMatch(entry, /LiveMessageHandler|applyLiveSnapshot|applyLiveEvent/);
   assert.match(entry, /<LiveSessionProvider[^>]*>[\s\S]*<ServerDataProvider>/);
   assert.match(entry, /key=\{`player:\$\{resolvedData\.session_id\}`\}/);
-  assert.match(entry, /key=\{`\$\{role\}:\$\{roomId \|\| "unknown"\}`\}/);
+  assert.match(entry, /key=\{`\$\{role\}:\$\{identity \|\| "unknown"\}`\}/);
   assert.match(recovery, /if \(outcome === true\)/);
   assert.match(recovery, /outcome\?\.status === "rate_limited"/);
   assert.match(recovery, /clearPlayerSeenActive\(roomId\)/);
@@ -832,7 +905,7 @@ test("audio editor uses one typed presentation draft and accessible native previ
   assert.match(hook, /audioDraftEquals/);
   assert.match(provider, /createContext<AudioContextValue \| null>/);
   assert.doesNotMatch(provider, /createOscillator|webkitAudioContext/);
-  assert.match(source("src/modules/live/routes/PresentationFlow.tsx"), /setQuizMusic\(quiz\.music_url\)/);
+  assert.match(source("src/modules/live/routes/PresentationFlow.tsx"), /setQuizMusic\(role === "manager" \? quiz\.music_url : ""\)/);
 });
 
 test("design editor shares one typed presentation draft across all preview surfaces", () => {
@@ -909,6 +982,16 @@ test("manager live UI is module-owned, typed, Persian and contract-driven", () =
   assert.doesNotMatch(combined, /\.\.\/\.\.\/\.\.\/pages|\.\.\/\.\.\/\.\.\/components/);
 });
 
+
+test("Stage recovery responds to browser network and lifecycle return signals", () => {
+  const stageProjection = source("src/modules/live/stage/useStageProjection.ts");
+
+  assert.match(stageProjection, /addEventListener\("online", recoverIfReachable\)/);
+  assert.match(stageProjection, /addEventListener\("pageshow", recoverIfReachable\)/);
+  assert.match(stageProjection, /addEventListener\("visibilitychange", recoverWhenVisible\)/);
+  assert.match(stageProjection, /wakeRetry\?\.\(\)/);
+  assert.match(stageProjection, /void refresh\(\)\.catch/);
+});
 
 test("projected live surfaces own the viewport instead of growing the page", () => {
   const lobby = source("src/modules/live/manager/ui/ManagerJoinPage.tsx");

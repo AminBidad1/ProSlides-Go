@@ -7,10 +7,16 @@ import {
   isQuestionSlide,
 } from "../../model/presentationFlow.ts";
 import { resolveQuestionTimer } from "../../model/questionTimer.ts";
+import {
+  choiceOptionProjectionTextClass,
+  choiceProjectionGridClass,
+  questionProjectionTextClass,
+} from "../../model/projectionLayout.ts";
 import type { LegacyQuestionSlide } from "../../model/serverData.ts";
 import { participantTheme } from "../../participant/theme.ts";
 import { useLiveSession } from "../../react/useLiveSession.ts";
 import { useServerData } from "../../react/useServerData.ts";
+import { LiveMediaImage } from "../../ui/LiveMediaImage.tsx";
 import { ManagerControls } from "./ManagerControls.tsx";
 import { ManagerLeaderboardDialog } from "./ManagerLeaderboardDialog.tsx";
 import { ManagerQrPanel } from "./ManagerQrPanel.tsx";
@@ -28,12 +34,11 @@ type TimerState = {
 };
 
 export function ManagerPickAnswerQuestion({
-  roomId,
+  sessionId,
   currentSlide,
   totalSlides,
   quiz,
   isRemoteReady,
-  onEndGame,
 }: ManagerQuestionProps) {
   const {
     isStreamConnected,
@@ -121,7 +126,7 @@ export function ManagerPickAnswerQuestion({
         run_id: timerRunId,
         remaining_seconds: timerRemainingSeconds,
       },
-      roomId,
+      roomId: sessionId,
       role: "manager",
     });
     activeTimerIdentityRef.current = timerIdentity;
@@ -132,7 +137,7 @@ export function ManagerPickAnswerQuestion({
     });
   }, [
     currentQuestion,
-    roomId,
+    sessionId,
     timerIdentity,
     timerRemainingSeconds,
     timerRunId,
@@ -152,12 +157,10 @@ export function ManagerPickAnswerQuestion({
     () => currentQuestion?.options ?? [],
     [currentQuestion],
   );
-  const optionGridColumns =
-    options.length <= 4
-      ? "lg:grid-cols-2"
-      : options.length <= 6
-        ? "lg:grid-cols-3"
-        : "lg:grid-cols-4";
+  const optionGridColumns = choiceProjectionGridClass(options.length);
+  const questionTextClass = questionProjectionTextClass(
+    currentQuestion?.question_text ?? "",
+  );
   const hasCorrectAnswer = currentQuestion?.has_correct_answer !== false;
   const votes = useMemo(
     () =>
@@ -226,7 +229,7 @@ export function ManagerPickAnswerQuestion({
     }
 
     if (!nextSlide) {
-      if (await sendEnd()) onEndGame();
+      await sendEnd();
       return;
     }
 
@@ -236,7 +239,7 @@ export function ManagerPickAnswerQuestion({
   };
 
   const handleEnd = async () => {
-    if (await sendEnd()) onEndGame();
+    await sendEnd();
   };
 
   const theme = participantTheme(quiz);
@@ -291,7 +294,7 @@ export function ManagerPickAnswerQuestion({
                 </p>
               ) : null}
               <h1
-                className="mx-auto mt-1 line-clamp-3 max-w-5xl text-2xl font-black leading-tight sm:text-4xl xl:text-5xl"
+                className={`mx-auto mt-1 max-w-5xl font-black ${questionTextClass}`}
                 dir="auto"
               >
                 {currentQuestion.question_text}
@@ -325,9 +328,9 @@ export function ManagerPickAnswerQuestion({
                 ) : null}
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/5 p-4 shadow-2xl sm:p-5">
                   {currentQuestion.image_url ? (
-                    <img
+                    <LiveMediaImage
                       src={currentQuestion.image_url}
-                      alt=""
+                      alt="تصویر سؤال"
                       className="mx-auto mb-3 max-h-40 max-w-full rounded-2xl object-contain"
                     />
                   ) : null}
@@ -355,7 +358,7 @@ export function ManagerPickAnswerQuestion({
               <div className="mt-4 flex min-h-0 flex-1 gap-5 overflow-hidden">
                 {currentQuestion.image_url ? (
                   <div className="hidden w-1/4 shrink-0 items-center justify-center lg:flex">
-                    <img
+                    <LiveMediaImage
                       src={currentQuestion.image_url}
                       alt="تصویر سؤال"
                       className="max-h-[48dvh] max-w-full rounded-2xl object-contain shadow-xl"
@@ -384,7 +387,7 @@ export function ManagerPickAnswerQuestion({
                           </p>
                         ) : null}
                         {option.image_url ? (
-                          <img
+                          <LiveMediaImage
                             src={option.image_url}
                             alt={option.option_text}
                             className="mb-2 max-h-[10dvh] max-w-full rounded-xl object-contain"
@@ -410,7 +413,10 @@ export function ManagerPickAnswerQuestion({
                           />
                         </div>
                         <p
-                          className="mt-2 line-clamp-2 min-h-10 text-center text-sm font-bold sm:text-base xl:text-lg"
+                          className={`mt-2 min-h-10 text-center font-bold ${choiceOptionProjectionTextClass(
+                            options.length,
+                            option.option_text ?? "",
+                          )}`}
                           dir="auto"
                         >
                           {option.option_text}

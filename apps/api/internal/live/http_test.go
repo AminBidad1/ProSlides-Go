@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/netip"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -205,6 +206,31 @@ func (snapshotAuth) Authorize(context.Context, string, string) (identity.User, e
 	return identity.User{}, identity.ErrInvalidCredentials
 }
 
+type captureRateLimiter struct {
+	scope    string
+	identity string
+	limit    int
+	window   time.Duration
+	allow    bool
+}
+
+func (l *captureRateLimiter) Allow(
+	_ context.Context,
+	scope string,
+	identity string,
+	limit int,
+	window time.Duration,
+) (bool, time.Duration, error) {
+	l.scope = scope
+	l.identity = identity
+	l.limit = limit
+	l.window = window
+	if l.allow {
+		return true, 0, nil
+	}
+	return false, 2 * time.Second, nil
+}
+
 func snapshotHandler(store *snapshotStore) http.Handler {
 	mux := http.NewServeMux()
 	service := NewService(store, DeductionPolicy{})
@@ -367,6 +393,75 @@ func TestResolveSessionUsesPublicJoinCode(t *testing.T) {
 	snapshotHandler(&snapshotStore{}).ServeHTTP(missing, httptest.NewRequest(http.MethodGet, "/api/v1/live/sessions/resolve", nil))
 	if missing.Code != http.StatusBadRequest {
 		t.Fatalf("missing join code status = %d", missing.Code)
+	}
+}
+
+func TestResolveSessionRateLimitUsesTrustedClientAddress(t *testing.T) {
+	store := &snapshotStore{}
+	limiter := &captureRateLimiter{allow: true}
+	mux := http.NewServeMux()
+	service := NewService(store, DeductionPolicy{})
+	NewHTTP(
+		service,
+		NewEventBroker(store, time.Hour, 1),
+		snapshotAuth{},
+		false,
+		limiter,
+	).
+		WithTrustedProxyCIDRs([]netip.Prefix{netip.MustParsePrefix("10.0.0.0/8")}).
+		Register(mux)
+
+	request := httptest.NewRequest(
+		http.MethodGet,
+		"/api/v1/live/sessions/resolve?join_code=join1",
+		nil,
+	)
+	request.RemoteAddr = "10.0.0.5:1234"
+	request.Header.Set(
+		"X-Forwarded-For",
+		"203.0.113.99, 198.51.100.20, 10.0.0.4",
+	)
+	response := httptest.NewRecorder()
+	mux.ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", response.Code, response.Body.String())
+	}
+	if limiter.scope != "live_resolve_session" ||
+		limiter.identity != "198.51.100.20" ||
+		limiter.limit != 12_000 ||
+		limiter.window != time.Minute {
+		t.Fatalf("unexpected limiter call: %#v", limiter)
+	}
+}
+
+func TestResolveSessionRateLimitRejectsBeforeLookup(t *testing.T) {
+	store := &snapshotStore{}
+	limiter := &captureRateLimiter{allow: false}
+	mux := http.NewServeMux()
+	service := NewService(store, DeductionPolicy{})
+	NewHTTP(
+		service,
+		NewEventBroker(store, time.Hour, 1),
+		snapshotAuth{},
+		false,
+		limiter,
+	).Register(mux)
+
+	request := httptest.NewRequest(
+		http.MethodGet,
+		"/api/v1/live/sessions/resolve?join_code=join1",
+		nil,
+	)
+	request.RemoteAddr = "192.0.2.10:1234"
+	response := httptest.NewRecorder()
+	mux.ServeHTTP(response, request)
+
+	if response.Code != http.StatusTooManyRequests {
+		t.Fatalf("status = %d, body = %s", response.Code, response.Body.String())
+	}
+	if response.Header().Get("Retry-After") != "2" {
+		t.Fatalf("Retry-After = %q", response.Header().Get("Retry-After"))
 	}
 }
 
