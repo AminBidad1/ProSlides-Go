@@ -165,8 +165,10 @@ For the Text primitive used by Word Cloud:
   prevents a participant from inflating a phrase by repeating it;
 - result reveal remains presenter-controlled by default. Stage and the shared
   Manager presentation surface are both audience-visible projections, so aggregates
-  are not exposed there or to participants during acceptance. Closed aggregate results
-  may be inspected only in presenter-private Backstage before reveal;
+  are not exposed there or to participants during acceptance. Presenter-private
+  Backstage may show count-only response progress while accepting and may inspect the
+  closed aggregate before reveal. A newly opened Backstage window must pass a presenter
+  privacy confirmation before rendering either;
 - projected Word Clouds use a readability budget rather than trying to render every
   unique term. Durable responses remain authoritative even when low-priority terms do
   not fit the projector frame;
@@ -254,10 +256,12 @@ flow DSL. v2.0 does not need that abstraction.
 ### Default flow
 
 The `closed` phase is a deliberate presenter-controlled boundary, not a loading
-state. While an Activity is closed but not yet revealed, participant devices
-keep the Activity context visible and show only whether that participant has a
-durable response. Correctness, aggregate results and score delta remain hidden
-until `revealed`.
+state. While an Activity is accepting, presenter-private Backstage may show only
+response-progress counts; aggregate answer content remains hidden. While an Activity is
+closed but not yet revealed, participant devices keep the Activity context visible and
+show only whether that participant has a durable response, while Backstage may inspect
+the closed aggregate. Correctness, aggregate results and score delta remain hidden from
+participants until `revealed`.
 
 Scored Activity:
 

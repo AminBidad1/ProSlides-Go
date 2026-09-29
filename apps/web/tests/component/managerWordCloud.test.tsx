@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { expect, test, vi } from "vitest";
 
@@ -6,6 +6,7 @@ import type { LiveSnapshot } from "../../src/modules/live/api/types.ts";
 import type { LivePresentationModel } from "../../src/modules/live/model/presentation.ts";
 import type { LegacyQuestionSlide } from "../../src/modules/live/model/serverData.ts";
 import { ManagerPickAnswerQuestion } from "../../src/modules/live/manager/ui/ManagerPickAnswerQuestion.tsx";
+import { ManagerBackstageDrawer } from "../../src/modules/live/manager/ui/ManagerBackstageDrawer.tsx";
 import {
   LiveSessionContext,
   type LiveSessionContextValue,
@@ -186,4 +187,53 @@ test("manager primary surface renders revealed Word Cloud terms", async () => {
   expect(screen.getByText("۳ پاسخ ثبت‌شده")).not.toBeNull();
   expect(await screen.findByText("خلاق")).not.toBeNull();
   expect(screen.getByText("سریع")).not.toBeNull();
+});
+
+
+test("private Backstage does not disclose results before presenter confirmation", async () => {
+  render(
+    <MemoryRouter
+      initialEntries={[
+        "/manager/presentation/presentation-1?backstage=1",
+      ]}
+    >
+      <AudioProvider>
+        <LiveSessionContext.Provider value={context}>
+          <ServerDataProvider>
+            <ManagerBackstageDrawer quiz={quiz} currentSlide={3} />
+          </ServerDataProvider>
+        </LiveSessionContext.Provider>
+      </AudioProvider>
+    </MemoryRouter>,
+  );
+
+  expect(
+    screen.getByRole("heading", {
+      name: "پیش از نمایش اطلاعات پشت‌صحنه",
+    }),
+  ).not.toBeNull();
+  expect(screen.queryByText("خلاق")).toBeNull();
+  expect(screen.queryByLabelText("پیش‌نمایش خصوصی ابر واژه")).toBeNull();
+
+  fireEvent.click(
+    screen.getByRole("button", { name: "نمایش پشت‌صحنه خصوصی" }),
+  );
+
+  expect(
+    await screen.findByRole("heading", { name: "پشت‌صحنه" }),
+  ).not.toBeNull();
+  expect(
+    await screen.findByLabelText("پیش‌نمایش خصوصی ابر واژه"),
+  ).not.toBeNull();
+  expect(await screen.findByText("خلاق")).not.toBeNull();
+
+  fireEvent.click(
+    screen.getByRole("button", { name: "پوشاندن اطلاعات" }),
+  );
+  expect(
+    screen.getByRole("heading", {
+      name: "پیش از نمایش اطلاعات پشت‌صحنه",
+    }),
+  ).not.toBeNull();
+  expect(screen.queryByText("خلاق")).toBeNull();
 });

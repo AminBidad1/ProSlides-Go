@@ -711,6 +711,11 @@ func (s *PostgresStore) ManagerSnapshot(c context.Context, session, manager stri
 		END,
 		(SELECT count(*)::int FROM participants WHERE session_id=l.id),
 		(SELECT count(*)::int FROM participants active WHERE active.session_id=l.id AND active.active_sse_connections>0),
+		CASE
+			WHEN l.active_item_id IS NULL THEN 0
+			ELSE (SELECT count(*)::int FROM answers a
+				WHERE a.session_id=l.id AND a.question_slide_id=l.active_item_id)
+		END,
 		EXISTS(
 			SELECT 1 FROM live_session_slides scored
 			WHERE scored.session_id=l.id
@@ -726,7 +731,7 @@ func (s *PostgresStore) ManagerSnapshot(c context.Context, session, manager stri
 		&x.Session.ID, &x.Session.PresentationID, &x.Session.HostID, &x.Session.JoinCode, &x.Session.State, &x.Session.StateVersion, &x.Session.ActiveItemID, &x.Session.ActivityPhase, &x.Session.StageView, &x.Session.EndsAt, &x.Session.RemainingSeconds,
 		&x.Presentation.Title, &x.Presentation.BackgroundColor,
 		&x.Presentation.BackgroundImageURL, &x.Presentation.MusicURL,
-		&x.Presentation.TextColor, &x.ParticipantCount, &x.ActiveParticipantCount, &x.HasScoring,
+		&x.Presentation.TextColor, &x.ParticipantCount, &x.ActiveParticipantCount, &x.ActiveActivityResponseCount, &x.HasScoring,
 		&x.LastEventID, &x.ActiveItem,
 	)
 	if errors.Is(e, pgx.ErrNoRows) {

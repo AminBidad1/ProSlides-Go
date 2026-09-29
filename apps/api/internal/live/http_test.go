@@ -113,9 +113,10 @@ func (s *snapshotStore) ManagerSnapshot(_ context.Context, session, manager stri
 			Role:             "manager",
 			Session:          Session{ID: session, PresentationID: testPresentationID, HostID: manager, JoinCode: "JOIN1", State: Presenting, StateVersion: 5, ActivityPhase: &accepting, StageView: StageItem, RemainingSeconds: &remaining},
 			Items:            items,
-			ParticipantCount: 10_000,
-			HasScoring:       true,
-			LastEventID:      42,
+			ParticipantCount:            10_000,
+			ActiveActivityResponseCount: 321,
+			HasScoring:                  true,
+			LastEventID:                 42,
 			ActivityTopPerformers: []ActivityTopPerformer{},
 		}, nil
 	}
@@ -372,6 +373,53 @@ func TestAcceptingActivitySnapshotsExposeServerComputedRemainingSeconds(t *testi
 				t.Fatalf("expected remaining_seconds=42 in %s snapshot, got %#v", tc.role, payload.Session)
 			}
 		})
+	}
+}
+
+func TestAcceptingManagerSnapshotExposesCountOnlyProgress(t *testing.T) {
+	store := &snapshotStore{}
+
+	managerRequest := httptest.NewRequest(
+		http.MethodGet,
+		"/api/v1/live/sessions/"+testPresentationID+"/snapshot?viewer=manager",
+		nil,
+	)
+	managerRequest.AddCookie(&http.Cookie{Name: "proslides_session", Value: "manager-token"})
+	managerResponse := httptest.NewRecorder()
+	snapshotHandler(store).ServeHTTP(managerResponse, managerRequest)
+	if managerResponse.Code != http.StatusOK {
+		t.Fatalf("manager status = %d, body = %s", managerResponse.Code, managerResponse.Body.String())
+	}
+
+	var managerPayload map[string]any
+	if err := json.Unmarshal(managerResponse.Body.Bytes(), &managerPayload); err != nil {
+		t.Fatal(err)
+	}
+	if managerPayload["active_activity_response_count"] != float64(321) {
+		t.Fatalf("manager progress count = %#v", managerPayload["active_activity_response_count"])
+	}
+	if _, exists := managerPayload["activity_result"]; exists {
+		t.Fatalf("accepting manager snapshot exposed aggregate result: %s", managerResponse.Body.String())
+	}
+
+	participantRequest := httptest.NewRequest(
+		http.MethodGet,
+		"/api/v1/live/sessions/"+testPresentationID+"/snapshot?viewer=participant",
+		nil,
+	)
+	participantRequest.AddCookie(&http.Cookie{Name: "proslides_participant", Value: testParticipantToken})
+	participantResponse := httptest.NewRecorder()
+	snapshotHandler(store).ServeHTTP(participantResponse, participantRequest)
+	if participantResponse.Code != http.StatusOK {
+		t.Fatalf("participant status = %d, body = %s", participantResponse.Code, participantResponse.Body.String())
+	}
+
+	var participantPayload map[string]any
+	if err := json.Unmarshal(participantResponse.Body.Bytes(), &participantPayload); err != nil {
+		t.Fatal(err)
+	}
+	if _, exists := participantPayload["active_activity_response_count"]; exists {
+		t.Fatalf("participant snapshot disclosed manager progress field: %s", participantResponse.Body.String())
 	}
 }
 

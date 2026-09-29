@@ -29,10 +29,17 @@ boundary to preserve.
 - Stage and the shared Manager presentation surface are both audience-visible projection
   surfaces. Neither may expose Word Cloud terms while the Activity is accepting responses
   under the default policy.
+- While responses are accepting, Backstage may receive **count-only progress** for
+  the active Activity. It must not receive Word Cloud terms under the default policy.
 - Backstage may inspect closed aggregate results before reveal. Future moderation and
   private preview capabilities belong in Backstage, not on the projected Manager surface.
-- Participant devices must not receive aggregate terms before reveal under the default
-  policy.
+- Participant devices must not receive aggregate terms or manager-only response-progress
+  fields before reveal under the default policy.
+- The private Backstage UI is a separate full-surface presenter window. The projected
+  Manager surface may expose only a launcher for it, never private Backstage content.
+  A newly opened Backstage window starts behind a non-sensitive privacy gate; the
+  presenter must explicitly confirm that the window is off the projector/screen share
+  before any private progress or result content is rendered.
 
 A future live-growing Word Cloud is an explicit result-presentation policy, not an
 implicit side effect of receiving answers. Adding it must preserve role-scoped
@@ -51,6 +58,10 @@ must be bounded, coalesced/batched, and measured against the live-capacity plan.
   must be deterministic so refresh/reconnect does not arbitrarily reshuffle visibility.
 - Future full exports/moderation tools operate on durable response data and are not
   constrained by the projector term budget.
+- The initial response-progress implementation reads an indexed manager-only count from
+  the Manager snapshot at a bounded interval while Backstage is open. It does not emit
+  an SSE event per accepted answer. A future coalesced aggregate event may replace this
+  polling only after measured need.
 
 ### Visual encoding
 
@@ -86,9 +97,12 @@ Participant projection model rather than creating a second live engine.
 ## Consequences
 
 - The current presenter-controlled reveal flow remains the product default.
-- The first implementation slice can improve projector rendering without changing the
-  external live protocol or database schema.
-- The shared Word Cloud renderer needs an explicit projection/embedded display mode.
+- The projector-rendering slice does not change the durable response schema.
+- The Manager snapshot exposes a count-only active-Activity response-progress field;
+  Stage and Participant snapshots do not expose it.
+- The shared Word Cloud renderer uses explicit projection/embedded display modes.
+- Backstage is isolated from the audience projection as a dedicated private surface and
+  reuses the shared embedded Word Cloud renderer for closed-result preview.
 - Future live Word Cloud work will require a deliberate API/event contract and load
   evidence rather than exposing the existing private result event to Stage.
 - Moderation remains possible without weakening the audience-safe Manager projection.

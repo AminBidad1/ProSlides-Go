@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import Waiting from "../ui/WaitingScreen.tsx";
 import type { ManagerPresentationController } from "../manager/useManagerPresentationController.ts";
@@ -34,6 +34,9 @@ export function ManagerPresentationView({
   modalLeaderboardResults,
 }: ManagerViewProps) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const backstageMode =
+    new URLSearchParams(location.search).get("backstage") === "1";
   const {
     view,
     currentSlide,
@@ -43,6 +46,15 @@ export function ManagerPresentationView({
 
   if (!isSynced) {
     return <Waiting message="در حال همگام‌سازی جلسه…" />;
+  }
+
+  if (backstageMode) {
+    return (
+      <ManagerBackstageDrawer
+        quiz={quiz}
+        currentSlide={currentSlide}
+      />
+    );
   }
 
   const stageProps = {

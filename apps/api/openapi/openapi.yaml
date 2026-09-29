@@ -1434,7 +1434,7 @@ components:
         avatar: { type: string }
     ManagerLiveSnapshot:
       type: object
-      required: [role, session, presentation, participant_count, active_participant_count, has_scoring, last_event_id, activity_top_performers]
+      required: [role, session, presentation, participant_count, active_participant_count, active_activity_response_count, has_scoring, last_event_id, activity_top_performers]
       additionalProperties: false
       properties:
         role: { type: string, enum: [manager] }
@@ -1448,6 +1448,7 @@ components:
           items: { $ref: '#/components/schemas/Slide' }
         participant_count: { type: integer, minimum: 0 }
         active_participant_count: { type: integer, minimum: 0, description: Number of participants with at least one currently open SSE connection. }
+        active_activity_response_count: { type: integer, minimum: 0, description: Manager-only count of accepted responses for the active Activity; zero when no Activity is active. Intended for bounded Backstage progress polling without exposing aggregate answers. }
         has_scoring: { type: boolean, description: True when the frozen Session contains at least one scored Activity. }
         last_event_id: { type: integer, format: int64, minimum: 0 }
         activity_result: { $ref: '#/components/schemas/ActivityResultPayload' }

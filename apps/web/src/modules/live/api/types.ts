@@ -91,6 +91,7 @@ interface ManagerSnapshot {
   items?: PresentationSlide[];
   participant_count: number;
   active_participant_count?: number;
+  active_activity_response_count?: number;
   has_scoring: boolean;
   last_event_id: number;
   activity_result?: ActivityResult;

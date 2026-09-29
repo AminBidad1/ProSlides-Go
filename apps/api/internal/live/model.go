@@ -134,10 +134,11 @@ type ManagerSnapshot struct {
 	Presentation          PublicLivePresentation `json:"presentation"`
 	ActiveItem            json.RawMessage        `json:"active_item,omitempty"`
 	Items                 *[]SessionItem         `json:"items,omitempty"`
-	ParticipantCount      int                    `json:"participant_count"`
-	ActiveParticipantCount int                  `json:"active_participant_count"`
-	HasScoring            bool                   `json:"has_scoring"`
-	LastEventID           int64                  `json:"last_event_id"`
+	ParticipantCount            int                    `json:"participant_count"`
+	ActiveParticipantCount      int                    `json:"active_participant_count"`
+	ActiveActivityResponseCount int                    `json:"active_activity_response_count"`
+	HasScoring                  bool                   `json:"has_scoring"`
+	LastEventID                 int64                  `json:"last_event_id"`
 	ActivityResult        *ActivityResult            `json:"activity_result,omitempty"`
 	LobbyParticipants     []ManagerLobbyParticipant `json:"lobby_participants"`
 	ActivityTopPerformers []ActivityTopPerformer     `json:"activity_top_performers"`

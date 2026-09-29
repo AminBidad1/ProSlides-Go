@@ -4,7 +4,9 @@ import { useLocation } from "react-router-dom";
 
 import { getColorForUser } from "../../../../shared/lib/playerColor.ts";
 import { ConfirmDialog } from "../../../../shared/ui/primitives/ConfirmDialog.tsx";
+import { WordCloudView } from "../../../../shared/ui/WordCloudView.tsx";
 import type { LivePresentationModel } from "../../model/presentation.ts";
+import { useManagerActivityProgress } from "../useManagerActivityProgress.ts";
 import {
   isContentSlide,
   isQuestionSlide,
@@ -65,6 +67,7 @@ export function ManagerBackstageDrawer({
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [commandPending, setCommandPending] = useState(false);
   const [commandError, setCommandError] = useState("");
+  const [privateSurfaceArmed, setPrivateSurfaceArmed] = useState(false);
   const {
     snapshot,
     isStreamConnected,
@@ -86,6 +89,14 @@ export function ManagerBackstageDrawer({
 
   const managerSnapshot = snapshot?.role === "manager" ? snapshot : null;
   const session = managerSnapshot?.session ?? null;
+  const liveResponseCount = useManagerActivityProgress({
+    enabled: backstageMode && privateSurfaceArmed,
+    sessionId: session?.id,
+    activeItemId: session?.active_item_id,
+    activityPhase: session?.activity_phase,
+    fallbackCount: Number(managerSnapshot?.active_activity_response_count ?? 0),
+  });
+
   const currentIndex = Math.max(0, currentSlide - 1);
   const nextSlide = quiz.slides[currentSlide] ?? null;
   const firstSlide = quiz.slides.find((slide) => slide !== null) ?? null;
@@ -105,16 +116,24 @@ export function ManagerBackstageDrawer({
     String(currentQuestion.question_id) === String(questionResults.question_id);
   const resultRows = resultMatches ? questionResults?.optionsResult ?? [] : [];
   const wordTerms = resultMatches ? questionResults?.wordTerms ?? [] : [];
-  const maxWordCount = Math.max(
-    1,
-    ...wordTerms.map((term) => Math.max(0, Number(term.count))),
-  );
   const isWordCloud = currentQuestion?.activity_kind === "text";
   const responseCount = Number(
-    resultMatches
-      ? questionResults?.response_count ?? managerSnapshot?.activity_result?.response_count ?? 0
-      : managerSnapshot?.activity_result?.response_count ?? 0,
+    session?.activity_phase === "accepting"
+      ? liveResponseCount
+      : resultMatches
+        ? questionResults?.response_count ??
+          managerSnapshot?.activity_result?.response_count ??
+          0
+        : managerSnapshot?.activity_result?.response_count ?? 0,
   );
+  const responseDenominator = Math.max(
+    responseCount,
+    Number(managerSnapshot?.participant_count ?? participantCount ?? 0),
+  );
+  const responseProgress =
+    session?.activity_phase === "accepting" && responseDenominator > 0
+      ? Math.round((responseCount / responseDenominator) * 100)
+      : null;
   const activityResultVisible =
     session?.activity_phase === "closed" ||
     session?.activity_phase === "revealed";
@@ -229,6 +248,41 @@ export function ManagerBackstageDrawer({
   const privateBackstageHref =
     `/manager/presentation/${encodeURIComponent(quiz.quiz_id)}?backstage=1`;
 
+  if (backstageMode && !privateSurfaceArmed) {
+    return (
+      <main
+        dir="rtl"
+        className="grid min-h-dvh place-items-center bg-slate-950 px-5 py-10 text-white"
+        data-backstage-privacy-gate="true"
+      >
+        <section className="w-full max-w-xl rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl sm:p-8">
+          <p className="text-xs font-black text-warning">
+            سطح خصوصی ارائه‌دهنده
+          </p>
+          <h1 className="mt-2 text-2xl font-black sm:text-3xl">
+            پیش از نمایش اطلاعات پشت‌صحنه
+          </h1>
+          <p className="mt-4 text-sm font-medium leading-7 text-white/70">
+            این پنجره می‌تواند تعداد پاسخ‌ها، نتیجه بسته‌شده و رتبه‌بندی خصوصی را
+            نشان دهد. ابتدا مطمئن شوید این پنجره روی ویدئوپروژکتور، اشتراک صفحه یا
+            نمایشگر عمومی دیده نمی‌شود.
+          </p>
+          <button
+            type="button"
+            onClick={() => setPrivateSurfaceArmed(true)}
+            className="mt-6 min-h-12 w-full rounded-2xl bg-brand px-4 font-black text-content-inverse hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25"
+          >
+            نمایش پشت‌صحنه خصوصی
+          </button>
+          <p className="mt-3 text-xs leading-6 text-white/45">
+            اگر فقط یک نمایشگر دارید و همان تصویر برای مخاطبان پخش می‌شود، این
+            صفحه را باز نگه ندارید.
+          </p>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <>
       {!backstageMode ? (
@@ -243,18 +297,33 @@ export function ManagerBackstageDrawer({
         </a>
       ) : null}
 
-      <DialogPrimitive.Root open={isOpen} onOpenChange={setIsOpen}>
+      <DialogPrimitive.Root
+        open={backstageMode || isOpen}
+        onOpenChange={(open) => {
+          if (!backstageMode) setIsOpen(open);
+        }}
+      >
 
         <DialogPrimitive.Portal>
-          <DialogPrimitive.Overlay className="fixed inset-0 z-[60] bg-black/55" />
+          <DialogPrimitive.Overlay
+            className={backstageMode ? "hidden" : "fixed inset-0 z-[60] bg-black/55"}
+          />
           <DialogPrimitive.Content
             dir="rtl"
-            className="fixed inset-y-0 end-0 z-[61] flex w-[min(36rem,94vw)] flex-col overflow-y-auto border-0 border-s border-white/10 bg-slate-950 p-5 text-white shadow-2xl outline-none"
+            className={
+              backstageMode
+                ? "fixed inset-0 z-[61] flex w-full flex-col overflow-y-auto bg-slate-950 p-5 text-white outline-none sm:p-7"
+                : "fixed inset-y-0 end-0 z-[61] flex w-[min(36rem,94vw)] flex-col overflow-y-auto border-0 border-s border-white/10 bg-slate-950 p-5 text-white shadow-2xl outline-none"
+            }
             aria-labelledby="backstage-title"
             onEscapeKeyDown={(event) => {
               if (showRanking) {
                 event.preventDefault();
                 setShowRanking(false);
+                return;
+              }
+              if (backstageMode) {
+                event.preventDefault();
               }
             }}
             onPointerDownOutside={(event) => event.preventDefault()}
@@ -263,6 +332,20 @@ export function ManagerBackstageDrawer({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-bold text-white/55">کنترل خصوصی ارائه‌دهنده</p>
+                {backstageMode ? (
+                  <div className="mt-2 flex max-w-2xl flex-wrap items-center gap-2 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-xs font-bold leading-6 text-warning">
+                    <span className="min-w-0 flex-1">
+                      این صفحه خصوصی است و نباید روی نمایشگر سالن یا اشتراک عمومی نمایش داده شود.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPrivateSurfaceArmed(false)}
+                      className="min-h-9 rounded-lg border border-warning/30 px-3 text-xs font-black hover:bg-warning/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warning/60"
+                    >
+                      پوشاندن اطلاعات
+                    </button>
+                  </div>
+                ) : null}
                 <DialogPrimitive.Title asChild>
                   <h2 id="backstage-title" className="mt-1 text-2xl font-black">
                     پشت‌صحنه
@@ -272,15 +355,17 @@ export function ManagerBackstageDrawer({
                   کنترل خصوصی ارائه، وضعیت اتصال، نتایج فعالیت و رتبه‌بندی جلسه.
                 </DialogPrimitive.Description>
               </div>
-              <DialogPrimitive.Close asChild>
-                <button
-                  type="button"
-                  className="grid min-h-11 min-w-11 place-items-center rounded-full bg-white/10 text-2xl hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-                  aria-label="بستن پشت‌صحنه"
-                >
-                  ×
-                </button>
-              </DialogPrimitive.Close>
+              {!backstageMode ? (
+                <DialogPrimitive.Close asChild>
+                  <button
+                    type="button"
+                    className="grid min-h-11 min-w-11 place-items-center rounded-full bg-white/10 text-2xl hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                    aria-label="بستن پشت‌صحنه"
+                  >
+                    ×
+                  </button>
+                </DialogPrimitive.Close>
+              ) : null}
             </div>
 
             <div className="mt-5 grid grid-cols-2 gap-3">
@@ -290,11 +375,44 @@ export function ManagerBackstageDrawer({
                   {Number(participantCount || 0).toLocaleString("fa-IR")}
                 </p>
               </div>
-              <div className="rounded-2xl bg-white/5 p-4">
+              <div
+                className="rounded-2xl bg-white/5 p-4"
+                aria-live="polite"
+                aria-atomic="true"
+                aria-label={
+                  session?.activity_phase === "accepting"
+                    ? responseCount.toLocaleString("fa-IR") +
+                      " پاسخ از " +
+                      responseDenominator.toLocaleString("fa-IR") +
+                      " شرکت‌کننده"
+                    : responseCount.toLocaleString("fa-IR") + " پاسخ ثبت‌شده"
+                }
+              >
                 <p className="text-xs text-white/55">پاسخ‌های فعالیت</p>
                 <p className="mt-1 text-2xl font-black">
-                  {responseCount.toLocaleString("fa-IR")}
+                  {session?.activity_phase === "accepting" &&
+                  responseDenominator > 0
+                    ? responseCount.toLocaleString("fa-IR") +
+                      " / " +
+                      responseDenominator.toLocaleString("fa-IR")
+                    : responseCount.toLocaleString("fa-IR")}
                 </p>
+                {responseProgress != null ? (
+                  <>
+                    <div
+                      className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10"
+                      aria-hidden="true"
+                    >
+                      <div
+                        className="h-full rounded-full bg-brand transition-[width] duration-300"
+                        style={{ width: responseProgress + "%" }}
+                      />
+                    </div>
+                    <p className="mt-2 text-xs text-white/50">
+                      {responseProgress.toLocaleString("fa-IR")}٪ پاسخ داده‌اند
+                    </p>
+                  </>
+                ) : null}
               </div>
             </div>
 
@@ -375,39 +493,12 @@ export function ManagerBackstageDrawer({
                   </span>
                 </div>
                 {isWordCloud ? (
-                  <div
-                    className="mt-3 flex min-h-32 flex-wrap items-center justify-center gap-x-4 gap-y-3 rounded-2xl bg-black/20 p-4"
-                    aria-label="پیش‌نمایش خصوصی ابر واژه"
-                  >
-                    {wordTerms.length === 0 ? (
-                      <p className="text-xs text-white/50">
-                        هنوز واژه‌ای برای نمایش وجود ندارد.
-                      </p>
-                    ) : (
-                      wordTerms.map((term) => {
-                        const ratio = Math.max(
-                          0.35,
-                          Number(term.count) / maxWordCount,
-                        );
-                        return (
-                          <span
-                            key={term.text}
-                            dir="auto"
-                            className="font-black leading-none"
-                            style={{ fontSize: 13 + Math.round(ratio * 18) }}
-                            aria-label={
-                              term.text +
-                              "، " +
-                              Number(term.count).toLocaleString("fa-IR") +
-                              " بار"
-                            }
-                          >
-                            {term.text}
-                          </span>
-                        );
-                      })
-                    )}
-                  </div>
+                  <WordCloudView
+                    terms={wordTerms}
+                    className="mt-3 min-h-44 rounded-2xl bg-black/20 p-3"
+                    emptyLabel="هنوز عبارتی برای نمایش وجود ندارد."
+                    ariaLabel="پیش‌نمایش خصوصی ابر واژه"
+                  />
                 ) : (
                   <div className="mt-3 space-y-2">
                     {(currentQuestion.options ?? []).map((option, index) => {

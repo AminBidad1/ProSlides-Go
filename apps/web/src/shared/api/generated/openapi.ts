@@ -1162,6 +1162,8 @@ export interface components {
             participant_count: number;
             /** @description Number of participants with at least one currently open SSE connection. */
             active_participant_count: number;
+            /** @description Manager-only count of accepted responses for the active Activity; zero when no Activity is active. Intended for bounded Backstage progress polling without exposing aggregate answers. */
+            active_activity_response_count: number;
             /** @description True when the frozen Session contains at least one scored Activity. */
             has_scoring: boolean;
             /** Format: int64 */

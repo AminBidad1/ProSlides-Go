@@ -189,6 +189,38 @@ test("marketing routes are typed, module-owned, RTL-safe and deliberately concis
   assert.doesNotMatch(team, /group-hover|group text-center/);
 });
 
+test("projected manager keeps private Backstage on a separate surface", () => {
+  const managerView = source(
+    "src/modules/live/routes/ManagerPresentationView.tsx",
+  );
+  const backstage = source(
+    "src/modules/live/manager/ui/ManagerBackstageDrawer.tsx",
+  );
+  const progress = source(
+    "src/modules/live/manager/useManagerActivityProgress.ts",
+  );
+
+  assert.match(managerView, /searchParams|URLSearchParams/);
+  assert.match(
+    managerView,
+    /if \(backstageMode\)[\s\S]*return \([\s\S]*<ManagerBackstageDrawer/,
+  );
+  assert.match(backstage, /target="_blank"/);
+  assert.match(backstage, /backstage=1/);
+  assert.match(backstage, /این صفحه خصوصی است/);
+  assert.match(
+    backstage,
+    /const activityResultVisible =\s*session\?\.activity_phase === "closed" \|\|\s*session\?\.activity_phase === "revealed"/,
+  );
+  assert.match(backstage, /data-backstage-privacy-gate="true"/);
+  assert.match(backstage, /پیش از نمایش اطلاعات پشت‌صحنه/);
+  assert.match(backstage, /setPrivateSurfaceArmed\(true\)/);
+  assert.match(backstage, /setPrivateSurfaceArmed\(false\)/);
+  assert.match(progress, /POLL_INTERVAL_MS = 2_000/);
+  assert.match(progress, /viewer: "manager"/);
+  assert.match(progress, /activityPhase !== "accepting"/);
+});
+
 test("editor presentation reads recover after interrupted route navigation", () => {
   const route = source("src/modules/presentations/editor/routes/EditorRoute.tsx");
   const repository = source("src/modules/presentations/api/presentationRepository.ts");

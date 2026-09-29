@@ -1,6 +1,6 @@
 # Current project status
 
-Last reviewed: 2026-09-28
+Last reviewed: 2026-09-29
 
 This is the only mutable project-status document. Durable architecture belongs
 in architecture/ADR documents; operational procedures belong in runbooks;
@@ -25,11 +25,14 @@ Items, presenter-paced Sessions, separate Activity results and cumulative
 ranking, Stage/Backstage/Participant projections, and Session-first reports.
 
 The planned V2.1-V2.8 repository delivery program is complete. Repository
-hardening continued with targeted Live resilience work through PR #167,
-including participant/Stage recovery, replay-cursor safety, pending-answer
-retry, manager roster recovery/order consistency, duplicate presenter-command
-guards, and post-merge validation on `main`. The completed execution plan is
-archived in `../archive/v2-delivery-plan-2026-09.md`.
+hardening continued with targeted Live resilience work and Word Cloud projection
+hardening, including participant/Stage recovery, replay-cursor safety,
+pending-answer retry, manager roster recovery/order consistency, duplicate
+presenter-command guards, projector-aware deterministic Word Cloud rendering, and
+separation of presenter-private Backstage from the audience projection. Backstage can
+read bounded count-only response progress while an Activity is accepting without
+exposing aggregate answer content. The completed execution plan is archived in
+`../archive/v2-delivery-plan-2026-09.md`.
 
 ## Verified repository baseline
 

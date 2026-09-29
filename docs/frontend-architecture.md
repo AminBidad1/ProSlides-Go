@@ -305,7 +305,13 @@ Live rendering uses three explicit projections:
 
 The shared Manager presentation surface follows the Stage disclosure boundary because
 it is commonly mirrored to a room display. Presenter-private Word Cloud previews,
-moderation queues, or unrevealed aggregate terms belong in Backstage. A future
+moderation queues, or unrevealed aggregate terms belong in Backstage. Backstage opens as
+a separate full-surface presenter window rather than rendering private data over the
+audience projection. The new window is initially a non-sensitive privacy gate and does
+not render private data until the presenter explicitly confirms it is off the projector
+or public screen share. While an Activity is accepting, its private progress hook may read
+the manager-only response count at a bounded interval; this count is operational
+progress, not an Activity result, and no aggregate terms are exposed. A future
 live-growing Word Cloud must use an explicit result policy and bounded/coalesced
 aggregate events; it must not turn raw responses into Stage events.
 
