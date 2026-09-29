@@ -298,11 +298,24 @@ test("landing, protected navigation, and responsive auth layout @critical", asyn
   const teamList = page.getByRole("list", { name: "اعضای تیم ProSlides" });
   await expect(teamList).toBeVisible();
   await expect(teamList.getByRole("listitem")).toHaveCount(7);
-  await expect(teamList.getByText("مهندسی بک‌اند", { exact: true }).first()).toBeVisible();
-  await expect(teamList.getByText("مهندسی فرانت‌اند", { exact: true }).first()).toBeVisible();
+  await expect(teamList.getByText("مهندس بک‌اند", { exact: true }).first()).toBeVisible();
+  await expect(teamList.getByText("مهندس فرانت‌اند", { exact: true }).first()).toBeVisible();
   await expect(
     page.getByText("backend فعال ProSlides اکنون بر Go استوار است", { exact: false }),
   ).toHaveCount(0);
+
+  const teamHeadingBounds = await page
+    .getByRole("heading", { name: "تیم ProSlides", exact: true })
+    .boundingBox();
+  const teamNavLink = page.getByRole("link", { name: "تیم ما", exact: true });
+  await expect(teamNavLink).toHaveAttribute("aria-current", "page");
+  const teamNavBounds = await teamNavLink.boundingBox();
+  expect(teamHeadingBounds).not.toBeNull();
+  expect(teamNavBounds).not.toBeNull();
+  const headingCenter = teamHeadingBounds.x + teamHeadingBounds.width / 2;
+  const navCenter = teamNavBounds.x + teamNavBounds.width / 2;
+  expect(Math.abs(headingCenter - navCenter)).toBeLessThanOrEqual(1);
+
   await expectAccessible(page, "team");
   await page.setViewportSize({ width: 375, height: 812 });
   await expectNoOverflow(page);

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 
 type SiteHeaderProps = {
   className?: string;
@@ -27,20 +27,32 @@ export default function SiteHeader({ className = "" }: SiteHeaderProps) {
 
   return (
     <header className={headerClassName} dir="rtl">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        <LogoMark />
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6 md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+        <div className="md:justify-self-start">
+          <LogoMark />
+        </div>
+
         <nav
-          className="hidden items-center gap-6 text-sm font-semibold text-content-muted md:flex"
+          className="hidden items-center text-sm font-semibold md:flex md:justify-self-center"
           aria-label="ناوبری اصلی"
         >
-          <Link
+          <NavLink
             to="/team"
-            className="rounded-lg px-2 py-2 transition-colors hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+            end
+            className={({ isActive }) =>
+              [
+                "rounded-lg px-2 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
+                isActive
+                  ? "font-bold text-content"
+                  : "text-content-muted hover:text-content",
+              ].join(" ")
+            }
           >
             تیم ما
-          </Link>
+          </NavLink>
         </nav>
-        <div className="flex items-center gap-2 text-xs font-semibold sm:gap-3 sm:text-sm">
+
+        <div className="flex items-center gap-2 text-xs font-semibold sm:gap-3 sm:text-sm md:justify-self-end">
           <Link
             to="/login"
             className="min-h-11 rounded-xl border border-border-subtle bg-surface px-3 py-2.5 text-content transition-colors hover:border-brand-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus sm:px-4"

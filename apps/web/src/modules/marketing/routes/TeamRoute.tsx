@@ -19,37 +19,37 @@ type TeamMember = {
 const team: TeamMember[] = [
   {
     name: "امین بیداد",
-    role: "مهندسی بک‌اند",
+    role: "مهندس بک‌اند",
     avatar: aminBidad,
   },
   {
     name: "امیرعلی فخاری",
-    role: "مهندسی بک‌اند",
+    role: "مهندس بک‌اند",
     avatar: amiraliFakhari,
   },
   {
     name: "علیرضا رضایی",
-    role: "مهندسی فرانت‌اند",
+    role: "مهندس فرانت‌اند",
     avatar: alirezaRezaei,
   },
   {
     name: "حسام آزمون",
-    role: "مهندسی فرانت‌اند",
+    role: "مهندس فرانت‌اند",
     avatar: HesamAzmoun,
   },
   {
     name: "کیان جان بزرگی",
-    role: "مهندسی فرانت‌اند",
+    role: "مهندس فرانت‌اند",
     avatar: KianJanbozorgi,
   },
   {
     name: "سیما کاظمی",
-    role: "مهندسی فرانت‌اند",
+    role: "مهندس فرانت‌اند",
     avatar: SimaKazemi,
   },
   {
     name: "زهرا کفایتی",
-    role: "مهندسی فرانت‌اند",
+    role: "مهندس فرانت‌اند",
     avatar: ZahraKefayati,
   },
 ];
@@ -82,7 +82,7 @@ export default function TeamRoute() {
         </header>
 
         <ul
-          className="mx-auto mt-12 flex max-w-5xl flex-wrap justify-center gap-x-4 gap-y-9 sm:mt-14 sm:gap-x-6 sm:gap-y-11"
+          className="mx-auto mt-10 flex max-w-5xl flex-wrap justify-center gap-x-4 gap-y-9 sm:mt-12 sm:gap-x-6 sm:gap-y-11"
           aria-label="اعضای تیم ProSlides"
         >
           {team.map((member) => (
@@ -90,15 +90,15 @@ export default function TeamRoute() {
               key={member.name}
               className="basis-[calc(50%-0.5rem)] sm:basis-[calc(33.333%-1rem)] lg:basis-[calc(25%-1.125rem)]"
             >
-              <article className="group text-center">
-                <div className="aspect-square overflow-hidden rounded-[28px] border border-border-subtle bg-surface shadow-sm transition-[transform,border-color,box-shadow] duration-300 group-hover:-translate-y-1 group-hover:border-brand-border group-hover:shadow-panel motion-reduce:transform-none">
+              <article className="text-center">
+                <div className="aspect-square overflow-hidden rounded-[28px] border border-border-subtle bg-surface shadow-sm">
                   <img
                     src={member.avatar}
-                    alt={"تصویر " + member.name}
+                    alt=""
                     width={480}
                     height={480}
                     decoding="async"
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02] motion-reduce:transform-none"
+                    className="h-full w-full object-cover"
                   />
                 </div>
 

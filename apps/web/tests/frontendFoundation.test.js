@@ -152,8 +152,8 @@ test("marketing routes are typed, module-owned, RTL-safe and deliberately concis
   assert.doesNotMatch(landing, /94%|۹۴٪/);
   assert.doesNotMatch(landing, /#[0-9a-fA-F]{3,8}/);
 
-  assert.match(team, /مهندسی بک‌اند/);
-  assert.match(team, /مهندسی فرانت‌اند/);
+  assert.match(team, /مهندس بک‌اند/);
+  assert.match(team, /مهندس فرانت‌اند/);
   assert.match(team, /aria-label="اعضای تیم ProSlides"/);
   assert.match(team, /aspect-square/);
   assert.match(team, /تیم ProSlides/);
@@ -165,6 +165,10 @@ test("marketing routes are typed, module-owned, RTL-safe and deliberately concis
 
   assert.match(seo, /restoreAttribute/);
   assert.match(siteHeader, /shared|SiteHeader|صفحه اصلی ProSlides/);
+  assert.match(siteHeader, /NavLink/);
+  assert.match(siteHeader, /grid-cols-\[minmax\(0,1fr\)_auto_minmax\(0,1fr\)\]/);
+  assert.match(team, /alt=""/);
+  assert.doesNotMatch(team, /group-hover|group text-center/);
 });
 
 test("editor presentation reads recover after interrupted route navigation", () => {
