@@ -91,6 +91,15 @@ export const createQuestionDraft = (slide: EditorSlide): QuestionDraft | null =>
     !slide.question
   ) return null;
   const question = normalizeQuestion(slide.question);
+  const options = (question.options || []).map((option) => ({
+    id: String(option.option_id),
+    text: option.text || "",
+    isCorrect:
+      (question.evaluation_mode ?? "correctness") === "correctness" &&
+      option.is_correct === true,
+    imageUrl: option.image_url || "",
+  }));
+  const correctOptionCount = options.filter((option) => option.isCorrect).length;
 
   return {
     slideId: slide.slide_id,
@@ -113,15 +122,10 @@ export const createQuestionDraft = (slide: EditorSlide): QuestionDraft | null =>
     imageUrl: question.question_image || "",
     fasterAnswersMorePoints: question.faster_answers_more_points === true,
     partialScoring:
-      question.question_type === "multiple" && question.partial_scoring === true,
-    options: (question.options || []).map((option) => ({
-      id: String(option.option_id),
-      text: option.text || "",
-      isCorrect:
-        (question.evaluation_mode ?? "correctness") === "correctness" &&
-        option.is_correct === true,
-      imageUrl: option.image_url || "",
-    })),
+      question.question_type === "multiple" &&
+      correctOptionCount > 1 &&
+      question.partial_scoring === true,
+    options,
   };
 };
 
@@ -182,10 +186,17 @@ export function questionDraftReducer(
       return patchDraft(state, { maxPointsInput: action.value });
     case "faster-points":
       return patchDraft(state, { fasterAnswersMorePoints: action.value });
-    case "partial-scoring":
+    case "partial-scoring": {
+      const correctOptionCount = state.draft.options.filter(
+        (option) => option.isCorrect,
+      ).length;
       return patchDraft(state, {
-        partialScoring: state.draft.type === "multiple" && action.value,
+        partialScoring:
+          state.draft.type === "multiple" &&
+          correctOptionCount > 1 &&
+          action.value,
       });
+    }
     case "leaderboard":
       return patchDraft(state, { showLeaderboardAfter: action.value });
     case "add-option": {
@@ -211,12 +222,18 @@ export function questionDraftReducer(
       const remaining = state.draft.options.filter(
         (option) => option.id !== action.optionId,
       );
+      const options = ensureCorrectOption(
+        remaining,
+        state.draft.type,
+        state.draft.evaluationMode,
+      );
+      const correctOptionCount = options.filter(
+        (option) => option.isCorrect,
+      ).length;
       return patchDraft(state, {
-        options: ensureCorrectOption(
-          remaining,
-          state.draft.type,
-          state.draft.evaluationMode,
-        ),
+        options,
+        partialScoring:
+          correctOptionCount > 1 ? state.draft.partialScoring : false,
       });
     }
     case "option-text":
@@ -257,12 +274,19 @@ export function questionDraftReducer(
       ).length;
       if (selected.isCorrect && correctCount === 1) return state;
 
+      const options = state.draft.options.map((option) =>
+        option.id === action.optionId
+          ? { ...option, isCorrect: !option.isCorrect }
+          : option,
+      );
+      const correctOptionCount = options.filter(
+        (option) => option.isCorrect,
+      ).length;
+
       return patchDraft(state, {
-        options: state.draft.options.map((option) =>
-          option.id === action.optionId
-            ? { ...option, isCorrect: !option.isCorrect }
-            : option,
-        ),
+        options,
+        partialScoring:
+          correctOptionCount > 1 ? state.draft.partialScoring : false,
       });
     }
     case "move-option": {
@@ -326,9 +350,10 @@ const draftQuestionLike = (draft: QuestionDraft) => ({
   question_time: parseDraftInteger(draft.timeInput),
   time_limit: parseDraftInteger(draft.timeInput),
   min_point:
-    draft.scoringMode === "none"
-      ? 0
-      : parseDraftInteger(draft.minPointsInput),
+    draft.scoringMode === "points" &&
+    draft.fasterAnswersMorePoints
+      ? parseDraftInteger(draft.minPointsInput)
+      : 0,
   max_point:
     draft.scoringMode === "none"
       ? 0
@@ -341,6 +366,7 @@ const draftQuestionLike = (draft: QuestionDraft) => ({
   partial_scoring:
     draft.scoringMode === "points" &&
     draft.type === "multiple" &&
+    draft.options.filter((option) => option.isCorrect).length > 1 &&
     draft.partialScoring,
   options: draft.options.map((option, index) => ({
     option_id: option.id,
@@ -379,7 +405,10 @@ export const questionDraftToEditorSlide = (
     time_limit: questionTime,
     question_time: questionTime,
     min_point:
-      draft.scoringMode === "none" ? 0 : minPoint,
+      draft.scoringMode === "points" &&
+      draft.fasterAnswersMorePoints
+        ? minPoint
+        : 0,
     max_point:
       draft.scoringMode === "none" ? 0 : maxPoint,
     image_url: draft.imageUrl.trim(),
@@ -390,6 +419,7 @@ export const questionDraftToEditorSlide = (
     partial_scoring:
       draft.scoringMode === "points" &&
       draft.type === "multiple" &&
+      draft.options.filter((option) => option.isCorrect).length > 1 &&
       draft.partialScoring,
     options: draft.options.map((option, index) => ({
       option_id: option.id,

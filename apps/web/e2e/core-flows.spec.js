@@ -1615,8 +1615,28 @@ test("question editor preserves typed draft semantics across save and edit confl
 
   await page.goto(`/manager/panel/${fixture.presentationId}`);
   await page.getByRole("button", { name: "محتوا", exact: true }).click();
-  await expect(page.getByRole("complementary", { name: "تنظیمات سؤال" })).toBeVisible();
+  const inspector = page.getByRole("complementary", { name: "تنظیمات سؤال" });
+  await expect(inspector).toBeVisible();
   await expectAccessible(page, "question editor");
+  await expect(
+    inspector.getByText("از ۵ ثانیه تا ۲۰ دقیقه.", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    inspector.getByLabel("حداقل امتیاز پاسخ صحیح"),
+  ).toHaveCount(0);
+  await expect(
+    inspector.getByText("امتیازدهی جزئی", { exact: true }),
+  ).toHaveCount(0);
+
+  const speedBonus = inspector.getByRole("checkbox", {
+    name: /پاسخ سریع‌تر، امتیاز بیشتر/,
+  });
+  await speedBonus.check();
+  const minPointsInput = inspector.getByLabel("حداقل امتیاز پاسخ صحیح");
+  await expect(minPointsInput).toBeVisible();
+  await minPointsInput.fill("۱۰۱");
+  await speedBonus.uncheck();
+  await expect(minPointsInput).toHaveCount(0);
 
   const preview = page.getByRole("region", { name: "پیش‌نمایش سؤال" });
   await expect(preview).toBeVisible();
@@ -1654,6 +1674,8 @@ test("question editor preserves typed draft semantics across save and edit confl
   expect(savedSlide.kind).toBe("activity");
   expect(savedSlide.content.prompt.text).toBe("پایتخت ایران را انتخاب کنید");
   expect(savedSlide.content.timing.duration_seconds).toBe(45);
+  expect(savedSlide.content.scoring.speed_bonus).toBe(false);
+  expect(savedSlide.content.scoring.min_points).toBe(0);
   expect(savedSlide.content.response.options[0].text).toBe("شیراز");
   expect(savedSlide.content.response.options[0].order).toBe(1);
   await expect(page.getByText("همه تغییرات ذخیره شده است.")).toBeVisible();

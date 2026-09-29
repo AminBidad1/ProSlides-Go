@@ -12,6 +12,8 @@ import {
   GripVertical,
   Image as ImageIcon,
   Plus,
+  Square,
+  SquareCheckBig,
   Trash2,
   X,
 } from "lucide-react";
@@ -100,12 +102,13 @@ export default function QuestionOptionsEditor({
                 : "یک یا چند پاسخ صحیح انتخاب کنید."}
           </p>
         </div>
-        <span className="shrink-0 rounded-full bg-brand-soft px-2.5 py-1 text-xs font-semibold text-brand-ink">
-          {evaluationMode === "none"
-            ? "بدون پاسخ صحیح"
-            : questionType === "single"
-              ? "تک‌گزینه‌ای"
-              : "چندگزینه‌ای"}
+        <span
+          className="shrink-0 rounded-full border border-border-subtle bg-canvas px-2.5 py-1 text-xs font-semibold text-content-muted"
+          aria-label={`${formatPersianNumber(options.length)} گزینه از حداکثر ${formatPersianNumber(maxOptions)}`}
+        >
+          {formatPersianNumber(options.length)}
+          {" / "}
+          {formatPersianNumber(maxOptions)}
         </span>
       </div>
 
@@ -144,7 +147,9 @@ export default function QuestionOptionsEditor({
                             ? "border-brand shadow-panel"
                             : error
                               ? "border-danger-border"
-                              : "border-border-subtle"
+                              : option.isCorrect && evaluationMode !== "none"
+                                ? "border-success-border bg-success-soft"
+                                : "border-border-subtle"
                         }`}
                       >
                         <div className="flex items-start gap-2">
@@ -169,7 +174,7 @@ export default function QuestionOptionsEditor({
                             </span>
                           ) : (
                             <Button
-                              variant={option.isCorrect ? "secondary" : "outline"}
+                              variant="outline"
                               size="icon"
                               disabled={correctnessDisabled}
                               aria-pressed={option.isCorrect}
@@ -178,10 +183,25 @@ export default function QuestionOptionsEditor({
                                   ? `گزینه ${formatPersianNumber(index + 1)} پاسخ صحیح است`
                                   : `انتخاب گزینه ${formatPersianNumber(index + 1)} به‌عنوان پاسخ صحیح`
                               }
-                              className="size-9 shrink-0"
+                              title={
+                                option.isCorrect
+                                  ? "پاسخ صحیح"
+                                  : "علامت‌گذاری به‌عنوان پاسخ صحیح"
+                              }
+                              className={`size-10 shrink-0 ${
+                                option.isCorrect
+                                  ? "border-success-border bg-success-soft text-success-ink hover:bg-success-soft"
+                                  : ""
+                              }`}
                               onClick={() => onToggleCorrect(option.id)}
                             >
-                              {option.isCorrect ? (
+                              {questionType === "multiple" ? (
+                                option.isCorrect ? (
+                                  <SquareCheckBig aria-hidden="true" />
+                                ) : (
+                                  <Square aria-hidden="true" />
+                                )
+                              ) : option.isCorrect ? (
                                 <CheckCircle2 aria-hidden="true" />
                               ) : (
                                 <Circle aria-hidden="true" />
@@ -267,26 +287,32 @@ export default function QuestionOptionsEditor({
                           </div>
                         </div>
 
-                        <div className="mt-2 flex justify-end gap-1 border-t border-border-subtle pt-2">
+                        <div
+                          className="mt-2 flex justify-end gap-1 border-t border-border-subtle pt-2"
+                          role="group"
+                          aria-label={`تغییر ترتیب گزینه ${formatPersianNumber(index + 1)}`}
+                        >
                           <Button
                             variant="ghost"
-                            size="sm"
+                            size="icon"
+                            className="size-8"
                             disabled={disabled || index === 0}
                             aria-label={`انتقال گزینه ${formatPersianNumber(index + 1)} به بالا`}
+                            title="انتقال به بالا"
                             onClick={() => onMove(index, index - 1)}
                           >
                             <ChevronUp aria-hidden="true" />
-                            بالا
                           </Button>
                           <Button
                             variant="ghost"
-                            size="sm"
+                            size="icon"
+                            className="size-8"
                             disabled={disabled || index === options.length - 1}
                             aria-label={`انتقال گزینه ${formatPersianNumber(index + 1)} به پایین`}
+                            title="انتقال به پایین"
                             onClick={() => onMove(index, index + 1)}
                           >
                             <ChevronDown aria-hidden="true" />
-                            پایین
                           </Button>
                         </div>
                       </div>

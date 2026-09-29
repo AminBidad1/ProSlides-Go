@@ -74,6 +74,67 @@ test("single and multiple correct-answer invariants stay valid during edits", ()
   assert.equal(state.draft.options.filter((option) => option.isCorrect).length, 2);
 });
 
+test("partial scoring only persists while multiple correct answers make it meaningful", () => {
+  const multipleSlide = {
+    ...slide,
+    question: {
+      ...slide.question,
+      question_type: "multiple",
+      partial_scoring: true,
+      options: [
+        { option_id: "a", text: "الف", is_correct: true, image_url: "", order: 1 },
+        { option_id: "b", text: "ب", is_correct: true, image_url: "", order: 2 },
+        { option_id: "c", text: "ج", is_correct: false, image_url: "", order: 3 },
+      ],
+    },
+  };
+
+  const draft = createQuestionDraft(multipleSlide);
+  assert.ok(draft);
+  assert.equal(draft.partialScoring, true);
+
+  const reduced = questionDraftReducer(
+    { baseline: draft, draft },
+    { type: "toggle-correct", optionId: "b" },
+  ).draft;
+  assert.equal(reduced.options.filter((option) => option.isCorrect).length, 1);
+  assert.equal(reduced.partialScoring, false);
+  assert.equal(questionDraftToEditorSlide(reduced).question?.partial_scoring, false);
+
+  const redundantPersisted = createQuestionDraft({
+    ...multipleSlide,
+    question: {
+      ...multipleSlide.question,
+      options: multipleSlide.question.options.map((option, index) => ({
+        ...option,
+        is_correct: index === 0,
+      })),
+    },
+  });
+  assert.ok(redundantPersisted);
+  assert.equal(redundantPersisted.partialScoring, false);
+});
+
+test("hidden speed-scoring minimum cannot block validation or leak into serialization", () => {
+  const draft = createQuestionDraft(slide);
+  assert.ok(draft);
+
+  const hiddenInvalidMinimum = {
+    ...draft,
+    fasterAnswersMorePoints: false,
+    minPointsInput: "نامعتبر",
+  };
+
+  assert.equal(
+    validateQuestionDraft(hiddenInvalidMinimum).some((issue) => issue.field === "points"),
+    false,
+  );
+  assert.equal(
+    questionDraftToEditorSlide(hiddenInvalidMinimum).question?.min_point,
+    0,
+  );
+});
+
 test("question draft never deletes below the backend minimum and supports keyboard reorder actions", () => {
   const draft = createQuestionDraft(slide);
   assert.ok(draft);
@@ -154,7 +215,12 @@ test("draft validation mirrors backend timing, scoring, option and unicode limit
   const invalidTime = { ...draft, timeInput: "۰" };
   assert.match(validateQuestionDraft(invalidTime)[0]?.message || "", /زمان/);
 
-  const invalidPoints = { ...draft, minPointsInput: "۱۰۱", maxPointsInput: "۱۰۰" };
+  const invalidPoints = {
+    ...draft,
+    fasterAnswersMorePoints: true,
+    minPointsInput: "۱۰۱",
+    maxPointsInput: "۱۰۰",
+  };
   assert.ok(validateQuestionDraft(invalidPoints).some((issue) => issue.field === "points"));
 
   const emptyOption = {
