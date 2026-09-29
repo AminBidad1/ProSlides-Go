@@ -93,7 +93,7 @@ export default function WordCloudCanvas({
 
         <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col items-center justify-center py-6 text-center">
           <p className="text-sm font-bold text-[color:var(--live-muted)]">
-            پیش‌نمایش نتیجه زنده
+            پیش‌نمایش نتیجه روی نمایشگر
           </p>
           {draft.title ? (
             <p
@@ -122,6 +122,7 @@ export default function WordCloudCanvas({
             terms={previewTerms}
             className="mt-6 min-h-48 w-full rounded-3xl border border-[color:var(--live-border)] bg-black/15 p-3"
             emptyLabel="پیش‌نمایشی برای نمایش وجود ندارد."
+            displayMode="projection"
           />
 
           <p className="mt-5 max-w-2xl text-sm leading-7 text-[color:var(--live-muted)]">

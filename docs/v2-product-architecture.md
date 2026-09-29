@@ -163,8 +163,19 @@ For the Text primitive used by Word Cloud:
   not change if normalization evolves;
 - duplicate canonical entries inside one participant response count once, which
   prevents a participant from inflating a phrase by repeating it;
-- result reveal remains presenter-controlled by default. Aggregates are not
-  exposed to participants during acceptance, avoiding response priming.
+- result reveal remains presenter-controlled by default. Stage and the shared
+  Manager presentation surface are both audience-visible projections, so aggregates
+  are not exposed there or to participants during acceptance. Closed aggregate results
+  may be inspected only in presenter-private Backstage before reveal;
+- projected Word Clouds use a readability budget rather than trying to render every
+  unique term. Durable responses remain authoritative even when low-priority terms do
+  not fit the projector frame;
+- frequency is encoded primarily by font size. Term color is deterministic decorative
+  separation, not participant identity or another data dimension. Placement is
+  deterministic, horizontal for Persian/mixed text, and collision-aware;
+- a future live-growing Word Cloud is an explicit result-presentation policy. It must
+  preserve role-scoped disclosure and use bounded/coalesced aggregate delivery rather
+  than raw-answer or per-answer Stage fanout. ADR 0005 defines this boundary.
 
 Open Text may later reuse the same Text response primitive with a different
 result policy. Do not create a separate live Session state or response endpoint

@@ -18,9 +18,9 @@ authoritative document rather than preserving two narratives.
 | Question | Authoritative source |
 |---|---|
 | What is implemented now and what still blocks release? | `status/current.md` |
-| What is the current product/domain model? | `v2-product-architecture.md`, ADR 0004 |
+| What is the current product/domain model? | `v2-product-architecture.md`, ADR 0004; Word Cloud projection/disclosure: ADR 0005 |
 | What are the system/backend/live invariants? | `architecture.md`, ADR 0001/0002/0004, OpenAPI |
-| What are the frontend technical boundaries? | `frontend-architecture.md`, ADR 0003/0004 |
+| What are the frontend technical boundaries? | `frontend-architecture.md`, ADR 0003/0004; Word Cloud projection boundary: ADR 0005 |
 | What are the Persian UX/design/accessibility rules? | `frontend-professionalization.md` |
 | What frontend debt is intentionally deferred? | `frontend-debt.md` |
 | What proves a capacity level? | `capacity-plan.md`; dated results live under `archive/` |

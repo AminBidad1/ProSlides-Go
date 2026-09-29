@@ -303,6 +303,18 @@ Live rendering uses three explicit projections:
 - Backstage for presenter-only controls and insight;
 - Participant for mobile-first personal interaction.
 
+The shared Manager presentation surface follows the Stage disclosure boundary because
+it is commonly mirrored to a room display. Presenter-private Word Cloud previews,
+moderation queues, or unrevealed aggregate terms belong in Backstage. A future
+live-growing Word Cloud must use an explicit result policy and bounded/coalesced
+aggregate events; it must not turn raw responses into Stage events.
+
+Shared Word Cloud rendering exposes a semantic projection profile rather than
+surface-specific styling knobs. Projection mode favors distance readability, uses a
+higher minimum font size, deterministic term colors/placement, actual font measurement
+when available, and a bounded term budget. Embedded report/editor/mobile views may use
+a denser profile without weakening the projector contract. See ADR 0005.
+
 Activity results and cumulative Session ranking are separate UI/domain
 concepts. The authoring rail contains only persisted Items; Activity-result and
 optional overall-ranking behavior is shown as metadata on the owning Activity

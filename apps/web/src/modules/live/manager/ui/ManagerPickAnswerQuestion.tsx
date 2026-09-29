@@ -350,6 +350,7 @@ export function ManagerPickAnswerQuestion({
                       className="min-h-0 flex-1"
                       emptyLabel="هنوز عبارتی برای نمایش وجود ندارد."
                       ariaLabel="نتیجه ابر واژه"
+                      displayMode="projection"
                     />
                   )}
                 </div>

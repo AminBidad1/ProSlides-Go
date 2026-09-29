@@ -5,11 +5,14 @@ type WordCloudTerm = {
   count: number;
 };
 
+type WordCloudDisplayMode = "embedded" | "projection";
+
 type WordCloudViewProps = {
   terms: readonly WordCloudTerm[];
   className?: string;
   emptyLabel?: string;
   ariaLabel?: string;
+  displayMode?: WordCloudDisplayMode;
 };
 
 const WordCloudRenderer = lazy(() => import("./WordCloudRenderer.tsx"));
@@ -19,6 +22,7 @@ export function WordCloudView({
   className = "",
   emptyLabel = "هنوز پاسخی برای نمایش وجود ندارد.",
   ariaLabel = "ابر واژه",
+  displayMode = "embedded",
 }: WordCloudViewProps) {
   return (
     <Suspense
@@ -40,6 +44,7 @@ export function WordCloudView({
         className={className}
         emptyLabel={emptyLabel}
         ariaLabel={ariaLabel}
+        displayMode={displayMode}
       />
     </Suspense>
   );

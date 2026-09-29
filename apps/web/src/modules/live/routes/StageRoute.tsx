@@ -313,6 +313,7 @@ function StageActivity({
                 terms={wordTerms}
                 className="min-h-0 flex-1"
                 emptyLabel="هنوز عبارتی برای نمایش وجود ندارد."
+                displayMode="projection"
               />
             )}
           </div>
