@@ -34,6 +34,7 @@ and must use safe direction boundaries rather than forced alignment.
 9. Runtime presentation theming may change visual mood without changing basic
    interaction/accessibility semantics.
 10. Responsive behavior is designed, not merely shrunk.
+11. Authored presentation audio is host-output-only. Participant devices stay silent to avoid echo, drift, bandwidth multiplication and browser-autoplay inconsistency. Remote sessions share the presenter device audio through the conferencing/screen-share path. A future personal-audio mode, if product evidence justifies it, must be an explicit session capability rather than silently changing this default.
 
 ## Design-system contract
 

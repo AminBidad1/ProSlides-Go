@@ -66,35 +66,23 @@ export function AudioProvider({ children }: { children: ReactNode }) {
 
     void audio.play().catch((error: unknown) => {
       if (import.meta.env.DEV) {
-        console.info(
-          "[Audio] Playback awaits a user gesture or a playable source.",
-          error,
-        );
+        console.info("[Audio] Playback awaits a user gesture or a playable source.", error);
       }
     });
   }, [isMuted]);
 
   const toggleMute = useCallback(() => {
+    if (!musicUrl) return;
     setIsMuted((current) => {
       const next = !current;
       const audio = audioElementRef.current;
       if (audio) {
-        if (next) {
-          audio.pause();
-        } else {
-          void audio.play().catch((error: unknown) => {
-            if (import.meta.env.DEV) {
-              console.info(
-                "[Audio] Playback awaits a user gesture or a playable source.",
-                error,
-              );
-            }
-          });
-        }
+        if (next) audio.pause();
+        else void audio.play().catch(() => undefined);
       }
       return next;
     });
-  }, []);
+  }, [musicUrl]);
 
   useEffect(() => {
     if (isMuted || !musicUrl) return;
@@ -103,13 +91,10 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       const audio = audioElementRef.current;
       if (!audio || !audio.paused) return;
       void audio.play().catch((error: unknown) => {
-        if (import.meta.env.DEV) {
-          console.info(
-            "[Audio] Playback is still blocked or the source is not playable.",
-            error,
-          );
-        }
-      });
+      if (import.meta.env.DEV) {
+        console.info("[Audio] Playback awaits a user gesture or a playable source.", error);
+      }
+    });
     };
 
     window.addEventListener("pointerdown", resumeOnGesture);

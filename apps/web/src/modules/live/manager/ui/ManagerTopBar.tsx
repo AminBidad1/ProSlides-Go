@@ -17,7 +17,7 @@ export function ManagerTopBar({
   onQrToggle,
 }: ManagerTopBarProps) {
   const navigate = useNavigate();
-  const { isMuted, toggleMute } = useAudio();
+  const { isMuted, musicUrl, toggleMute } = useAudio();
   const [copied, setCopied] = useState(false);
 
   const joinUrl = useMemo(() => {
@@ -29,7 +29,7 @@ export function ManagerTopBar({
   }, [accessCode]);
 
   const displayUrl = joinUrl.replace(/^https?:\/\//, "");
-
+  const audioUnavailable = !musicUrl;
   const copyJoinUrl = async () => {
     try {
       await navigator.clipboard.writeText(joinUrl);
@@ -57,10 +57,17 @@ export function ManagerTopBar({
         <button
           type="button"
           onClick={toggleMute}
-          className="grid min-h-11 min-w-11 place-items-center rounded-full bg-black/20 text-lg transition hover:bg-black/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-          aria-label={isMuted ? "روشن کردن صدا" : "بی‌صدا کردن"}
+          disabled={audioUnavailable}
+          className="grid min-h-11 min-w-11 place-items-center rounded-full bg-black/20 text-lg transition hover:bg-black/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-45"
+          aria-label={
+            audioUnavailable
+              ? "برای این ارائه صدایی تنظیم نشده است"
+              : isMuted
+                ? "روشن کردن صدای ارائه"
+                : "بی‌صدا کردن صدای ارائه"
+          }
         >
-          {isMuted ? "🔇" : "🔊"}
+          {audioUnavailable ? "🔈" : isMuted ? "🔇" : "🔊"}
         </button>
       </div>
 
