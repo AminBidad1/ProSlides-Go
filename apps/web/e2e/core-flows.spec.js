@@ -243,10 +243,19 @@ test("landing, protected navigation, and responsive auth layout @critical", asyn
 
   const liveDemo = page.locator("#live-demo");
   await expect(liveDemo).toBeVisible();
+  await expect(liveDemo.getByText("نمای مخاطب", { exact: true })).toBeVisible();
+  await expect(liveDemo.getByText("صفحه ارائه", { exact: true })).toBeVisible();
+  await expect(liveDemo.getByText("موبایل مخاطب", { exact: true })).toHaveCount(0);
+  await expect(
+    liveDemo.getByText("ابتدا در نمای مخاطب یک گزینه را انتخاب کنید.", { exact: true }),
+  ).toBeVisible();
   const firstOption = liveDemo.getByRole("button", { name: "مشارکت مخاطب", exact: true });
   await firstOption.click();
   await expect(firstOption).toHaveAttribute("aria-pressed", "true");
   await expect(liveDemo.getByText("پاسخ ثبت شد ✓", { exact: true })).toBeVisible();
+  await expect(
+    liveDemo.getByText("حالا نتیجه را برای مخاطبان نمایش دهید.", { exact: true }),
+  ).toBeVisible();
   await expect(liveDemo.getByRole("button", { name: "نمایش نتیجه" })).toBeVisible();
   await expect(liveDemo.getByText("نتیجه نظرسنجی", { exact: true })).toHaveCount(0);
   await liveDemo.getByRole("button", { name: "نمایش نتیجه" }).click();

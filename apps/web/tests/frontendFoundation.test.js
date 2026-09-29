@@ -114,6 +114,7 @@ test("marketing routes are typed, module-owned, RTL-safe and deliberately concis
   const team = source("src/modules/marketing/routes/TeamRoute.tsx");
   const seo = source("src/shared/ui/Seo.tsx");
   const siteHeader = source("src/shared/ui/SiteHeader.tsx");
+  const indexHtml = source("index.html");
 
   assert.match(router, /modules\/marketing\/routes\/LandingRoute\.tsx/);
   assert.match(router, /modules\/marketing\/routes\/TeamRoute\.tsx/);
@@ -135,15 +136,19 @@ test("marketing routes are typed, module-owned, RTL-safe and deliberately concis
   assert.match(landing, /LandingUseCaseShowcase/);
   assert.match(landing, /\^\[A-Z0-9\]\{5,12\}\$/);
   assert.match(landing, /همین حالا امتحان کنید/);
-  assert.match(landing, /نتیجه را در زمان مناسب روی Stage نمایش می‌دهید/);
-  assert.doesNotMatch(landing, /Stage همان لحظه تغییر می‌کند/);
+  assert.match(landing, /در مرورگر پاسخ می‌دهند.*در زمان مناسب روی صفحه ارائه نمایش می‌دهید/s);
+  assert.doesNotMatch(landing, /مخاطبان با موبایل|پاسخ از موبایل|Stage همان لحظه تغییر می‌کند/);
   assert.match(liveDemo, /دموی تعاملی/);
   assert.match(liveDemo, /BASE_COUNTS = \[4, 3, 2\]/);
   assert.match(liveDemo, /aria-pressed=\{active\}/);
   assert.match(liveDemo, /data-live-demo-surface="participant"/);
   assert.match(liveDemo, /data-live-demo-surface="stage"/);
   assert.match(liveDemo, /نمایش نتیجه/);
-  assert.match(liveDemo, /نتیجه تا زمان نمایش ارائه‌دهنده/);
+  assert.match(liveDemo, /نمای مخاطب/);
+  assert.match(liveDemo, /صفحه ارائه/);
+  assert.match(liveDemo, /نتیجه تا زمانی که ارائه‌دهنده آن را نمایش دهد/);
+  assert.match(liveDemo, /حالا نتیجه را برای مخاطبان نمایش دهید/);
+  assert.doesNotMatch(liveDemo, /موبایل مخاطب|از موبایل مخاطب|منتظر نمایش نتیجه بمانید/);
   assert.match(liveDemo, /aria-live="polite"/);
   assert.doesNotMatch(liveDemo, /پاسخ شما رسید|درصدها فقط تصویر/);
   assert.doesNotMatch(liveDemo, /setInterval|setTimeout/);
@@ -154,11 +159,14 @@ test("marketing routes are typed, module-owned, RTL-safe and deliberately concis
   assert.doesNotMatch(journey, /IntersectionObserver/);
   assert.match(useCases, /کلاس و دانشگاه.*جلسه و کارگاه.*رویداد و وبینار.*آموزش سازمانی/s);
   assert.doesNotMatch(useCases, /useState|onClick/);
-  assert.match(indexCss, /landing-response-pulse/);
   assert.match(indexCss, /prefers-reduced-motion: reduce/);
   assert.match(indexCss, /--font-brand: "Outfit", "Vazirmatn"/);
   assert.match(landing, /normalizeAccessCode/);
   assert.doesNotMatch(landing, /پاسخ باز|پرسش زنده|سؤال زنده|Q&A/);
+  assert.doesNotMatch(journey, /مرورگر موبایل|Stage · نظرسنجی/);
+  assert.doesNotMatch(useCases, /از موبایل وارد می‌شوند|حضورشان روی Stage|نتیجه زنده/);
+  assert.match(indexHtml, /با کد جلسه وارد می‌شوند.*در مرورگر پاسخ می‌دهند.*در زمان مناسب روی صفحه ارائه نمایش می‌دهد/s);
+  assert.doesNotMatch(indexHtml, /مخاطبان با موبایل|همان لحظه روی ارائه دیده می‌شود/);
   assert.doesNotMatch(landing, /94%|۹۴٪/);
   assert.doesNotMatch(landing, /#[0-9a-fA-F]{3,8}/);
 

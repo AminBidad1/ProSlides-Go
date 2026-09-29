@@ -137,6 +137,11 @@ speculative feature count.
   the visitor to complete several separate mini-app interactions.
 - Marketing claims stay within shipped product capability. Future Session
   channels such as Q&A are not marketed as current features.
+- Public copy describes participant/presenter roles and actions before device
+  assumptions or internal projection names. Device terms such as mobile are
+  used only when they describe a real capability or responsive surface, not as
+  a required way to participate. Prefer plain-language "participant view" and
+  "presentation screen" labels over unexplained Stage/Participant jargon.
 - Demo values are deterministic fixtures and are labelled as demo/sample data.
   They must not resemble real customer or usage proof. Small fixture populations
   are preferred when they make one visitor action visibly legible; they are not

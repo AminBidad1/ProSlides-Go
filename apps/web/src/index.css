@@ -352,9 +352,6 @@ textarea::placeholder {
   filter: blur(28px);
 }
 
-.landing-response-pulse {
-  animation: landingResponsePulse 380ms var(--ease-interface) both;
-}
 
 .landing-dark-glow {
   background:
@@ -362,8 +359,3 @@ textarea::placeholder {
     radial-gradient(circle at 86% 76%, color-mix(in srgb, var(--color-info) 18%, transparent), transparent 28%);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .landing-response-pulse {
-    animation: none !important;
-  }
-}

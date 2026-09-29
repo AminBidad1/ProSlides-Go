@@ -33,14 +33,14 @@ const STEPS: Array<{
     shortTitle: "ورود",
     title: "مخاطب با یک کد وارد همان جلسه می‌شود",
     description:
-      "برای شرکت در جلسه نصب لازم نیست؛ مخاطب از مرورگر موبایل وارد می‌شود و به فعالیت جاری می‌رسد.",
+      "برای شرکت در جلسه نصب لازم نیست؛ مخاطب با مرورگر وارد می‌شود و به فعالیت جاری می‌رسد.",
     Icon: QrCode,
   },
   {
     id: "live",
     eyebrow: "۳ · اجرا کنید",
     shortTitle: "اجرا",
-    title: "پاسخ مخاطب روی Stage به نتیجه تبدیل می‌شود",
+    title: "پاسخ مخاطب روی صفحه ارائه به نتیجه تبدیل می‌شود",
     description:
       "ارائه‌دهنده کنترل جریان را نگه می‌دارد و مخاطب پاسخ می‌دهد؛ نتیجه در زمان مناسب برای جمع آشکار می‌شود.",
     Icon: RadioTower,
@@ -115,7 +115,7 @@ function ProductScene({ id }: { id: JourneyId }) {
           <p className="mt-3 text-sm text-white/65">کد را در proslides.ir وارد کنید</p>
           <div className="mt-6 flex items-center gap-2 text-xs text-white/70">
             <UsersRound className="size-4" aria-hidden="true" />
-            بدون نصب، از مرورگر موبایل
+            بدون نصب، از مرورگر
           </div>
         </div>
         <div className="rounded-[1.5rem] bg-surface p-4 text-content">
@@ -139,7 +139,7 @@ function ProductScene({ id }: { id: JourneyId }) {
     return (
       <div className="min-h-72 rounded-3xl bg-content p-5 text-content-inverse sm:p-6">
         <div className="flex items-center justify-between gap-3">
-          <span className="text-xs font-black text-brand-border">Stage · نظرسنجی</span>
+          <span className="text-xs font-black text-brand-border">صفحه ارائه · نظرسنجی</span>
           <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/70">
             ۲۷ پاسخ نمونه
           </span>

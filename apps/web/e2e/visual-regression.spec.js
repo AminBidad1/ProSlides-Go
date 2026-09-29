@@ -31,7 +31,7 @@ test("landing desktop responsive layout contract", async ({ page }) => {
     "aria-pressed",
     "true",
   );
-  await expect(journey.getByText("Stage · نظرسنجی", { exact: true })).toBeVisible();
+  await expect(journey.getByText("صفحه ارائه · نظرسنجی", { exact: true })).toBeVisible();
 });
 
 test("landing mobile responsive layout contract", async ({ page }) => {

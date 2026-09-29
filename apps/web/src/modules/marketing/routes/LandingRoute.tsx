@@ -30,7 +30,7 @@ const TRUST_ITEMS = [
   { label: "ورود با کد", Icon: KeyRound },
   { label: "بدون نصب برای مخاطب", Icon: MonitorSmartphone },
   { label: "فارسی و RTL", Icon: Languages },
-  { label: "پاسخ و نتیجه زنده", Icon: RadioTower },
+  { label: "پاسخ زنده", Icon: RadioTower },
   { label: "مناسب موبایل", Icon: UsersRound },
   { label: "گزارش جلسه", Icon: BarChart3 },
 ] as const;
@@ -204,7 +204,7 @@ export default function LandingRoute() {
     <div className="min-h-screen overflow-x-clip bg-canvas text-content" dir="rtl">
       <Seo
         title="پرو اسلایدز | ارائه تعاملی با مشارکت زنده مخاطبان"
-        description="مخاطبان با موبایل وارد می‌شوند، پاسخ می‌دهند و شما نتیجه را در زمان مناسب روی Stage نمایش می‌دهید؛ از نظرسنجی و کوئیز تا ابر واژه و گزارش جلسه."
+        description="مخاطبان با کد جلسه وارد می‌شوند، در مرورگر پاسخ می‌دهند و شما نتیجه را در زمان مناسب روی صفحه ارائه نمایش می‌دهید؛ از نظرسنجی و کوئیز تا ابر واژه و گزارش جلسه."
         canonical="https://proslides.ir/"
       />
 
@@ -366,7 +366,7 @@ export default function LandingRoute() {
                 ارائه‌ای بسازید که مخاطب فقط تماشاگر آن نباشد
               </h1>
               <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-content-muted md:text-lg lg:mx-0">
-                مخاطبان با موبایل وارد می‌شوند، پاسخ می‌دهند و شما نتیجه را در زمان مناسب روی Stage نمایش می‌دهید؛ از نظرسنجی و کوئیز تا ابر واژه، رتبه‌بندی و گزارش جلسه.
+                مخاطبان با کد جلسه وارد می‌شوند، در مرورگر پاسخ می‌دهند و شما نتیجه را در زمان مناسب روی صفحه ارائه نمایش می‌دهید؛ از نظرسنجی و کوئیز تا ابر واژه، رتبه‌بندی و گزارش جلسه.
               </p>
               <div className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
                 <Link
@@ -414,7 +414,7 @@ export default function LandingRoute() {
           <SectionHeader
             eyebrow="کاربردها"
             title="برای کلاس، جلسه، رویداد و آموزش"
-            description="نوع فعالیت با موقعیت تغییر می‌کند، اما مسیر مخاطب همان است: ورود با کد، پاسخ از موبایل و مشاهده نتیجه روی Stage."
+            description="نوع فعالیت با موقعیت تغییر می‌کند، اما مسیر مخاطب همان است: ورود با کد، پاسخ در مرورگر و مشاهده نتیجه روی صفحه ارائه."
           />
           <LandingUseCaseShowcase />
         </section>

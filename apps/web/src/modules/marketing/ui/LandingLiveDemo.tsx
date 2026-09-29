@@ -65,7 +65,7 @@ export default function LandingLiveDemo() {
             className="rounded-[1.5rem] border border-border-subtle bg-canvas p-3 shadow-sm sm:p-4"
           >
             <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-content/10" aria-hidden="true" />
-            <p className="text-[11px] font-semibold text-content-muted">موبایل مخاطب</p>
+            <p className="text-[11px] font-semibold text-content-muted">نمای مخاطب</p>
             <p className="mt-1 text-sm font-black text-content">یک گزینه را انتخاب کنید</p>
 
             <div className="mt-3 space-y-2">
@@ -103,7 +103,7 @@ export default function LandingLiveDemo() {
                 aria-atomic="true"
               >
                 <p className="text-xs font-black">پاسخ ثبت شد ✓</p>
-                <p className="mt-1 text-[11px] leading-5">منتظر نمایش نتیجه بمانید.</p>
+                <p className="mt-1 text-[11px] leading-5">انتخاب شما ثبت شد.</p>
               </div>
             ) : null}
           </div>
@@ -113,7 +113,7 @@ export default function LandingLiveDemo() {
             className="relative overflow-hidden rounded-2xl border border-border-subtle bg-content p-4 text-content-inverse shadow-sm sm:p-5"
           >
             <div className="flex items-center justify-between gap-3">
-              <span className="text-xs font-black text-brand-border">نمایش برای مخاطبان</span>
+              <span className="text-xs font-black text-brand-border">صفحه ارائه</span>
               <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/75">
                 {revealed ? "نتیجه نظرسنجی" : "نظرسنجی"}
               </span>
@@ -169,7 +169,7 @@ export default function LandingLiveDemo() {
             <p className="mt-4 text-[11px] leading-6 text-white/60">
               {revealed
                 ? `${total.toLocaleString("fa-IR")} پاسخ ثبت‌شده`
-                : "نتیجه تا زمان نمایش ارائه‌دهنده برای مخاطبان پنهان می‌ماند."}
+                : "نتیجه تا زمانی که ارائه‌دهنده آن را نمایش دهد، پنهان می‌ماند."}
             </p>
           </div>
         </div>
@@ -179,10 +179,10 @@ export default function LandingLiveDemo() {
             <p className="text-[10px] font-black text-brand">کنترل ارائه‌دهنده</p>
             <p className="mt-0.5 text-xs font-semibold text-brand-ink">
               {selected === null
-                ? "از موبایل مخاطب یک گزینه را انتخاب کنید."
+                ? "ابتدا در نمای مخاطب یک گزینه را انتخاب کنید."
                 : revealed
-                  ? `نتیجه با ${total.toLocaleString("fa-IR")} پاسخ نمونه نمایش داده شد.`
-                  : "پاسخ ثبت شد؛ نتیجه هنوز برای مخاطبان پنهان است."}
+                  ? `نتیجه بر اساس ${total.toLocaleString("fa-IR")} پاسخ نمونه نمایش داده شد.`
+                  : "حالا نتیجه را برای مخاطبان نمایش دهید."}
             </p>
           </div>
 
