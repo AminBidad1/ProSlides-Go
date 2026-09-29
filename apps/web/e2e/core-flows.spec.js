@@ -294,10 +294,15 @@ test("landing, protected navigation, and responsive auth layout @critical", asyn
   await page.setViewportSize({ width: 1280, height: 800 });
 
   await page.goto("/team");
-  await expect(page.getByRole("heading", { name: "تیم ما", exact: true })).toBeVisible();
-  await expect(page.getByText("توسعه اولیه Rust", { exact: false }).first()).toBeVisible();
-  await expect(page.getByText("توسعه اولیه Django", { exact: false }).first()).toBeVisible();
-  await expect(page.getByText("backend فعال ProSlides اکنون بر Go استوار است", { exact: false })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "آدم‌های پشت ProSlides", exact: true })).toBeVisible();
+  const teamList = page.getByRole("list", { name: "اعضای تیم ProSlides" });
+  await expect(teamList).toBeVisible();
+  await expect(teamList.getByRole("listitem")).toHaveCount(7);
+  await expect(teamList.getByText("مهندسی بک‌اند", { exact: true }).first()).toBeVisible();
+  await expect(teamList.getByText("مهندسی فرانت‌اند", { exact: true }).first()).toBeVisible();
+  await expect(
+    page.getByText("backend فعال ProSlides اکنون بر Go استوار است", { exact: false }),
+  ).toHaveCount(0);
   await expectAccessible(page, "team");
   await page.setViewportSize({ width: 375, height: 812 });
   await expectNoOverflow(page);

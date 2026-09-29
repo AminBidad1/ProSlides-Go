@@ -108,7 +108,7 @@ test("protected manager routes use the data router and one cached session bounda
   );
 });
 
-test("marketing routes are typed, module-owned, RTL-safe and historically accurate", () => {
+test("marketing routes are typed, module-owned, RTL-safe and deliberately concise", () => {
   const router = source("src/app/router/router.tsx");
   const landing = source("src/modules/marketing/routes/LandingRoute.tsx");
   const team = source("src/modules/marketing/routes/TeamRoute.tsx");
@@ -152,9 +152,13 @@ test("marketing routes are typed, module-owned, RTL-safe and historically accura
   assert.doesNotMatch(landing, /94%|۹۴٪/);
   assert.doesNotMatch(landing, /#[0-9a-fA-F]{3,8}/);
 
-  assert.match(team, /توسعه اولیه Rust/);
-  assert.match(team, /توسعه اولیه Django/);
-  assert.match(team, /backend فعال ProSlides اکنون بر Go استوار است/);
+  assert.match(team, /مهندسی بک‌اند/);
+  assert.match(team, /مهندسی فرانت‌اند/);
+  assert.match(team, /aria-label="اعضای تیم ProSlides"/);
+  assert.match(team, /aspect-square/);
+  assert.doesNotMatch(team, /description:\s*"/);
+  assert.doesNotMatch(team, /<aside|TeamSection|dotGrid|badgeClassName|ringClassName|coverClassName/);
+  assert.doesNotMatch(team, /backend فعال ProSlides اکنون بر Go استوار است/);
   assert.doesNotMatch(team, /#[0-9a-fA-F]{3,8}/);
 
   assert.match(seo, /restoreAttribute/);

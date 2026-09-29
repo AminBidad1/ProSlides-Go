@@ -7,168 +7,52 @@ import HesamAzmoun from "../../../assets/avatars/HesamAzmoun.jpg";
 import KianJanbozorgi from "../../../assets/avatars/KianJanbozorgi.jpg";
 import SimaKazemi from "../../../assets/avatars/SimaKazemi.jpg";
 import ZahraKefayati from "../../../assets/avatars/ZahraKefayati.jpg";
-import dotGrid from "../../../assets/patterns/dot-grid.svg";
 import Seo from "../../../shared/ui/Seo.tsx";
 import SiteHeader from "../../../shared/ui/SiteHeader.tsx";
 
 type TeamMember = {
   name: string;
   role: string;
-  description: string;
   avatar: string;
-  coverClassName: string;
-  ringClassName: string;
-  badgeClassName: string;
 };
 
-const backendTeam: TeamMember[] = [
+const team: TeamMember[] = [
   {
     name: "امین بیداد",
-    role: "مهندسی بک‌اند · توسعه اولیه Rust",
-    description:
-      "در توسعه زیرساخت و سرویس‌های بلادرنگ اولیه پروژه با Rust نقش داشته است؛ بخشی از مسیری که بعداً در معماری فعلی Go بازطراحی شد.",
+    role: "مهندسی بک‌اند",
     avatar: aminBidad,
-    coverClassName: "bg-info-soft",
-    ringClassName: "bg-info-border",
-    badgeClassName: "bg-info-soft text-info-ink",
   },
   {
     name: "امیرعلی فخاری",
-    role: "مهندسی بک‌اند · توسعه اولیه Django",
-    description:
-      "در توسعه بک‌اند اولیه مبتنی بر Django/DRF، مدل‌های داده و APIهای محصول نقش داشته است؛ این سابقه پیش از مهاجرت backend فعلی به Go است.",
+    role: "مهندسی بک‌اند",
     avatar: amiraliFakhari,
-    coverClassName: "bg-brand-soft",
-    ringClassName: "bg-brand-border",
-    badgeClassName: "bg-brand-soft text-brand-ink",
   },
-];
-
-const frontendTeam: TeamMember[] = [
   {
     name: "علیرضا رضایی",
-    role: "مهندسی فرانت‌اند · React",
-    description:
-      "روی پیاده‌سازی رابط‌های محصول و یکپارچگی تجربه کاربری در مسیرهای اصلی کار کرده است.",
+    role: "مهندسی فرانت‌اند",
     avatar: alirezaRezaei,
-    coverClassName: "bg-success-soft",
-    ringClassName: "bg-success-border",
-    badgeClassName: "bg-success-soft text-success-ink",
   },
   {
     name: "حسام آزمون",
-    role: "مهندسی فرانت‌اند · React",
-    description:
-      "در تبدیل جریان‌های محصول به تعامل‌های قابل‌فهم و روان در رابط کاربری مشارکت داشته است.",
+    role: "مهندسی فرانت‌اند",
     avatar: HesamAzmoun,
-    coverClassName: "bg-success-soft",
-    ringClassName: "bg-success-border",
-    badgeClassName: "bg-success-soft text-success-ink",
   },
   {
     name: "کیان جان بزرگی",
-    role: "مهندسی فرانت‌اند · React",
-    description:
-      "در توسعه مسیرهای فرانت‌اند و اتصال تجربه ارائه به قابلیت‌های محصول مشارکت داشته است.",
+    role: "مهندسی فرانت‌اند",
     avatar: KianJanbozorgi,
-    coverClassName: "bg-success-soft",
-    ringClassName: "bg-success-border",
-    badgeClassName: "bg-success-soft text-success-ink",
   },
   {
     name: "سیما کاظمی",
-    role: "مهندسی فرانت‌اند · React",
-    description:
-      "در توسعه و اصلاح رابط‌های ارائه و تجربه کاربری بخش‌های تعاملی محصول مشارکت داشته است.",
+    role: "مهندسی فرانت‌اند",
     avatar: SimaKazemi,
-    coverClassName: "bg-success-soft",
-    ringClassName: "bg-success-border",
-    badgeClassName: "bg-success-soft text-success-ink",
   },
   {
     name: "زهرا کفایتی",
-    role: "مهندسی فرانت‌اند · React",
-    description:
-      "در توسعه رابط کاربری و پرداخت جزئیات تجربه بصری و تعاملات فرانت‌اند مشارکت داشته است.",
+    role: "مهندسی فرانت‌اند",
     avatar: ZahraKefayati,
-    coverClassName: "bg-success-soft",
-    ringClassName: "bg-success-border",
-    badgeClassName: "bg-success-soft text-success-ink",
   },
 ];
-
-function TeamSection({
-  id,
-  title,
-  description,
-  members,
-  gridClassName,
-}: {
-  id: string;
-  title: string;
-  description: string;
-  members: TeamMember[];
-  gridClassName: string;
-}) {
-  return (
-    <section aria-labelledby={id} className="space-y-8">
-      <div className="space-y-2">
-        <h2 id={id} className="text-2xl font-semibold text-content">
-          {title}
-        </h2>
-        <p className="max-w-3xl text-sm leading-7 text-content-muted">
-          {description}
-        </p>
-      </div>
-
-      <ul className={gridClassName}>
-        {members.map((member) => (
-          <li key={member.name}>
-            <article className="group relative flex h-full min-h-[340px] flex-col overflow-hidden rounded-[28px] border border-border-subtle bg-surface text-center shadow-panel transition-transform duration-300 hover:-translate-y-1">
-              <div
-                className={`relative h-28 w-full overflow-hidden ${member.coverClassName}`}
-                aria-hidden="true"
-              >
-                <div className="absolute -top-10 start-6 h-20 w-20 rounded-full bg-surface/60 blur-2xl" />
-                <div className="absolute -bottom-10 end-6 h-24 w-24 rounded-full bg-surface/45 blur-2xl" />
-              </div>
-
-              <div className="relative flex flex-1 flex-col items-center px-6 pb-8">
-                <div className="-mt-10 rounded-full bg-surface p-1 shadow-panel">
-                  <div className={`rounded-full p-[3px] ${member.ringClassName}`}>
-                    <div className="rounded-full bg-surface p-[3px]">
-                      <img
-                        src={member.avatar}
-                        alt={`تصویر ${member.name}`}
-                        width={96}
-                        height={96}
-                        loading="lazy"
-                        decoding="async"
-                        className="h-24 w-24 rounded-full object-cover"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <h3 className="mt-4 text-lg font-semibold text-content">
-                  {member.name}
-                </h3>
-                <span
-                  className={`mt-2 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${member.badgeClassName}`}
-                >
-                  {member.role}
-                </span>
-                <p className="mt-3 text-sm leading-7 text-content-muted">
-                  {member.description}
-                </p>
-              </div>
-            </article>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
 
 export default function TeamRoute() {
   useLayoutEffect(() => {
@@ -176,70 +60,66 @@ export default function TeamRoute() {
   }, []);
 
   return (
-    <main
-      className="relative min-h-screen overflow-x-hidden bg-canvas text-content"
-      dir="rtl"
-      style={{
-        backgroundImage: `url(${dotGrid})`,
-        backgroundSize: "56px 56px",
-      }}
-    >
+    <div className="min-h-screen overflow-x-clip bg-canvas text-content" dir="rtl">
       <Seo
         title="تیم ما | پرو اسلایدز"
-        description="با اعضای تیم ProSlides و نقش آن‌ها در توسعه مسیرهای فرانت‌اند، Django و Rust اولیه و معماری فعلی محصول آشنا شوید."
+        description="با اعضای تیم ProSlides و نقش آن‌ها در توسعه محصول آشنا شوید."
         canonical="https://proslides.ir/team"
       />
 
-      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-        <div className="absolute -top-28 -start-24 h-72 w-72 rounded-full bg-info-soft/80 blur-3xl" />
-        <div className="absolute top-20 -end-32 h-80 w-80 rounded-full bg-brand-soft/75 blur-3xl" />
-        <div className="absolute bottom-0 start-1/3 h-80 w-80 rounded-full bg-success-soft/80 blur-3xl" />
-      </div>
+      <SiteHeader />
 
-      <SiteHeader className="relative z-10" />
+      <main className="relative mx-auto max-w-6xl px-4 pb-20 pt-12 sm:px-6 sm:pb-24 sm:pt-16">
+        <div
+          className="landing-ambient pointer-events-none absolute inset-x-0 top-0 -z-10 h-[30rem]"
+          aria-hidden="true"
+        />
 
-      <div className="relative mx-auto flex max-w-6xl flex-col gap-16 px-6 py-16 sm:py-20">
-        <header className="mx-auto max-w-3xl space-y-4 pb-4 text-center">
-          <p
-            className="text-xs font-semibold uppercase tracking-[0.24em] text-content-muted"
-            dir="ltr"
-          >
-            ProSlides team
-          </p>
-          <h1 className="text-4xl font-semibold leading-tight text-content sm:text-5xl">
-            تیم ما
+        <header className="mx-auto max-w-xl text-center">
+          <p className="text-xs font-black text-brand">تیم ما</p>
+          <h1 className="mt-3 text-4xl font-black leading-tight tracking-tight text-content sm:text-5xl">
+            آدم‌های پشت ProSlides
           </h1>
-          <p className="text-base leading-8 text-content-muted sm:text-lg">
-            ProSlides در چند نسل فنی توسعه پیدا کرده است. صفحه تیم نقش‌های واقعی
-            اعضا در آن مسیر را حفظ می‌کند، حتی اگر فناوری فعلی محصول نسبت به
-            نسخه‌های اولیه تغییر کرده باشد.
+          <p className="mt-4 text-sm leading-7 text-content-muted sm:text-base">
+            تیمی که ProSlides را می‌سازد.
           </p>
         </header>
 
-        <aside className="rounded-3xl border border-brand-border bg-brand-soft p-5 text-sm leading-7 text-brand-ink sm:p-6">
-          <strong className="font-semibold">درباره فناوری‌های بک‌اند:</strong>{" "}
-          اشاره به Rust و Django در کارت اعضای بک‌اند، سابقه توسعه اولیه محصول
-          است. معماری backend فعال ProSlides اکنون بر Go استوار است؛ بنابراین
-          این برچسب‌ها تاریخچه مشارکت اعضا را نشان می‌دهند، نه stack فعلی
-          production.
-        </aside>
+        <ul
+          className="mx-auto mt-12 flex max-w-5xl flex-wrap justify-center gap-x-4 gap-y-9 sm:mt-14 sm:gap-x-6 sm:gap-y-11"
+          aria-label="اعضای تیم ProSlides"
+        >
+          {team.map((member) => (
+            <li
+              key={member.name}
+              className="basis-[calc(50%-0.5rem)] sm:basis-[calc(33.333%-1rem)] lg:basis-[calc(25%-1.125rem)]"
+            >
+              <article className="group text-center">
+                <div className="aspect-square overflow-hidden rounded-[28px] border border-border-subtle bg-surface shadow-sm transition-[transform,border-color,box-shadow] duration-300 group-hover:-translate-y-1 group-hover:border-brand-border group-hover:shadow-panel motion-reduce:transform-none">
+                  <img
+                    src={member.avatar}
+                    alt={"تصویر " + member.name}
+                    width={480}
+                    height={480}
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02] motion-reduce:transform-none"
+                  />
+                </div>
 
-        <TeamSection
-          id="backend-team"
-          title="مهندسی بک‌اند"
-          description="توسعه بک‌اند ProSlides از Django و سرویس‌های Rust اولیه عبور کرده و امروز به معماری Go رسیده است. این بخش نقش اعضا در مراحل اولیه را با همان زمینه تاریخی نمایش می‌دهد."
-          members={backendTeam}
-          gridClassName="grid gap-8 md:grid-cols-2"
-        />
-
-        <TeamSection
-          id="frontend-team"
-          title="مهندسی فرانت‌اند"
-          description="اعضای فرانت‌اند در توسعه رابط‌های React و تجربه تعاملی ارائه‌دهنده و شرکت‌کننده مشارکت داشته‌اند."
-          members={frontendTeam}
-          gridClassName="grid gap-8 md:grid-cols-2 lg:grid-cols-3"
-        />
-      </div>
-    </main>
+                <div className="px-1 pt-4">
+                  <h2 className="text-base font-black text-content sm:text-lg">
+                    {member.name}
+                  </h2>
+                  <p className="mt-1 text-xs font-semibold text-content-muted sm:text-sm">
+                    {member.role}
+                  </p>
+                </div>
+              </article>
+            </li>
+          ))}
+        </ul>
+      </main>
+    </div>
   );
 }
