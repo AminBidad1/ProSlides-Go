@@ -863,6 +863,12 @@ components:
           maxLength: 4096
           pattern: '^\s*(?:https?://[^/\s?#]+(?:[/?#]\S*)?)?\s*$'
         text_color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
+        accent_color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
+        visualization_palette:
+          type: array
+          minItems: 3
+          maxItems: 8
+          items: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
     CreatePresentationRequest:
       type: object
       required: [title]
@@ -1415,7 +1421,7 @@ components:
           $ref: '#/components/schemas/PublicLivePresentation'
     PublicLivePresentation:
       type: object
-      required: [title, background_color, background_image_url, music_url, text_color]
+      required: [title, background_color, background_image_url, music_url, text_color, accent_color, visualization_palette]
       additionalProperties: false
       description: Public, display-only presentation metadata safe for participant theming and presentation audio.
       properties:
@@ -1424,6 +1430,12 @@ components:
         background_image_url: { type: string }
         music_url: { type: string, maxLength: 4096 }
         text_color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
+        accent_color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
+        visualization_palette:
+          type: array
+          minItems: 3
+          maxItems: 8
+          items: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
     ParticipantLiveSnapshot:
       type: object
       required: [role, session, participant, has_responded, participant_count, active_participant_count, has_scoring, last_event_id]

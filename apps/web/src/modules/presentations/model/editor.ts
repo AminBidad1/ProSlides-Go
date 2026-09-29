@@ -66,6 +66,8 @@ export interface EditorPresentation {
   background_color: string;
   background_image_url: string;
   text_color: string;
+  accent_color: string;
+  visualization_palette: string[];
   music_url: string;
   background: { color: string; image: string; text_color: string };
   slides: EditorSlide[];

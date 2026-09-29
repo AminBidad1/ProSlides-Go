@@ -60,6 +60,8 @@ const managerSnapshot: LiveSnapshot = {
     background_image_url: "",
     music_url: "",
     text_color: "#ffffff",
+    accent_color: "#8b5cf6",
+    visualization_palette: ["#8b5cf6", "#06b6d4", "#10b981"],
   },
   session: {
     id: "session-1",

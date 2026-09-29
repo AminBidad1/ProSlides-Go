@@ -440,6 +440,8 @@ function QuestionEditor({
           quizBackground={quiz.background_color}
           quizBackgroundImage={quiz.background_image_url}
           textColor={quiz.text_color}
+          accentColor={quiz.accent_color}
+          visualizationPalette={quiz.visualization_palette}
           isFullSize={
             !showSidebar && !showDesignPanel && !showAudioPanel
           }

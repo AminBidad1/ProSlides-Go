@@ -1,4 +1,11 @@
-import { presentationTheme } from "../../../../shared/styles/presentationTheme.ts";
+import {
+  DEFAULT_PRESENTATION_ACCENT,
+  DEFAULT_VISUALIZATION_PALETTE,
+  findPresentationThemePreset,
+  normalizeVisualizationPalette,
+  presentationTheme,
+  type PresentationThemePreset,
+} from "../../../../shared/styles/presentationTheme.ts";
 import type { EditorPresentation } from "../../model/editor.ts";
 
 export const DESIGN_LIMITS = {
@@ -14,6 +21,8 @@ export type DesignDraft = {
   backgroundColor: string;
   backgroundImageUrl: string;
   textColor: string;
+  accentColor: string;
+  visualizationPalette: string[];
 };
 
 type DesignDraftState = {
@@ -26,11 +35,14 @@ type DesignDraftAction =
   | { type: "saved"; draft: DesignDraft }
   | { type: "background-color"; value: string }
   | { type: "background-image"; value: string }
-  | { type: "text-color"; value: string };
+  | { type: "text-color"; value: string }
+  | { type: "accent-color"; value: string }
+  | { type: "visualization-palette"; value: string[] }
+  | { type: "apply-preset"; preset: PresentationThemePreset };
 
 type DesignValidationIssue = {
   code: string;
-  field: "background_color" | "background_image" | "text_color";
+  field: "background_color" | "background_image" | "text_color" | "accent_color" | "visualization_palette";
   message: string;
 };
 
@@ -71,6 +83,14 @@ export const createDesignDraft = (
       presentation.background_image_url || "",
     ).trim(),
     textColor: readableForeground(backgroundColor, requestedText),
+    accentColor: normalizeHex(
+      presentation.accent_color,
+      DEFAULT_PRESENTATION_ACCENT,
+    ),
+    visualizationPalette: normalizeVisualizationPalette(
+      presentation.visualization_palette,
+      DEFAULT_VISUALIZATION_PALETTE,
+    ),
   };
 };
 
@@ -107,6 +127,27 @@ export function designDraftReducer(
       return patchDraft(state, {
         backgroundImageUrl: action.value.trim(),
       });
+    case "accent-color":
+      return patchDraft(state, {
+        accentColor: normalizeHex(
+          action.value,
+          state.draft.accentColor,
+        ),
+      });
+    case "visualization-palette":
+      return patchDraft(state, {
+        visualizationPalette: normalizeVisualizationPalette(
+          action.value,
+          state.draft.visualizationPalette,
+        ),
+      });
+    case "apply-preset":
+      return patchDraft(state, {
+        backgroundColor: action.preset.background,
+        textColor: action.preset.foreground,
+        accentColor: action.preset.accent,
+        visualizationPalette: [...action.preset.palette],
+      });
     case "text-color": {
       const requested = normalizeHex(
         action.value,
@@ -132,7 +173,10 @@ export const designDraftEquals = (
   left.revision === right.revision &&
   left.backgroundColor === right.backgroundColor &&
   left.backgroundImageUrl === right.backgroundImageUrl &&
-  left.textColor === right.textColor;
+  left.textColor === right.textColor &&
+  left.accentColor === right.accentColor &&
+  left.visualizationPalette.length === right.visualizationPalette.length &&
+  left.visualizationPalette.every((color, index) => color === right.visualizationPalette[index]);
 
 export const validateDesignDraft = (
   draft: DesignDraft,
@@ -144,6 +188,26 @@ export const validateDesignDraft = (
       code: "background_color_invalid",
       field: "background_color",
       message: "رنگ پس‌زمینه معتبر نیست.",
+    });
+  }
+
+  if (!HEX_COLOR.test(draft.accentColor)) {
+    issues.push({
+      code: "accent_color_invalid",
+      field: "accent_color",
+      message: "رنگ تأکیدی معتبر نیست.",
+    });
+  }
+
+  if (
+    draft.visualizationPalette.length < 3 ||
+    draft.visualizationPalette.length > 8 ||
+    draft.visualizationPalette.some((color) => !HEX_COLOR.test(color))
+  ) {
+    issues.push({
+      code: "visualization_palette_invalid",
+      field: "visualization_palette",
+      message: "پالت نمودار باید بین ۳ تا ۸ رنگ معتبر داشته باشد.",
     });
   }
 
@@ -185,6 +249,19 @@ export const designDraftToUpdate = (
     background_color: draft.backgroundColor,
     background_image_url: draft.backgroundImageUrl,
     text_color: draft.textColor,
+    accent_color: draft.accentColor,
+    visualization_palette: draft.visualizationPalette,
     revision: draft.revision,
   };
 };
+
+
+export const activeDesignPreset = (
+  draft: DesignDraft,
+): PresentationThemePreset | null =>
+  findPresentationThemePreset({
+    background: draft.backgroundColor,
+    foreground: draft.textColor,
+    accent: draft.accentColor,
+    palette: draft.visualizationPalette,
+  });

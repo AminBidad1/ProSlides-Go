@@ -23,6 +23,8 @@ type EditorCanvasProps = {
   quizBackground?: string;
   quizBackgroundImage?: string;
   textColor?: string;
+  accentColor?: string;
+  visualizationPalette?: string[];
   isFullSize?: boolean;
 };
 
@@ -92,6 +94,8 @@ function ContentCanvasAdapter(props: EditorCanvasProps) {
       quizBackground={props.quizBackground}
       quizBackgroundImage={props.quizBackgroundImage}
       textColor={props.textColor}
+      accentColor={props.accentColor}
+      visualizationPalette={props.visualizationPalette}
     />
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { getColorForUser } from "../../../../shared/lib/playerColor.ts";
+import { presentationVisualizationColor } from "../../../../shared/styles/presentationTheme.ts";
 import { WordCloudView } from "../../../../shared/ui/WordCloudView.tsx";
 import {
   findSlideIndexById,
@@ -375,7 +375,7 @@ export function ManagerPickAnswerQuestion({
                       showResults && totalVotes > 0
                         ? Math.max(6, (count / totalVotes) * 100)
                         : 0;
-                    const color = getColorForUser(option.option_id);
+                    const color = presentationVisualizationColor(option.option_id);
 
                     return (
                       <article

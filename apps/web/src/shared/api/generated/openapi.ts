@@ -744,6 +744,8 @@ export interface components {
             background_image_url?: string;
             music_url?: string;
             text_color?: string;
+            accent_color?: string;
+            visualization_palette?: string[];
         } & {
             [key: string]: unknown;
         };
@@ -1131,6 +1133,8 @@ export interface components {
             background_image_url: string;
             music_url: string;
             text_color: string;
+            accent_color: string;
+            visualization_palette: string[];
         };
         ParticipantLiveSnapshot: {
             /** @enum {string} */

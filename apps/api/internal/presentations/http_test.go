@@ -353,6 +353,9 @@ func TestUpdatePresentationRejectsInvalidKnownSettings(t *testing.T) {
 	for _, body := range []string{
 		`{"settings":{"background_color":"#fff"}}`,
 		`{"settings":{"text_color":"white"}}`,
+		`{"settings":{"accent_color":"red"}}`,
+		`{"settings":{"visualization_palette":["#112233","#445566"]}}`,
+		`{"settings":{"visualization_palette":["#112233","#445566","invalid"]}}`,
 		`{"settings":{"background_image_url":"javascript:alert(1)"}}`,
 		`{"settings":{"music_url":"javascript:alert(1)"}}`,
 	} {

@@ -9,7 +9,10 @@ import {
 } from "lucide-react";
 
 import { ApiError } from "../../../../shared/api/http.ts";
-import { presentationTheme } from "../../../../shared/styles/presentationTheme.ts";
+import {
+  PRESENTATION_THEME_PRESETS,
+  presentationTheme,
+} from "../../../../shared/styles/presentationTheme.ts";
 import Notice, {
   type NoticeTone,
 } from "../../../../shared/ui/Notice.tsx";
@@ -19,6 +22,7 @@ import { quizService } from "../../api/presentationRepository.ts";
 import type { EditorPresentation } from "../../model/editor.ts";
 import {
   DESIGN_LIMITS,
+  activeDesignPreset,
   designDraftToUpdate,
   validateDesignDraft,
 } from "../model/designDraft.ts";
@@ -39,20 +43,6 @@ type ConfirmState =
   | { kind: "discard" }
   | { kind: "reload-conflict" };
 
-const BACKGROUND_PRESETS = [
-  { label: "سفید", value: "#ffffff" },
-  { label: "خاکستری روشن", value: "#f3f4f6" },
-  { label: "آبی روشن", value: "#eff6ff" },
-  { label: "نعنایی", value: "#f0fdf4" },
-  { label: "یاسی", value: "#f5f3ff" },
-  { label: "سرمه‌ای", value: "#312e81" },
-] as const;
-
-const TEXT_PRESETS = [
-  { label: "تیره", value: "#0f172a" },
-  { label: "روشن", value: "#ffffff" },
-] as const;
-
 export default function DesignInspector({
   quizId,
   onClose,
@@ -69,6 +59,9 @@ export default function DesignInspector({
     setBackgroundColor,
     setBackgroundImageUrl,
     setTextColor,
+    setAccentColor,
+    setVisualizationPalette,
+    applyPreset,
   } = useRequiredDesignDraft();
 
   const [saving, setSaving] = useState(false);
@@ -93,12 +86,21 @@ export default function DesignInspector({
           text_color: draft.textColor,
         },
         text_color: draft.textColor,
+        accent_color: draft.accentColor,
+        visualization_palette: draft.visualizationPalette,
       }),
     [
       draft.backgroundColor,
       draft.backgroundImageUrl,
       draft.textColor,
+      draft.accentColor,
+      draft.visualizationPalette,
     ],
+  );
+
+  const selectedPreset = useMemo(
+    () => activeDesignPreset(draft),
+    [draft],
   );
 
   useEffect(() => {
@@ -196,7 +198,7 @@ export default function DesignInspector({
           <div>
             <h2 className="text-base font-bold">طراحی ارائه</h2>
             <p className="mt-1 text-xs leading-5 text-content-muted">
-              پس‌زمینه و رنگ متن در همه اسلایدها و اجرای زنده استفاده می‌شود.
+              تم، رنگ متن و رنگ‌های نمودار در پیش‌نمایش و اجرای زنده یکسان استفاده می‌شوند.
             </p>
           </div>
           <Button
@@ -233,133 +235,175 @@ export default function DesignInspector({
           )}
 
           <div className="space-y-7">
-            <section aria-labelledby="design-background-heading">
+            <section aria-labelledby="design-theme-heading">
               <div>
                 <h3
-                  id="design-background-heading"
+                  id="design-theme-heading"
                   className="text-sm font-semibold"
                 >
-                  رنگ پایه پس‌زمینه
+                  تم آماده
                 </h3>
                 <p className="mt-1 text-xs leading-5 text-content-muted">
-                  این رنگ هنگام نبودن تصویر و همچنین برای محاسبه کنتراست متن استفاده می‌شود.
+                  یک پایه هماهنگ انتخاب کنید؛ سپس در صورت نیاز رنگ‌ها را دقیق‌تر تنظیم کنید.
                 </p>
               </div>
 
               <div className="mt-3 grid grid-cols-2 gap-2">
-                {BACKGROUND_PRESETS.map((preset) => (
-                  <button
-                    key={preset.value}
-                    type="button"
-                    aria-pressed={
-                      draft.backgroundColor === preset.value
-                    }
-                    disabled={saving || conflictPending}
-                    onClick={() =>
-                      setBackgroundColor(preset.value)
-                    }
-                    className="rounded-panel border border-border-subtle bg-surface p-2 text-start transition hover:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus aria-pressed:border-brand aria-pressed:ring-2 aria-pressed:ring-focus/30 disabled:opacity-60"
-                  >
-                    <span
-                      className="block h-10 w-full rounded-control border border-border-subtle"
-                      style={{ backgroundColor: preset.value }}
-                      aria-hidden="true"
-                    />
-                    <span className="mt-1.5 block text-xs font-bold">
-                      {preset.label}
-                    </span>
-                  </button>
-                ))}
+                {PRESENTATION_THEME_PRESETS.map((preset) => {
+                  const selected = selectedPreset?.id === preset.id;
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      aria-pressed={selected}
+                      disabled={saving || conflictPending}
+                      onClick={() => applyPreset(preset)}
+                      className="overflow-hidden rounded-panel border border-border-subtle bg-surface text-start transition hover:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus aria-pressed:border-brand aria-pressed:ring-2 aria-pressed:ring-focus/30 disabled:opacity-60"
+                    >
+                      <span
+                        className="block p-2.5"
+                        style={{
+                          background: preset.background,
+                          color: preset.foreground,
+                        }}
+                      >
+                        <span className="block truncate text-xs font-black">
+                          {preset.label}
+                        </span>
+                        <span className="mt-2 flex gap-1" aria-hidden="true">
+                          {preset.palette.slice(0, 5).map((color) => (
+                            <span
+                              key={color}
+                              className="h-2 flex-1 rounded-full"
+                              style={{ backgroundColor: color }}
+                            />
+                          ))}
+                        </span>
+                      </span>
+                      <span className="block px-2.5 py-2 text-[11px] leading-5 text-content-muted">
+                        {preset.description}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
-
-              <label
-                htmlFor="design-background-custom"
-                className="mt-3 flex items-center justify-between gap-3 rounded-panel border border-border-subtle bg-canvas p-3"
-              >
-                <span>
-                  <span className="block text-sm font-medium">
-                    رنگ سفارشی
-                  </span>
-                  <span
-                    dir="ltr"
-                    className="mt-1 block font-mono text-xs text-content-muted"
-                  >
-                    {draft.backgroundColor}
-                  </span>
-                </span>
-                <input
-                  id="design-background-custom"
-                  type="color"
-                  value={draft.backgroundColor}
-                  disabled={saving || conflictPending}
-                  onChange={(event) =>
-                    setBackgroundColor(event.target.value)
-                  }
-                  className="h-10 w-14 cursor-pointer rounded-control border border-border-subtle bg-surface p-1 disabled:cursor-not-allowed"
-                />
-              </label>
             </section>
 
-            <section aria-labelledby="design-text-heading">
+            <section aria-labelledby="design-colors-heading">
               <div>
                 <h3
-                  id="design-text-heading"
+                  id="design-colors-heading"
                   className="text-sm font-semibold"
                 >
-                  رنگ متن
+                  رنگ‌های اصلی
                 </h3>
                 <p className="mt-1 text-xs leading-5 text-content-muted">
-                  اگر انتخاب شما کنتراست کافی نداشته باشد، ویرایشگر آن را به
-                  نزدیک‌ترین رنگ خوانا اصلاح می‌کند.
+                  رنگ متن همیشه با حداقل کنتراست خوانا نگه داشته می‌شود؛ انتخاب نامناسب به نزدیک‌ترین رنگ امن اصلاح می‌شود.
                 </p>
               </div>
 
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                {TEXT_PRESETS.map((preset) => (
-                  <button
-                    key={preset.value}
-                    type="button"
-                    aria-pressed={draft.textColor === preset.value}
-                    disabled={saving || conflictPending}
-                    onClick={() => setTextColor(preset.value)}
-                    className="flex items-center gap-2 rounded-panel border border-border-subtle bg-surface p-3 text-sm font-bold transition hover:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus aria-pressed:border-brand aria-pressed:ring-2 aria-pressed:ring-focus/30 disabled:opacity-60"
+              <div className="mt-3 space-y-2">
+                {[
+                  {
+                    id: "design-background-custom",
+                    label: "پس‌زمینه",
+                    value: draft.backgroundColor,
+                    onChange: setBackgroundColor,
+                  },
+                  {
+                    id: "design-text-custom",
+                    label: "متن",
+                    value: draft.textColor,
+                    onChange: setTextColor,
+                  },
+                  {
+                    id: "design-accent-custom",
+                    label: "رنگ تأکیدی",
+                    value: draft.accentColor,
+                    onChange: setAccentColor,
+                  },
+                ].map((field) => (
+                  <label
+                    key={field.id}
+                    htmlFor={field.id}
+                    className="flex items-center justify-between gap-3 rounded-panel border border-border-subtle bg-canvas p-3"
                   >
-                    <span
-                      className="size-6 rounded-full border border-border-subtle"
-                      style={{ backgroundColor: preset.value }}
-                      aria-hidden="true"
+                    <span>
+                      <span className="block text-sm font-medium">
+                        {field.label}
+                      </span>
+                      <span
+                        dir="ltr"
+                        className="mt-1 block font-mono text-xs text-content-muted"
+                      >
+                        {field.value}
+                      </span>
+                    </span>
+                    <input
+                      id={field.id}
+                      type="color"
+                      value={field.value}
+                      disabled={saving || conflictPending}
+                      onChange={(event) => field.onChange(event.target.value)}
+                      className="h-10 w-14 cursor-pointer rounded-control border border-border-subtle bg-surface p-1 disabled:cursor-not-allowed"
                     />
-                    {preset.label}
-                  </button>
+                  </label>
                 ))}
               </div>
 
-              <label
-                htmlFor="design-text-custom"
-                className="mt-3 flex items-center justify-between gap-3 rounded-panel border border-border-subtle bg-canvas p-3"
-              >
-                <span>
-                  <span className="block text-sm font-medium">
-                    رنگ متن سفارشی
-                  </span>
-                  <span
-                    dir="ltr"
-                    className="mt-1 block font-mono text-xs text-content-muted"
-                  >
-                    {draft.textColor}
-                  </span>
+              <div className="mt-2 flex items-center justify-between rounded-control bg-canvas px-3 py-2 text-xs">
+                <span className="text-content-muted">کنتراست متن و پس‌زمینه</span>
+                <span
+                  dir="ltr"
+                  className="font-mono font-bold text-success-ink"
+                >
+                  {theme.contrastRatio.toFixed(2)}:1
                 </span>
-                <input
-                  id="design-text-custom"
-                  type="color"
-                  value={draft.textColor}
-                  disabled={saving || conflictPending}
-                  onChange={(event) =>
-                    setTextColor(event.target.value)
-                  }
-                  className="h-10 w-14 cursor-pointer rounded-control border border-border-subtle bg-surface p-1 disabled:cursor-not-allowed"
-                />
-              </label>
+              </div>
+            </section>
+
+            <section aria-labelledby="design-palette-heading">
+              <div>
+                <h3
+                  id="design-palette-heading"
+                  className="text-sm font-semibold"
+                >
+                  رنگ‌های نمودار و پاسخ‌ها
+                </h3>
+                <p className="mt-1 text-xs leading-5 text-content-muted">
+                  این پالت در نمودار گزینه‌ها و ابر واژه روی Stage به‌صورت پایدار استفاده می‌شود.
+                </p>
+              </div>
+
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {draft.visualizationPalette.map((color, index) => (
+                  <label
+                    key={`${index}-${color}`}
+                    className="rounded-control border border-border-subtle bg-canvas p-2 text-center"
+                  >
+                    <span className="sr-only">
+                      رنگ نمودار {index + 1}
+                    </span>
+                    <input
+                      type="color"
+                      value={color}
+                      disabled={saving || conflictPending}
+                      onChange={(event) => {
+                        const nextPalette = [...draft.visualizationPalette];
+                        nextPalette[index] = event.target.value;
+                        setVisualizationPalette(nextPalette);
+                      }}
+                      className="h-9 w-full cursor-pointer rounded-control border border-border-subtle bg-surface p-1 disabled:cursor-not-allowed"
+                    />
+                    <span
+                      dir="ltr"
+                      className="mt-1 block truncate font-mono text-[10px] text-content-muted"
+                    >
+                      {color}
+                    </span>
+                  </label>
+                ))}
+              </div>
             </section>
 
             <section aria-labelledby="design-image-heading">
@@ -432,14 +476,35 @@ export default function DesignInspector({
               >
                 <div className="flex items-center gap-2 text-xs font-bold text-[color:var(--live-muted)]">
                   <Palette className="size-4" aria-hidden="true" />
-                  همان theme مورد استفاده در preview و اجرای زنده
+                  پیش‌نمایش واقعی تم روی Stage
                 </div>
                 <p className="mt-4 text-xl font-black">
                   عنوان نمونه ارائه
                 </p>
                 <p className="mt-2 text-sm leading-6 text-[color:var(--live-muted)]">
-                  این متن برای بررسی خوانایی رنگ‌ها نمایش داده می‌شود.
+                  این متن برای بررسی خوانایی از فاصله و روی پروژکتور نمایش داده می‌شود.
                 </p>
+                <div className="mt-4 flex items-end gap-2" aria-hidden="true">
+                  {theme.palette.slice(0, 6).map((color, index) => (
+                    <span
+                      key={color + index}
+                      className="flex-1 rounded-t-md"
+                      style={{
+                        height: `${18 + index * 5}px`,
+                        backgroundColor: color,
+                      }}
+                    />
+                  ))}
+                </div>
+                <div
+                  className="mt-3 inline-flex rounded-full border border-[color:var(--live-border)] px-3 py-1.5 text-xs font-black"
+                  style={{
+                    backgroundColor: "var(--live-accent-soft)",
+                    color: "var(--live-fg)",
+                  }}
+                >
+                  رنگ تأکیدی
+                </div>
               </div>
             </section>
 

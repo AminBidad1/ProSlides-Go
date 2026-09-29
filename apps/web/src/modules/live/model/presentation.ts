@@ -13,6 +13,8 @@ export interface LivePresentationModel {
   access_code: string;
   background: LivePresentationBackground;
   music_url: string;
+  accent_color?: string;
+  visualization_palette?: string[];
   slides: Array<LegacyLiveSlide | null>;
   text_color?: string;
 }

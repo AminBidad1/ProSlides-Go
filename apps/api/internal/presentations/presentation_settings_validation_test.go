@@ -11,6 +11,8 @@ func TestValidatePresentationSettingsAcceptsKnownValues(t *testing.T) {
 		"background_color":"#312e81",
 		"background_image_url":"https://example.com/background.jpg",
 		"text_color":"#ffffff",
+		"accent_color":"#8b5cf6",
+		"visualization_palette":["#8b5cf6","#06b6d4","#10b981"],
 		"music_url":"https://example.com/music.mp3"
 	}`)
 
@@ -23,6 +25,10 @@ func TestValidatePresentationSettingsRejectsInvalidKnownValues(t *testing.T) {
 	cases := []string{
 		`{"background_color":"banana"}`,
 		`{"text_color":"#fff"}`,
+		`{"accent_color":"red"}`,
+		`{"visualization_palette":[]}`,
+		`{"visualization_palette":["#112233","#445566"]}`,
+		`{"visualization_palette":["#112233","#445566","nope"]}`,
 		`{"background_image_url":"javascript:alert(1)"}`,
 		`{"background_image_url":123}`,
 		`{"background_color":null}`,

@@ -14,6 +14,8 @@ type WordCloudCanvasProps = {
   quizBackground?: string;
   quizBackgroundImage?: string;
   textColor?: string;
+  accentColor?: string;
+  visualizationPalette?: string[];
 };
 
 const previewTerms = [
@@ -35,6 +37,8 @@ export default function WordCloudCanvas({
   quizBackground,
   quizBackgroundImage,
   textColor = "#111827",
+  accentColor = "#8b5cf6",
+  visualizationPalette,
 }: WordCloudCanvasProps) {
   const designController = useOptionalDesignDraft();
   const controller = useOptionalWordCloudDraft();
@@ -54,11 +58,18 @@ export default function WordCloudCanvas({
           text_color: designController?.draft.textColor ?? textColor,
         },
         text_color: designController?.draft.textColor ?? textColor,
+        accent_color: designController?.draft.accentColor ?? accentColor,
+        visualization_palette:
+          designController?.draft.visualizationPalette ?? visualizationPalette,
       }),
     [
       designController?.draft.backgroundColor,
       designController?.draft.backgroundImageUrl,
       designController?.draft.textColor,
+      designController?.draft.accentColor,
+      designController?.draft.visualizationPalette,
+      accentColor,
+      visualizationPalette,
       quizBackground,
       quizBackgroundImage,
       textColor,

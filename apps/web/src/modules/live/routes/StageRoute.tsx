@@ -2,13 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import QRCode from "qrcode";
 
-import { getColorForUser } from "../../../shared/lib/playerColor.ts";
 import {
   choiceOptionProjectionTextClass,
   choiceProjectionGridClass,
   questionProjectionTextClass,
 } from "../model/projectionLayout.ts";
-import { presentationTheme } from "../../../shared/styles/presentationTheme.ts";
+import {
+  presentationTheme,
+  presentationVisualizationColor,
+} from "../../../shared/styles/presentationTheme.ts";
 import { WordCloudView } from "../../../shared/ui/WordCloudView.tsx";
 import type {
   StageRankingEntry,
@@ -333,6 +335,9 @@ function StageActivity({
               const count = counts.get(index) ?? 0;
               const percentage = total > 0 ? (count / total) * 100 : 0;
               const correct = revealed && option.answer === true;
+              const visualizationColor = presentationVisualizationColor(
+                option.option_id ?? index,
+              );
               return (
                 <article
                   key={String(option.option_id ?? index)}
@@ -375,6 +380,9 @@ function StageActivity({
                           style={{
                             width:
                               Math.max(0, Math.min(100, percentage)) + "%",
+                            backgroundColor: isPoll
+                              ? visualizationColor
+                              : undefined,
                           }}
                         />
                       </div>
@@ -382,7 +390,7 @@ function StageActivity({
                   ) : (
                     <div
                       className="mx-auto mt-auto h-2 w-2/3 rounded-full"
-                      style={{ backgroundColor: getColorForUser(index) }}
+                      style={{ backgroundColor: visualizationColor }}
                       aria-hidden="true"
                     />
                   )}
@@ -567,6 +575,8 @@ export default function StageRoute() {
       text_color: snapshot.presentation.text_color,
     },
     text_color: snapshot.presentation.text_color,
+    accent_color: snapshot.presentation.accent_color,
+    visualization_palette: snapshot.presentation.visualization_palette,
   });
   const item = normalizeLiveSlide(snapshot.active_item, snapshot.session);
 

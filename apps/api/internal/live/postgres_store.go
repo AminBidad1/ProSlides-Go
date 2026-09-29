@@ -119,12 +119,32 @@ func (s *PostgresStore) ResolveSession(c context.Context, code string) (SessionL
 			WHEN (COALESCE(ls.presentation_settings_snapshot,p.settings)->>'text_color') ~ '^#[0-9A-Fa-f]{6}$'
 			THEN COALESCE(ls.presentation_settings_snapshot,p.settings)->>'text_color'
 			ELSE '#ffffff'
+		END,
+		CASE
+			WHEN (COALESCE(ls.presentation_settings_snapshot,p.settings)->>'accent_color') ~ '^#[0-9A-Fa-f]{6}$'
+			THEN COALESCE(ls.presentation_settings_snapshot,p.settings)->>'accent_color'
+			ELSE '#8b5cf6'
+		END,
+		CASE
+			WHEN CASE
+				WHEN jsonb_typeof(COALESCE(ls.presentation_settings_snapshot,p.settings)->'visualization_palette')='array'
+				THEN jsonb_array_length(COALESCE(ls.presentation_settings_snapshot,p.settings)->'visualization_palette') BETWEEN 3 AND 8
+					AND NOT EXISTS (
+						SELECT 1
+						FROM jsonb_array_elements_text(COALESCE(ls.presentation_settings_snapshot,p.settings)->'visualization_palette') AS palette(value)
+						WHERE palette.value !~ '^#[0-9A-Fa-f]{6}$'
+					)
+				ELSE false
+			END
+			THEN COALESCE(ls.presentation_settings_snapshot,p.settings)->'visualization_palette'
+			ELSE '["#8b5cf6","#06b6d4","#10b981","#f59e0b","#ec4899","#3b82f6"]'::jsonb
 		END
 		FROM live_sessions ls JOIN presentations p ON p.id=ls.presentation_id
 		WHERE ls.join_code=$1 AND ls.state<>'ended' LIMIT 1`, code).Scan(
 		&out.SessionID, &out.PresentationID, &out.Presentation.Title,
 		&out.Presentation.BackgroundColor, &out.Presentation.BackgroundImageURL,
-		&out.Presentation.MusicURL, &out.Presentation.TextColor)
+		&out.Presentation.MusicURL, &out.Presentation.TextColor,
+		&out.Presentation.AccentColor, &out.Presentation.VisualizationPalette)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return out, ErrNotFound
 	}
@@ -709,6 +729,25 @@ func (s *PostgresStore) ManagerSnapshot(c context.Context, session, manager stri
 			THEN COALESCE(l.presentation_settings_snapshot,p.settings)->>'text_color'
 			ELSE '#ffffff'
 		END,
+		CASE
+			WHEN (COALESCE(l.presentation_settings_snapshot,p.settings)->>'accent_color') ~ '^#[0-9A-Fa-f]{6}$'
+			THEN COALESCE(l.presentation_settings_snapshot,p.settings)->>'accent_color'
+			ELSE '#8b5cf6'
+		END,
+		CASE
+			WHEN CASE
+				WHEN jsonb_typeof(COALESCE(l.presentation_settings_snapshot,p.settings)->'visualization_palette')='array'
+				THEN jsonb_array_length(COALESCE(l.presentation_settings_snapshot,p.settings)->'visualization_palette') BETWEEN 3 AND 8
+					AND NOT EXISTS (
+						SELECT 1
+						FROM jsonb_array_elements_text(COALESCE(l.presentation_settings_snapshot,p.settings)->'visualization_palette') AS palette(value)
+						WHERE palette.value !~ '^#[0-9A-Fa-f]{6}$'
+					)
+				ELSE false
+			END
+			THEN COALESCE(l.presentation_settings_snapshot,p.settings)->'visualization_palette'
+			ELSE '["#8b5cf6","#06b6d4","#10b981","#f59e0b","#ec4899","#3b82f6"]'::jsonb
+		END,
 		(SELECT count(*)::int FROM participants WHERE session_id=l.id),
 		(SELECT count(*)::int FROM participants active WHERE active.session_id=l.id AND active.active_sse_connections>0),
 		CASE
@@ -731,7 +770,8 @@ func (s *PostgresStore) ManagerSnapshot(c context.Context, session, manager stri
 		&x.Session.ID, &x.Session.PresentationID, &x.Session.HostID, &x.Session.JoinCode, &x.Session.State, &x.Session.StateVersion, &x.Session.ActiveItemID, &x.Session.ActivityPhase, &x.Session.StageView, &x.Session.EndsAt, &x.Session.RemainingSeconds,
 		&x.Presentation.Title, &x.Presentation.BackgroundColor,
 		&x.Presentation.BackgroundImageURL, &x.Presentation.MusicURL,
-		&x.Presentation.TextColor, &x.ParticipantCount, &x.ActiveParticipantCount, &x.ActiveActivityResponseCount, &x.HasScoring,
+		&x.Presentation.TextColor, &x.Presentation.AccentColor,
+		&x.Presentation.VisualizationPalette, &x.ParticipantCount, &x.ActiveParticipantCount, &x.ActiveActivityResponseCount, &x.HasScoring,
 		&x.LastEventID, &x.ActiveItem,
 	)
 	if errors.Is(e, pgx.ErrNoRows) {
@@ -883,6 +923,25 @@ func (s *PostgresStore) StageSnapshot(c context.Context, session, manager string
 			THEN COALESCE(l.presentation_settings_snapshot,p.settings)->>'text_color'
 			ELSE '#ffffff'
 		END,
+		CASE
+			WHEN (COALESCE(l.presentation_settings_snapshot,p.settings)->>'accent_color') ~ '^#[0-9A-Fa-f]{6}$'
+			THEN COALESCE(l.presentation_settings_snapshot,p.settings)->>'accent_color'
+			ELSE '#8b5cf6'
+		END,
+		CASE
+			WHEN CASE
+				WHEN jsonb_typeof(COALESCE(l.presentation_settings_snapshot,p.settings)->'visualization_palette')='array'
+				THEN jsonb_array_length(COALESCE(l.presentation_settings_snapshot,p.settings)->'visualization_palette') BETWEEN 3 AND 8
+					AND NOT EXISTS (
+						SELECT 1
+						FROM jsonb_array_elements_text(COALESCE(l.presentation_settings_snapshot,p.settings)->'visualization_palette') AS palette(value)
+						WHERE palette.value !~ '^#[0-9A-Fa-f]{6}$'
+					)
+				ELSE false
+			END
+			THEN COALESCE(l.presentation_settings_snapshot,p.settings)->'visualization_palette'
+			ELSE '["#8b5cf6","#06b6d4","#10b981","#f59e0b","#ec4899","#3b82f6"]'::jsonb
+		END,
 		(SELECT count(*)::int FROM participants counted WHERE counted.session_id=l.id),
 		(SELECT count(*)::int FROM participants active WHERE active.session_id=l.id AND active.active_sse_connections>0),
 		EXISTS(
@@ -902,7 +961,8 @@ func (s *PostgresStore) StageSnapshot(c context.Context, session, manager string
 		&x.Session.EndsAt, &x.Session.RemainingSeconds, &x.JoinCode,
 		&x.Presentation.Title, &x.Presentation.BackgroundColor,
 		&x.Presentation.BackgroundImageURL, &x.Presentation.MusicURL,
-		&x.Presentation.TextColor, &x.ParticipantCount, &x.ActiveParticipantCount, &x.HasScoring,
+		&x.Presentation.TextColor, &x.Presentation.AccentColor,
+		&x.Presentation.VisualizationPalette, &x.ParticipantCount, &x.ActiveParticipantCount, &x.HasScoring,
 		&x.LastEventID, &x.ActiveItem,
 	)
 	if errors.Is(e, pgx.ErrNoRows) {

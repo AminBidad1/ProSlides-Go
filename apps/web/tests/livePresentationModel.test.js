@@ -31,6 +31,15 @@ test("live presentation mapper normalizes unknown settings into domain strings",
       text_color: "#111827",
     },
     music_url: "",
+    accent_color: "#8b5cf6",
+    visualization_palette: [
+      "#8b5cf6",
+      "#06b6d4",
+      "#10b981",
+      "#f59e0b",
+      "#ec4899",
+      "#3b82f6",
+    ],
     slides: [],
     text_color: "#111827",
   });
@@ -46,6 +55,8 @@ test("live presentation mapper preserves validated string settings", () => {
       background_image_url: "https://example.test/bg.jpg",
       text_color: "#ffffff",
       music_url: "https://example.test/music.mp3",
+      accent_color: "#22d3ee",
+      visualization_palette: ["#22d3ee", "#34d399", "#fbbf24"],
     },
     slides: [],
   };
@@ -59,6 +70,12 @@ test("live presentation mapper preserves validated string settings", () => {
   });
   assert.equal(model.music_url, "https://example.test/music.mp3");
   assert.equal(model.text_color, "#ffffff");
+  assert.equal(model.accent_color, "#22d3ee");
+  assert.deepEqual(model.visualization_palette, [
+    "#22d3ee",
+    "#34d399",
+    "#fbbf24",
+  ]);
 });
 
 
@@ -71,6 +88,8 @@ test("manager frozen Session items are sufficient when mutable Presentation load
       background_image_url: "",
       music_url: "",
       text_color: "#ffffff",
+      accent_color: "#8b5cf6",
+      visualization_palette: ["#8b5cf6", "#06b6d4", "#10b981"],
     },
     session: {
       id: "session-1",
@@ -121,6 +140,8 @@ test("manager projection uses frozen Session presentation metadata", () => {
       text_color: "#111827",
     },
     music_url: "",
+    accent_color: "#8b5cf6",
+    visualization_palette: ["#8b5cf6", "#06b6d4", "#10b981"],
     slides: [],
     text_color: "#111827",
   };
@@ -132,6 +153,8 @@ test("manager projection uses frozen Session presentation metadata", () => {
       background_image_url: "https://example.test/frozen-bg.jpg",
       music_url: "https://example.test/frozen.mp3",
       text_color: "#fedcba",
+      accent_color: "#f97316",
+      visualization_palette: ["#f97316", "#22d3ee", "#a78bfa"],
     },
     session: {
       id: "session-1",
@@ -163,4 +186,10 @@ test("manager projection uses frozen Session presentation metadata", () => {
   });
   assert.equal(projected.music_url, "https://example.test/frozen.mp3");
   assert.equal(projected.text_color, "#fedcba");
+  assert.equal(projected.accent_color, "#f97316");
+  assert.deepEqual(projected.visualization_palette, [
+    "#f97316",
+    "#22d3ee",
+    "#a78bfa",
+  ]);
 });

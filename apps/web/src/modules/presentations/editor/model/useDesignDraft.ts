@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer } from "react";
 
+import type { PresentationThemePreset } from "../../../../shared/styles/presentationTheme.ts";
 import type { EditorPresentation } from "../../model/editor.ts";
 import {
   createDesignDraft,
@@ -59,6 +60,18 @@ export function useDesignDraft(
     dispatch({ type: "text-color", value });
   }, []);
 
+  const setAccentColor = useCallback((value: string) => {
+    dispatch({ type: "accent-color", value });
+  }, []);
+
+  const setVisualizationPalette = useCallback((value: string[]) => {
+    dispatch({ type: "visualization-palette", value });
+  }, []);
+
+  const applyPreset = useCallback((preset: PresentationThemePreset) => {
+    dispatch({ type: "apply-preset", preset });
+  }, []);
+
   return {
     draft: state.draft,
     dirty,
@@ -67,5 +80,8 @@ export function useDesignDraft(
     setBackgroundColor,
     setBackgroundImageUrl,
     setTextColor,
+    setAccentColor,
+    setVisualizationPalette,
+    applyPreset,
   };
 }

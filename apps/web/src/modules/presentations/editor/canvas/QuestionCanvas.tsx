@@ -22,6 +22,8 @@ type QuestionCanvasProps = {
   quizBackground?: string;
   quizBackgroundImage?: string;
   textColor?: string;
+  accentColor?: string;
+  visualizationPalette?: string[];
   isFullSize?: boolean;
 };
 
@@ -70,6 +72,8 @@ export default function QuestionCanvas({
   quizBackground,
   quizBackgroundImage,
   textColor = "#111827",
+  accentColor = "#8b5cf6",
+  visualizationPalette,
   isFullSize = true,
 }: QuestionCanvasProps) {
   const designController = useOptionalDesignDraft();
@@ -97,11 +101,18 @@ export default function QuestionCanvas({
           text_color: designController?.draft.textColor ?? textColor,
         },
         text_color: designController?.draft.textColor ?? textColor,
+        accent_color: designController?.draft.accentColor ?? accentColor,
+        visualization_palette:
+          designController?.draft.visualizationPalette ?? visualizationPalette,
       }),
     [
       designController?.draft.backgroundColor,
       designController?.draft.backgroundImageUrl,
       designController?.draft.textColor,
+      designController?.draft.accentColor,
+      designController?.draft.visualizationPalette,
+      accentColor,
+      visualizationPalette,
       quizBackground,
       quizBackgroundImage,
       textColor,

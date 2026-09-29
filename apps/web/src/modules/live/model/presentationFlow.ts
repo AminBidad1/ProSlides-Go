@@ -40,6 +40,8 @@ export const EMPTY_PRESENTATION: LivePresentationModel = {
     text_color: "#111827",
   },
   music_url: "",
+  accent_color: "#8b5cf6",
+  visualization_palette: ["#8b5cf6", "#06b6d4", "#10b981", "#f59e0b", "#ec4899", "#3b82f6"],
   slides: [],
   text_color: "#111827",
 };

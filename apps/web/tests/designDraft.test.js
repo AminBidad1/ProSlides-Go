@@ -18,6 +18,8 @@ const presentation = {
   background_color: "#ffffff",
   background_image_url: "",
   text_color: "#ffffff",
+  accent_color: "#8b5cf6",
+  visualization_palette: ["#8b5cf6", "#06b6d4", "#10b981"],
   music_url: "",
   background: {
     color: "#ffffff",
@@ -98,4 +100,31 @@ test("design dirty comparison and serialization preserve presentation revision",
   assert.equal(update.revision, 9);
   assert.equal(update.background_color, "#312e81");
   assert.equal(update.text_color, "#ffffff");
+  assert.equal(update.accent_color, "#8b5cf6");
+  assert.deepEqual(update.visualization_palette, [
+    "#8b5cf6",
+    "#06b6d4",
+    "#10b981",
+  ]);
+});
+
+test("theme presets update background, foreground, accent and visualization palette together", async () => {
+  const { PRESENTATION_THEME_PRESETS } = await import(
+    "../src/shared/styles/presentationTheme.ts"
+  );
+  const draft = createDesignDraft(presentation);
+  const preset = PRESENTATION_THEME_PRESETS.find(
+    (item) => item.id === "deep-ocean",
+  );
+  assert.ok(preset);
+
+  const state = designDraftReducer(
+    { baseline: draft, draft },
+    { type: "apply-preset", preset },
+  );
+
+  assert.equal(state.draft.backgroundColor, preset.background);
+  assert.equal(state.draft.textColor, preset.foreground);
+  assert.equal(state.draft.accentColor, preset.accent);
+  assert.deepEqual(state.draft.visualizationPalette, [...preset.palette]);
 });

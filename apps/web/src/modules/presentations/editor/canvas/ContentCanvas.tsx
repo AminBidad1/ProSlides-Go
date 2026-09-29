@@ -13,6 +13,8 @@ type ContentCanvasProps = {
   quizBackground?: string;
   quizBackgroundImage?: string;
   textColor?: string;
+  accentColor?: string;
+  visualizationPalette?: string[];
 };
 
 function ContentPreviewImage({
@@ -58,6 +60,8 @@ export default function ContentCanvas({
   quizBackground,
   quizBackgroundImage,
   textColor = "#111827",
+  accentColor = "#8b5cf6",
+  visualizationPalette,
 }: ContentCanvasProps) {
   const designController = useOptionalDesignDraft();
   const controller = useOptionalContentDraft();
@@ -84,11 +88,18 @@ export default function ContentCanvas({
           text_color: designController?.draft.textColor ?? textColor,
         },
         text_color: designController?.draft.textColor ?? textColor,
+        accent_color: designController?.draft.accentColor ?? accentColor,
+        visualization_palette:
+          designController?.draft.visualizationPalette ?? visualizationPalette,
       }),
     [
       designController?.draft.backgroundColor,
       designController?.draft.backgroundImageUrl,
       designController?.draft.textColor,
+      designController?.draft.accentColor,
+      designController?.draft.visualizationPalette,
+      accentColor,
+      visualizationPalette,
       quizBackground,
       quizBackgroundImage,
       textColor,

@@ -1,3 +1,4 @@
+import { DEFAULT_PRESENTATION_ACCENT, DEFAULT_VISUALIZATION_PALETTE, normalizeVisualizationPalette } from "../../../shared/styles/presentationTheme.ts";
 import type {
   EditorPresentation,
   EditorSlide,
@@ -44,6 +45,14 @@ export const presentationToEditor = (presentation: PresentationDTO): EditorPrese
     typeof settings.text_color === "string"
       ? settings.text_color
       : "#111827";
+  const accentColor =
+    typeof settings.accent_color === "string"
+      ? settings.accent_color
+      : DEFAULT_PRESENTATION_ACCENT;
+  const visualizationPalette = normalizeVisualizationPalette(
+    settings.visualization_palette,
+    DEFAULT_VISUALIZATION_PALETTE,
+  );
   const musicURL =
     typeof settings.music_url === "string"
       ? settings.music_url
@@ -61,6 +70,8 @@ export const presentationToEditor = (presentation: PresentationDTO): EditorPrese
     background_color: backgroundColor,
     background_image_url: backgroundImage,
     text_color: textColor,
+    accent_color: accentColor,
+    visualization_palette: visualizationPalette,
     music_url: musicURL,
     background: {
       color: backgroundColor,
@@ -88,7 +99,7 @@ const queueSlideMutation = <T>(presentationID: string, slideID: string, mutation
   return next;
 };
 
-type PresentationUpdate = Partial<Pick<EditorPresentation, "title" | "quiz_name" | "background_color" | "background_image_url" | "text_color" | "music_url">> & {
+type PresentationUpdate = Partial<Pick<EditorPresentation, "title" | "quiz_name" | "background_color" | "background_image_url" | "text_color" | "accent_color" | "visualization_palette" | "music_url">> & {
   revision?: number;
   background?: Partial<EditorPresentation["background"]>;
 };
@@ -98,6 +109,8 @@ const updatePresentation = async (quizID: string, data: PresentationUpdate): Pro
   if (data.background_color !== undefined || data.background?.color !== undefined) settings.background_color = data.background_color ?? data.background?.color;
   if (data.background_image_url !== undefined || data.background?.image !== undefined) settings.background_image_url = data.background_image_url ?? data.background?.image;
   if (data.text_color !== undefined || data.background?.text_color !== undefined) settings.text_color = data.text_color ?? data.background?.text_color;
+  if (data.accent_color !== undefined) settings.accent_color = data.accent_color;
+  if (data.visualization_palette !== undefined) settings.visualization_palette = data.visualization_palette;
   if (data.music_url !== undefined) settings.music_url = data.music_url;
   const json: Record<string, unknown> = {};
   const title = data.title ?? data.quiz_name;

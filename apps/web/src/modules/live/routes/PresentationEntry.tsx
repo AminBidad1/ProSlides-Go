@@ -42,6 +42,8 @@ const toResolvedMeta = (
     text_color: data.presentation.text_color,
   },
   music_url: data.presentation.music_url || "",
+  accent_color: data.presentation.accent_color,
+  visualization_palette: data.presentation.visualization_palette,
   slides: [],
   text_color: data.presentation.text_color,
 });

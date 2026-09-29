@@ -20,7 +20,7 @@ func validatePresentationSettings(raw json.RawMessage) error {
 		return errInvalidPresentationSettings
 	}
 
-	for _, key := range []string{"background_color", "text_color"} {
+	for _, key := range []string{"background_color", "text_color", "accent_color"} {
 		value, ok := values[key]
 		if !ok {
 			continue
@@ -28,6 +28,18 @@ func validatePresentationSettings(raw json.RawMessage) error {
 		var color string
 		if json.Unmarshal(value, &color) != nil || !validHexColor(color) {
 			return errInvalidPresentationSettings
+		}
+	}
+
+	if value, ok := values["visualization_palette"]; ok {
+		var palette []string
+		if json.Unmarshal(value, &palette) != nil || len(palette) < 3 || len(palette) > 8 {
+			return errInvalidPresentationSettings
+		}
+		for _, color := range palette {
+			if !validHexColor(color) {
+				return errInvalidPresentationSettings
+			}
 		}
 	}
 

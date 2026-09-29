@@ -75,7 +75,7 @@ func (s *snapshotStore) ResolveSession(_ context.Context, code string) (SessionL
 	}
 	return SessionLocator{
 		SessionID: testSessionID, PresentationID: testPresentationID,
-		Presentation: PublicLivePresentation{Title: "آزمون نمونه", BackgroundColor: "#123456", BackgroundImageURL: "https://example.test/theme.webp", MusicURL: "https://example.test/theme.mp3", TextColor: "#ffffff"},
+		Presentation: PublicLivePresentation{Title: "آزمون نمونه", BackgroundColor: "#123456", BackgroundImageURL: "https://example.test/theme.webp", MusicURL: "https://example.test/theme.mp3", TextColor: "#ffffff", AccentColor: "#22d3ee", VisualizationPalette: []string{"#22d3ee", "#34d399", "#fbbf24"}},
 	}, nil
 }
 func (s *snapshotStore) Join(context.Context, string, string, string, string, []byte) (Participant, bool, error) {
@@ -187,7 +187,7 @@ func (s *snapshotStore) StageSnapshot(_ context.Context, session, manager string
 		Role:         "stage",
 		Session:      PublicSession{ID: session, PresentationID: testPresentationID, State: Presenting, StateVersion: 5, ActiveItemID: &itemID, ActivityPhase: &accepting, StageView: StageItem, RemainingSeconds: &remaining},
 		JoinCode:     "JOIN1",
-		Presentation: PublicLivePresentation{Title: "آزمون نمونه", BackgroundColor: "#123456", BackgroundImageURL: "", MusicURL: "https://example.test/theme.mp3", TextColor: "#ffffff"},
+		Presentation: PublicLivePresentation{Title: "آزمون نمونه", BackgroundColor: "#123456", BackgroundImageURL: "", MusicURL: "https://example.test/theme.mp3", TextColor: "#ffffff", AccentColor: "#22d3ee", VisualizationPalette: []string{"#22d3ee", "#34d399", "#fbbf24"}},
 		ActiveItem:   json.RawMessage(`{"id":"item-1","kind":"activity","content":{"evaluation":{"mode":"correctness"},"response":{"options":[{"id":"a","text":"الف"}]}}}`),
 		ParticipantCount:   10_000,
 		HasScoring:         true,
@@ -803,6 +803,14 @@ func TestStageSnapshotIsManagerOnlyAndProjectionScoped(t *testing.T) {
 	}
 	if payload["role"] != "stage" || payload["join_code"] != "JOIN1" || payload["participant_count"] != float64(10_000) {
 		t.Fatalf("unexpected stage projection: %#v", payload)
+	}
+	presentation, ok := payload["presentation"].(map[string]any)
+	if !ok || presentation["accent_color"] != "#22d3ee" {
+		t.Fatalf("stage projection missing theme metadata: %#v", payload["presentation"])
+	}
+	palette, ok := presentation["visualization_palette"].([]any)
+	if !ok || len(palette) != 3 {
+		t.Fatalf("stage projection missing visualization palette: %#v", presentation)
 	}
 	if _, exists := payload["participant"]; exists {
 		t.Fatalf("stage projection disclosed participant identity")

@@ -202,6 +202,8 @@ export interface LiveSessionLocator {
     background_image_url: string;
     music_url: string;
     text_color: string;
+    accent_color: string;
+    visualization_palette: string[];
   };
 }
 export type PresentationSlide = components["schemas"]["Slide"];

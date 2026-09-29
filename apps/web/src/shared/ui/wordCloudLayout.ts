@@ -57,12 +57,14 @@ const DISPLAY_PROFILES: Record<WordCloudDisplayMode, DisplayProfile> = {
 };
 
 const ACCENTS = [
-  "#8b5cf6",
-  "#06b6d4",
-  "#10b981",
-  "#f59e0b",
-  "#ec4899",
-  "#3b82f6",
+  "var(--live-palette-1, #8b5cf6)",
+  "var(--live-palette-2, #06b6d4)",
+  "var(--live-palette-3, #10b981)",
+  "var(--live-palette-4, #f59e0b)",
+  "var(--live-palette-5, #ec4899)",
+  "var(--live-palette-6, #3b82f6)",
+  "var(--live-palette-7, #8b5cf6)",
+  "var(--live-palette-8, #06b6d4)",
 ] as const;
 
 const hashText = (value: string): number => {

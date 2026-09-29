@@ -30,6 +30,12 @@ export const toLivePresentationModel = (
 ): LivePresentationModel => {
   const settings = presentation.settings ?? {};
   const textColor = stringValue(settings.text_color, "#111827");
+  const accentColor = stringValue(settings.accent_color, "#8b5cf6");
+  const visualizationPalette = Array.isArray(settings.visualization_palette)
+    ? settings.visualization_palette.filter(
+        (color): color is string => typeof color === "string",
+      )
+    : ["#8b5cf6", "#06b6d4", "#10b981", "#f59e0b", "#ec4899", "#3b82f6"];
 
   return {
     quiz_id: presentation.id,
@@ -41,6 +47,8 @@ export const toLivePresentationModel = (
       text_color: textColor,
     },
     music_url: stringValue(settings.music_url),
+    accent_color: accentColor,
+    visualization_palette: visualizationPalette,
     slides: Array.isArray(presentation.slides)
       ? presentation.slides.map(presentationSlideToLegacy)
       : [],
@@ -66,6 +74,8 @@ export const projectManagerLivePresentation = (
       text_color: snapshot.presentation.text_color,
     },
     music_url: snapshot.presentation.music_url,
+    accent_color: snapshot.presentation.accent_color,
+    visualization_palette: snapshot.presentation.visualization_palette,
     slides: frozenSlides ?? baseQuiz.slides,
     text_color: snapshot.presentation.text_color,
   };
