@@ -175,6 +175,15 @@ For the Text primitive used by Word Cloud:
 - frequency is encoded primarily by font size. Term color is deterministic decorative
   separation, not participant identity or another data dimension. Placement is
   deterministic, horizontal for Persian/mixed text, and collision-aware;
+- Word Cloud moderation is durable and non-destructive: private Backstage may
+  hide/restore a canonical term after response collection closes; Session/Activity-scoped
+  suppression is applied consistently to live and report aggregates while raw authorized
+  response history remains intact;
+- moderation commands are manager-only, idempotent, state-version guarded and auditable.
+  A hide/reveal/next race therefore resolves through the same optimistic Session version
+  boundary instead of silently overwriting another presenter command;
+- automatic profanity classification, if added, must write the same suppression policy
+  rather than destructively filtering participant answers;
 - a future live-growing Word Cloud is an explicit result-presentation policy. It must
   preserve role-scoped disclosure and use bounded/coalesced aggregate delivery rather
   than raw-answer or per-answer Stage fanout. ADR 0005 defines this boundary.

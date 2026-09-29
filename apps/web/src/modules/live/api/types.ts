@@ -34,6 +34,26 @@ interface WordFrequencyTerm {
   count: number;
 }
 
+interface WordCloudModerationTerm {
+  canonical_key: string;
+  text: string;
+  count: number;
+  hidden: boolean;
+}
+
+interface WordCloudModerationState {
+  activity_item_id: string;
+  terms: WordCloudModerationTerm[];
+}
+
+export interface WordCloudModerationResult {
+  activity_item_id: string;
+  canonical_key: string;
+  hidden: boolean;
+  state_version: number;
+  duplicate: boolean;
+}
+
 export interface ActivityResult {
   activity_item_id: string;
   activity_kind: "choice" | "text";
@@ -95,6 +115,7 @@ interface ManagerSnapshot {
   has_scoring: boolean;
   last_event_id: number;
   activity_result?: ActivityResult;
+  word_cloud_moderation?: WordCloudModerationState;
   lobby_participants?: ManagerLobbyParticipant[];
   activity_top_performers: ActivityTopPerformer[];
 }
@@ -138,6 +159,7 @@ export interface LiveEvent {
     | "presence.updated"
     | "session.state_changed"
     | "activity.result_updated"
+    | "activity.moderation_updated"
     | "ranking.updated";
   payload: unknown;
   occurred_at: string;

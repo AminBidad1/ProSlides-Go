@@ -66,6 +66,7 @@ export function LiveSessionProvider({
       submitAnswer: runtime.submitAnswer,
       sendNavigation: runtime.sendNavigation,
       sendManagerAction: runtime.sendManagerAction,
+      moderateWordCloudTerm: runtime.moderateWordCloudTerm,
       sendEnd: runtime.sendEnd,
       loadRoster: runtime.loadRoster,
       loadMoreRoster: runtime.loadMoreRoster,

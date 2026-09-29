@@ -562,6 +562,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/live/sessions/{sessionId}/word-cloud/moderation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hide or restore one canonical Word Cloud term as the manager.
+         * @description Applies a durable, non-destructive visibility policy to the current closed or revealed Text Activity. Participant answers are never edited or deleted. The command is idempotent by request_id and guarded by Session state_version; successful changes advance state_version so every projection resynchronizes.
+         */
+        post: operations["moderateLiveWordCloudTerm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/live/sessions/{sessionId}/snapshot": {
         parameters: {
             query?: never;
@@ -895,6 +915,37 @@ export interface components {
             /** Format: uuid */
             item_id?: string;
         };
+        WordCloudModerationRequest: {
+            /** Format: uuid */
+            request_id: string;
+            /** Format: int64 */
+            expected_state_version: number;
+            /** Format: uuid */
+            activity_item_id: string;
+            canonical_key: string;
+            hidden: boolean;
+        };
+        WordCloudModerationResult: {
+            /** Format: uuid */
+            activity_item_id: string;
+            canonical_key: string;
+            hidden: boolean;
+            /** Format: int64 */
+            state_version: number;
+            duplicate: boolean;
+        };
+        WordCloudModerationTerm: {
+            canonical_key: string;
+            text: string;
+            count: number;
+            hidden: boolean;
+        };
+        WordCloudModerationState: {
+            /** Format: uuid */
+            activity_item_id: string;
+            /** @description Up to 100 currently visible terms plus up to 100 hidden terms, keeping moderation bounded while allowing newly surfaced terms to remain manageable. */
+            terms: components["schemas"]["WordCloudModerationTerm"][];
+        };
         LiveSession: {
             /** Format: uuid */
             id: string;
@@ -1169,6 +1220,7 @@ export interface components {
             /** Format: int64 */
             last_event_id: number;
             activity_result?: components["schemas"]["ActivityResultPayload"];
+            word_cloud_moderation?: components["schemas"]["WordCloudModerationState"];
             /** @description Most recently joined participants for the manager lobby composition; empty outside the lobby. */
             lobby_participants?: components["schemas"]["ManagerLobbyParticipant"][];
             /** @description Top performers for the current scored Activity only; separate from cumulative Session ranking. */
@@ -1197,7 +1249,7 @@ export interface components {
             /** Format: int64 */
             event_id: number;
             /**
-             * @description Version 2 is used by activity.result_updated generic result envelopes and aggregate-only ranking.updated payloads; other current events remain version 1.
+             * @description Version 2 is used by activity.result_updated, activity.moderation_updated, and aggregate-only ranking.updated payloads; other current events remain version 1.
              * @enum {integer}
              */
             schema_version: 1 | 2;
@@ -1206,8 +1258,8 @@ export interface components {
             /** Format: int64 */
             state_version: number;
             /** @enum {string} */
-            name: "session.created" | "presence.updated" | "session.state_changed" | "activity.result_updated" | "ranking.updated";
-            payload: components["schemas"]["SessionEventPayload"] | components["schemas"]["PresenceUpdatedPayload"] | components["schemas"]["ActivityResultPayload"] | components["schemas"]["RankingUpdatedPayload"];
+            name: "session.created" | "presence.updated" | "session.state_changed" | "activity.result_updated" | "activity.moderation_updated" | "ranking.updated";
+            payload: components["schemas"]["SessionEventPayload"] | components["schemas"]["PresenceUpdatedPayload"] | components["schemas"]["ActivityResultPayload"] | components["schemas"]["WordCloudModerationEventPayload"] | components["schemas"]["RankingUpdatedPayload"];
             /** Format: date-time */
             occurred_at: string;
         };
@@ -1223,10 +1275,10 @@ export interface components {
             /** Format: date-time */
             ends_at?: string | null;
             /**
-             * @description Present only when the server closes an Activity at its authoritative deadline.
+             * @description Optional server reason for an authoritative lifecycle/version refresh.
              * @enum {string}
              */
-            reason?: "deadline_elapsed";
+            reason?: "deadline_elapsed" | "word_cloud_moderation";
         };
         PresenceUpdatedPayload: {
             /** @description Signed change in committed Session participants. New joins increment it; connection churn leaves it at zero. */
@@ -1249,6 +1301,12 @@ export interface components {
             schema_version: number;
             response_count: number;
             payload: components["schemas"]["ReportChoiceResultPayload"] | components["schemas"]["WordFrequencyResultPayload"];
+        };
+        WordCloudModerationEventPayload: {
+            /** Format: uuid */
+            activity_item_id: string;
+            canonical_key: string;
+            hidden: boolean;
         };
         RankingUpdatedPayload: {
             participant_count: number;
@@ -2450,6 +2508,61 @@ export interface operations {
                 content?: never;
             };
             /** @description Manager action rate exceeded; Retry-After is returned. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    moderateLiveWordCloudTerm: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CSRFToken"];
+            };
+            path: {
+                sessionId: components["parameters"]["SessionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WordCloudModerationRequest"];
+            };
+        };
+        responses: {
+            /** @description Duplicate idempotent request; returns the original command result. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WordCloudModerationResult"];
+                };
+            };
+            /** @description Visibility policy changed. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WordCloudModerationResult"];
+                };
+            };
+            400: components["responses"]["ValidationError"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["CSRFError"];
+            404: components["responses"]["NotFound"];
+            /** @description State version, Activity lifecycle, or concurrent-command conflict. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Manager moderation command rate exceeded; Retry-After is returned. */
             429: {
                 headers: {
                     [name: string]: unknown;

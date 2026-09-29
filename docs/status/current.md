@@ -31,7 +31,10 @@ pending-answer retry, manager roster recovery/order consistency, duplicate
 presenter-command guards, projector-aware deterministic Word Cloud rendering, and
 separation of presenter-private Backstage from the audience projection. Backstage can
 read bounded count-only response progress while an Activity is accepting without
-exposing aggregate answer content. The completed execution plan is archived in
+exposing aggregate answer content. Word Cloud now also has durable, non-destructive,
+Session-scoped moderation: hidden canonical terms are removed consistently from live and
+report aggregates while authorized raw response history remains intact. The completed
+execution plan is archived in
 `../archive/v2-delivery-plan-2026-09.md`.
 
 ## Verified repository baseline

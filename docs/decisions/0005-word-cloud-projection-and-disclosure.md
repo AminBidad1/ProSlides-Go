@@ -83,11 +83,27 @@ must be bounded, coalesced/batched, and measured against the live-capacity plan.
 
 Do not persist a generic bag of Word Cloud feature flags. When a real capability is
 implemented, extend the concrete result-presentation/moderation policy with explicit,
-versioned semantics. Likely future capabilities include:
+versioned semantics. The durable moderation foundation is now implemented:
+
+- a presenter may hide or restore one canonical Word Cloud term from private
+  Backstage after response collection closes;
+- suppression is scoped to Session + Activity item + canonical aggregation key;
+- participant answers are never rewritten or deleted;
+- live/public aggregates and report aggregates apply the same suppression
+  policy, while authorized report response history keeps the raw response;
+- moderation commands are manager-authorized, request-idempotent,
+  state-version guarded and durably auditable through the live event log;
+- Persian/Arabic glyph variants use the same canonicalization policy as
+  accepted responses;
+- a newly exposed term after moderation remains manageable because Backstage
+  receives the current visible result set plus a bounded hidden-term set.
+
+Likely future capabilities include:
 
 - live aggregate display for brainstorming;
-- presenter moderation/approval;
-- profanity/filtering policy;
+- optional approval-queue moderation before result reveal;
+- profanity/classification policy layered over the same non-destructive
+  suppression mechanism;
 - richer aggregate metadata such as total unique terms;
 - alternate visual density profiles for different projection contexts.
 
@@ -105,4 +121,10 @@ Participant projection model rather than creating a second live engine.
   reuses the shared embedded Word Cloud renderer for closed-result preview.
 - Future live Word Cloud work will require a deliberate API/event contract and load
   evidence rather than exposing the existing private result event to Stage.
-- Moderation remains possible without weakening the audience-safe Manager projection.
+- Durable moderation does not weaken the audience-safe Manager projection: controls
+  and hidden-term state are available only in confirmed private Backstage.
+- Moderation changes advance Session state_version only when visibility actually
+  changes; redundant desired-state commands are durable no-ops rather than
+  unnecessary projection churn.
+- Automatic profanity classification remains intentionally out of scope until
+  measurable Persian false-positive/false-negative criteria exist.

@@ -1914,3 +1914,127 @@ test("manager coalesces lobby presence bursts into a bounded recent-arrivals sna
 
   runtime.destroy();
 });
+
+
+test("Word Cloud moderation reuses request ids and refreshes authoritative policy", async () => {
+  let sequence = 0;
+  const moderationCalls = [];
+  let failFirst = true;
+  let current = {
+    ...managerSnapshot("session", {
+      eventId: 12,
+      stateVersion: 5,
+      state: "presenting",
+      activityPhase: "closed",
+      activeItemId: "cloud-1",
+    }),
+    activity_result: {
+      activity_item_id: "cloud-1",
+      activity_kind: "text",
+      schema_version: 1,
+      response_count: 2,
+      payload: {
+        terms: [
+          { text: "هوش مصنوعی", count: 2 },
+          { text: "کار تیمی", count: 1 },
+        ],
+      },
+    },
+    word_cloud_moderation: {
+      activity_item_id: "cloud-1",
+      terms: [
+        {
+          canonical_key: "هوش مصنوعی",
+          text: "هوش مصنوعی",
+          count: 2,
+          hidden: false,
+        },
+        {
+          canonical_key: "کار تیمی",
+          text: "کار تیمی",
+          count: 1,
+          hidden: false,
+        },
+      ],
+    },
+  };
+
+  const runtime = createLiveRuntime("manager", {
+    storage: null,
+    transport: {
+      createRequestId: () =>
+        `00000000-0000-4000-8000-${String(++sequence).padStart(12, "0")}`,
+      createLiveSession: async () => current.session,
+      getLiveSnapshot: async () => current,
+      getRosterPage: async (_id, order) => emptyRoster(order),
+      streamLiveEvents: parkedStream,
+      moderateLiveWordCloudTerm: async (_id, input) => {
+        moderationCalls.push(input);
+        if (failFirst) {
+          failFirst = false;
+          throw new Error("temporary moderation failure");
+        }
+        current = {
+          ...current,
+          session: {
+            ...current.session,
+            state_version: 6,
+          },
+          last_event_id: 14,
+          activity_result: {
+            ...current.activity_result,
+            payload: {
+              terms: [{ text: "کار تیمی", count: 1 }],
+            },
+          },
+          word_cloud_moderation: {
+            activity_item_id: "cloud-1",
+            terms: current.word_cloud_moderation.terms.map((term) =>
+              term.canonical_key === "هوش مصنوعی"
+                ? { ...term, hidden: true }
+                : term,
+            ),
+          },
+        };
+        return {
+          activity_item_id: "cloud-1",
+          canonical_key: "هوش مصنوعی",
+          hidden: true,
+          state_version: 6,
+          duplicate: false,
+        };
+      },
+    },
+  });
+
+  assert.equal(await runtime.connect("presentation"), true);
+  assert.equal(
+    await runtime.moderateWordCloudTerm("هوش مصنوعی", true),
+    false,
+  );
+  assert.equal(
+    await runtime.moderateWordCloudTerm("هوش مصنوعی", true),
+    true,
+  );
+
+  assert.equal(moderationCalls.length, 2);
+  assert.equal(
+    moderationCalls[0].request_id,
+    moderationCalls[1].request_id,
+  );
+  assert.equal(moderationCalls[0].expected_state_version, 5);
+  assert.equal(moderationCalls[0].activity_item_id, "cloud-1");
+  assert.equal(moderationCalls[0].canonical_key, "هوش مصنوعی");
+  assert.equal(moderationCalls[0].hidden, true);
+  assert.equal(runtime.getState().snapshot.session.state_version, 6);
+  assert.equal(
+    runtime.getState().snapshot.word_cloud_moderation.terms[0].hidden,
+    true,
+  );
+  assert.deepEqual(
+    runtime.getState().snapshot.activity_result.payload.terms,
+    [{ text: "کار تیمی", count: 1 }],
+  );
+
+  runtime.destroy();
+});

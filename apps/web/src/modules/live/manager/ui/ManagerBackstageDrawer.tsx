@@ -55,6 +55,15 @@ const phaseLabel = (phase: string | null | undefined) => {
   }
 };
 
+const normalizeModerationSearch = (value: string): string =>
+  value
+    .normalize("NFKC")
+    .toLocaleLowerCase("fa")
+    .replace(/ي/g, "ی")
+    .replace(/ك/g, "ک")
+    .replace(/\s+/gu, " ")
+    .trim();
+
 export function ManagerBackstageDrawer({
   quiz,
   currentSlide,
@@ -68,6 +77,9 @@ export function ManagerBackstageDrawer({
   const [commandPending, setCommandPending] = useState(false);
   const [commandError, setCommandError] = useState("");
   const [privateSurfaceArmed, setPrivateSurfaceArmed] = useState(false);
+  const [moderationPendingKey, setModerationPendingKey] = useState("");
+  const [moderationError, setModerationError] = useState("");
+  const [moderationQuery, setModerationQuery] = useState("");
   const {
     snapshot,
     isStreamConnected,
@@ -75,6 +87,7 @@ export function ManagerBackstageDrawer({
     participantCount,
     sendNavigation,
     sendManagerAction,
+    moderateWordCloudTerm,
     sendEnd,
     loadRoster,
     loadMoreRoster,
@@ -138,6 +151,28 @@ export function ManagerBackstageDrawer({
     session?.activity_phase === "closed" ||
     session?.activity_phase === "revealed";
   const topPerformers = managerSnapshot?.activity_top_performers ?? [];
+  const wordCloudModeration =
+    isWordCloud &&
+    managerSnapshot?.word_cloud_moderation?.activity_item_id ===
+      String(currentQuestion?.question_id ?? "")
+      ? managerSnapshot.word_cloud_moderation
+      : null;
+  const moderationTerms = wordCloudModeration?.terms ?? [];
+  const normalizedModerationQuery = normalizeModerationSearch(moderationQuery);
+  const filteredModerationTerms = normalizedModerationQuery
+    ? moderationTerms.filter(
+        (term) =>
+          normalizeModerationSearch(term.text).includes(
+            normalizedModerationQuery,
+          ) ||
+          normalizeModerationSearch(term.canonical_key).includes(
+            normalizedModerationQuery,
+          ),
+      )
+    : moderationTerms;
+  const hiddenModerationCount = moderationTerms.filter(
+    (term) => term.hidden,
+  ).length;
 
   const stageView =
     session?.stage_view === "overall_ranking"
@@ -145,8 +180,15 @@ export function ManagerBackstageDrawer({
       : "آیتم جاری";
 
   const primaryControl = useMemo<PrimaryControl>(() => {
-    if (!session || commandPending) {
-      return { kind: "disabled", label: commandPending ? "در حال اعمال…" : "در انتظار جلسه" };
+    if (!session || commandPending || moderationPendingKey) {
+      return {
+        kind: "disabled",
+        label: commandPending
+          ? "در حال اعمال…"
+          : moderationPendingKey
+            ? "در حال اعمال مدیریت واژه…"
+            : "در انتظار جلسه",
+      };
     }
     if (session.state === "ended") {
       return { kind: "disabled", label: "جلسه پایان یافته" };
@@ -176,12 +218,32 @@ export function ManagerBackstageDrawer({
     return { kind: "end", label: "پایان جلسه" };
   }, [
     commandPending,
+    moderationPendingKey,
     currentQuestion?.is_scored,
     currentQuestion?.show_leaderboard_after,
     firstSlide,
     nextSlide,
     session,
   ]);
+
+  const setWordCloudTermHidden = async (
+    canonicalKey: string,
+    hidden: boolean,
+  ) => {
+    if (moderationPendingKey) return;
+    setModerationError("");
+    setModerationPendingKey(canonicalKey);
+    try {
+      const applied = await moderateWordCloudTerm(canonicalKey, hidden);
+      if (!applied) {
+        setModerationError(
+          "تغییر اعمال نشد. وضعیت جلسه تازه‌سازی شد؛ وضعیت واژه را بررسی و دوباره تلاش کنید.",
+        );
+      }
+    } finally {
+      setModerationPendingKey("");
+    }
+  };
 
   const runPrimaryControl = async () => {
     setCommandError("");
@@ -493,12 +555,144 @@ export function ManagerBackstageDrawer({
                   </span>
                 </div>
                 {isWordCloud ? (
-                  <WordCloudView
-                    terms={wordTerms}
-                    className="mt-3 min-h-44 rounded-2xl bg-black/20 p-3"
-                    emptyLabel="هنوز عبارتی برای نمایش وجود ندارد."
-                    ariaLabel="پیش‌نمایش خصوصی ابر واژه"
-                  />
+                  <>
+                    <WordCloudView
+                      terms={wordTerms}
+                      className="mt-3 min-h-44 rounded-2xl bg-black/20 p-3"
+                      emptyLabel="هنوز عبارتی برای نمایش وجود ندارد."
+                      ariaLabel="پیش‌نمایش خصوصی ابر واژه"
+                    />
+                    {backstageMode && wordCloudModeration ? (
+                      <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3 sm:p-4">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <h4 className="text-sm font-black">
+                              مدیریت واژه‌های ابر
+                            </h4>
+                            <p className="mt-1 max-w-xl text-xs leading-6 text-white/55">
+                              پنهان‌کردن فقط نمایش aggregate را تغییر می‌دهد؛
+                              پاسخ خام شرکت‌کننده برای گزارش و audit حذف نمی‌شود.
+                            </p>
+                          </div>
+                          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white/65">
+                            {hiddenModerationCount.toLocaleString("fa-IR")} پنهان
+                          </span>
+                        </div>
+
+                        {session?.activity_phase === "revealed" ? (
+                          <p className="mt-3 rounded-xl border border-warning/25 bg-warning/10 px-3 py-2 text-xs font-bold leading-6 text-warning">
+                            نتیجه اکنون نمایش داده شده است؛ هر تغییر پس از همگام‌سازی
+                            فوراً روی Stage و نتیجه شرکت‌کنندگان اعمال می‌شود.
+                          </p>
+                        ) : (
+                          <p className="mt-3 rounded-xl bg-white/5 px-3 py-2 text-xs leading-6 text-white/55">
+                            نتیجه هنوز عمومی نشده است. می‌توانید واژه‌ها را پیش از
+                            نمایش نتیجه بازبینی کنید.
+                          </p>
+                        )}
+
+                        <label className="mt-3 block">
+                          <span className="sr-only">جست‌وجوی واژه برای مدیریت</span>
+                          <input
+                            type="search"
+                            value={moderationQuery}
+                            onChange={(event) =>
+                              setModerationQuery(event.target.value)
+                            }
+                            placeholder="جست‌وجوی واژه…"
+                            className="min-h-11 w-full rounded-xl border border-white/10 bg-slate-950/70 px-3 text-sm font-medium text-white outline-none placeholder:text-white/35 focus:border-brand/70 focus:ring-2 focus:ring-brand/30"
+                          />
+                        </label>
+
+                        {moderationError ? (
+                          <p
+                            className="mt-3 rounded-xl bg-danger/10 px-3 py-2 text-xs font-bold leading-6 text-danger"
+                            role="alert"
+                          >
+                            {moderationError}
+                          </p>
+                        ) : null}
+
+                        <div
+                          className="mt-3 max-h-80 space-y-2 overflow-y-auto pe-1"
+                          aria-label="فهرست مدیریت واژه‌های ابر"
+                        >
+                          {filteredModerationTerms.length > 0 ? (
+                            filteredModerationTerms.map((term) => {
+                              const pending =
+                                moderationPendingKey === term.canonical_key;
+                              return (
+                                <div
+                                  key={term.canonical_key}
+                                  className={
+                                    "flex min-h-12 items-center gap-3 rounded-xl border px-3 py-2 " +
+                                    (term.hidden
+                                      ? "border-warning/20 bg-warning/5"
+                                      : "border-white/10 bg-white/5")
+                                  }
+                                >
+                                  <div className="min-w-0 flex-1">
+                                    <p
+                                      className={
+                                        "truncate text-sm font-black " +
+                                        (term.hidden
+                                          ? "text-white/45 line-through"
+                                          : "text-white")
+                                      }
+                                      dir="auto"
+                                      title={term.text}
+                                    >
+                                      {term.text}
+                                    </p>
+                                    <p className="mt-0.5 text-xs text-white/45">
+                                      {term.count.toLocaleString("fa-IR")} بار
+                                      {term.hidden ? " · پنهان" : " · قابل نمایش"}
+                                    </p>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      void setWordCloudTermHidden(
+                                        term.canonical_key,
+                                        !term.hidden,
+                                      )
+                                    }
+                                    disabled={
+                                      Boolean(moderationPendingKey) ||
+                                      commandPending
+                                    }
+                                    className={
+                                      "min-h-9 shrink-0 rounded-lg border px-3 text-xs font-black focus-visible:outline-none focus-visible:ring-2 disabled:cursor-wait disabled:opacity-45 " +
+                                      (term.hidden
+                                        ? "border-success/30 bg-success/10 text-success hover:bg-success/15 focus-visible:ring-success/50"
+                                        : "border-danger/30 bg-danger/10 text-danger hover:bg-danger/15 focus-visible:ring-danger/50")
+                                    }
+                                    aria-label={
+                                      (term.hidden
+                                        ? "بازگرداندن "
+                                        : "پنهان کردن ") + term.text
+                                    }
+                                  >
+                                    {pending
+                                      ? "در حال اعمال…"
+                                      : term.hidden
+                                        ? "بازگرداندن"
+                                        : "پنهان کردن"}
+                                  </button>
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <p className="rounded-xl bg-white/5 p-3 text-center text-xs text-white/50">
+                              {moderationQuery.trim()
+                                ? "واژه‌ای با این جست‌وجو پیدا نشد."
+                                : "واژه‌ای برای مدیریت وجود ندارد."}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ) : null}
+                  </>
                 ) : (
                   <div className="mt-3 space-y-2">
                     {(currentQuestion.options ?? []).map((option, index) => {
@@ -608,7 +802,7 @@ export function ManagerBackstageDrawer({
               <button
                 type="button"
                 onClick={() => setConfirmEnd(true)}
-                disabled={commandPending}
+                disabled={commandPending || Boolean(moderationPendingKey)}
                 className="mt-5 min-h-11 rounded-xl border border-danger/40 bg-danger/10 px-4 text-sm font-bold text-danger hover:bg-danger/15 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/60"
               >
                 پایان جلسه

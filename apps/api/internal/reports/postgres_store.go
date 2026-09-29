@@ -291,6 +291,14 @@ func (s *PostgresStore) ActivityReport(ctx context.Context, presentationID, sess
 				COALESCE(answer.answer->'terms','[]'::jsonb)
 			) term(value)
 			WHERE answer.session_id=$1 AND answer.question_slide_id=$2
+			  AND NOT EXISTS (
+				SELECT 1
+				FROM live_word_cloud_moderation m
+				WHERE m.session_id=answer.session_id
+				  AND m.activity_item_id=answer.question_slide_id
+				  AND m.canonical_key=term.value
+				  AND m.hidden
+			  )
 			GROUP BY term.value
 			ORDER BY count(*) DESC,term.value
 			LIMIT 100`
@@ -306,6 +314,14 @@ func (s *PostgresStore) ActivityReport(ctx context.Context, presentationID, sess
 					COALESCE(answer.answer->'terms','[]'::jsonb)
 				) WITH ORDINALITY term(value, ordinality)
 				WHERE answer.session_id=$1 AND answer.question_slide_id=$2
+				  AND NOT EXISTS (
+					SELECT 1
+					FROM live_word_cloud_moderation m
+					WHERE m.session_id=answer.session_id
+					  AND m.activity_item_id=answer.question_slide_id
+					  AND m.canonical_key=term.value
+					  AND m.hidden
+				  )
 			),
 			counts AS (
 				SELECT aggregation_key,count(*)::int AS count

@@ -742,37 +742,265 @@ test("entry Word Cloud closes and reveals without destabilizing live state @crit
         action: "close_activity",
       },
     });
-    const revealed = await api(`/live/sessions/${session.id}/actions`, {
+    const closedSnapshot = await api(
+      `/live/sessions/${session.id}/snapshot?viewer=manager`,
+    );
+
+    const csrf = cookieValue("proslides_csrf");
+    const moderationHeaders = {
+      "Content-Type": "application/json",
+      ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+    };
+
+    // Hide and reveal intentionally race on the same state version. The
+    // session row lock + optimistic state version must allow exactly one
+    // command to commit and force the loser to resynchronize with 409.
+    let moderationBody = {
+      request_id: requestId(),
+      expected_state_version: closed.state_version,
+      activity_item_id: slide.id,
+      // Arabic yeh intentionally verifies that moderation uses the same
+      // canonicalization policy as accepted Word Cloud responses.
+      canonical_key: "هوش مصنوعي",
+      hidden: true,
+    };
+    const [raceModerationResponse, raceRevealResponse] = await Promise.all([
+      fetch(`/api/v1/live/sessions/${session.id}/word-cloud/moderation`, {
+        method: "POST",
+        credentials: "include",
+        headers: moderationHeaders,
+        body: JSON.stringify(moderationBody),
+      }),
+      fetch(`/api/v1/live/sessions/${session.id}/actions`, {
+        method: "POST",
+        credentials: "include",
+        headers: moderationHeaders,
+        body: JSON.stringify({
+          request_id: requestId(),
+          expected_state_version: closed.state_version,
+          action: "reveal_activity",
+        }),
+      }),
+    ]);
+    const raceStatuses = [
+      raceModerationResponse.status,
+      raceRevealResponse.status,
+    ].sort((left, right) => left - right);
+    const raceModerationPayload = await raceModerationResponse
+      .json()
+      .catch(() => null);
+
+    const afterRace = await api(
+      `/live/sessions/${session.id}/snapshot?viewer=manager`,
+    );
+
+    let moderated = raceModerationResponse.ok
+      ? raceModerationPayload
+      : null;
+    if (!moderated) {
+      moderationBody = {
+        ...moderationBody,
+        request_id: requestId(),
+        expected_state_version: afterRace.session.state_version,
+      };
+      moderated = await api(
+        `/live/sessions/${session.id}/word-cloud/moderation`,
+        { method: "POST", body: moderationBody },
+      );
+    }
+
+    const duplicateModeration = await api(
+      `/live/sessions/${session.id}/word-cloud/moderation`,
+      { method: "POST", body: moderationBody },
+    );
+
+    const staleResponse = await fetch(
+      `/api/v1/live/sessions/${session.id}/word-cloud/moderation`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: moderationHeaders,
+        body: JSON.stringify({
+          request_id: requestId(),
+          expected_state_version: closed.state_version,
+          activity_item_id: slide.id,
+          canonical_key: "هوش مصنوعی",
+          hidden: false,
+        }),
+      },
+    );
+
+    const hiddenManagerSnapshot = await api(
+      `/live/sessions/${session.id}/snapshot?viewer=manager`,
+    );
+    const revealed =
+      hiddenManagerSnapshot.session.activity_phase === "revealed"
+        ? hiddenManagerSnapshot.session
+        : await api(`/live/sessions/${session.id}/actions`, {
+            method: "POST",
+            body: {
+              request_id: requestId(),
+              expected_state_version:
+                hiddenManagerSnapshot.session.state_version,
+              action: "reveal_activity",
+            },
+          });
+
+    const hiddenStage = await api(`/live/sessions/${session.id}/stage`);
+    const hiddenParticipant = await api(
+      `/live/sessions/${session.id}/snapshot?viewer=participant`,
+    );
+    const hiddenReport = await api(
+      `/presentations/${presentation.id}/sessions/${session.id}/activities/${slide.id}/results`,
+    );
+
+    const restored = await api(
+      `/live/sessions/${session.id}/word-cloud/moderation`,
+      {
+        method: "POST",
+        body: {
+          request_id: requestId(),
+          expected_state_version: revealed.state_version,
+          activity_item_id: slide.id,
+          canonical_key: "هوش مصنوعی",
+          hidden: false,
+        },
+      },
+    );
+    const restoredStage = await api(`/live/sessions/${session.id}/stage`);
+    const restoredParticipant = await api(
+      `/live/sessions/${session.id}/snapshot?viewer=participant`,
+    );
+    const restoredReport = await api(
+      `/presentations/${presentation.id}/sessions/${session.id}/activities/${slide.id}/results`,
+    );
+
+    const rehidden = await api(
+      `/live/sessions/${session.id}/word-cloud/moderation`,
+      {
+        method: "POST",
+        body: {
+          request_id: requestId(),
+          expected_state_version: restored.state_version,
+          activity_item_id: slide.id,
+          canonical_key: "هوش مصنوعی",
+          hidden: true,
+        },
+      },
+    );
+    await api(`/live/sessions/${session.id}/actions`, {
       method: "POST",
       body: {
         request_id: requestId(),
-        expected_state_version: closed.state_version,
-        action: "reveal_activity",
+        expected_state_version: rehidden.state_version,
+        action: "end",
       },
     });
-    const snapshot = await api(
-      `/live/sessions/${session.id}/snapshot?viewer=manager`,
+    const historicalReport = await api(
+      `/presentations/${presentation.id}/sessions/${session.id}/activities/${slide.id}/results`,
     );
 
     return {
       closedPhase: closed.activity_phase,
+      closedTerms: closedSnapshot.activity_result?.payload?.terms ?? [],
+      moderationTerms: closedSnapshot.word_cloud_moderation?.terms ?? [],
+      moderated,
+      duplicateModeration,
+      raceStatuses,
+      staleStatus: staleResponse.status,
+      hiddenManagerTerms:
+        hiddenManagerSnapshot.activity_result?.payload?.terms ?? [],
+      hiddenModerationTerms:
+        hiddenManagerSnapshot.word_cloud_moderation?.terms ?? [],
       revealedPhase: revealed.activity_phase,
-      snapshotPhase: snapshot.session.activity_phase,
-      responseCount: snapshot.activity_result?.response_count ?? 0,
-      terms: snapshot.activity_result?.payload?.terms ?? [],
+      hiddenStageTerms: hiddenStage.activity_result?.payload?.terms ?? [],
+      hiddenParticipantTerms:
+        hiddenParticipant.activity_result?.payload?.terms ?? [],
+      hiddenReportTerms: hiddenReport.result?.payload?.terms ?? [],
+      rawReportResponses: hiddenReport.responses ?? [],
+      restored,
+      restoredStageTerms:
+        restoredStage.activity_result?.payload?.terms ?? [],
+      restoredParticipantTerms:
+        restoredParticipant.activity_result?.payload?.terms ?? [],
+      restoredReportTerms: restoredReport.result?.payload?.terms ?? [],
+      historicalReportTerms:
+        historicalReport.result?.payload?.terms ?? [],
+      historicalRawResponses: historicalReport.responses ?? [],
     };
   }, { activityContent });
 
   expect(result.closedPhase).toBe("closed");
-  expect(result.revealedPhase).toBe("revealed");
-  expect(result.snapshotPhase).toBe("revealed");
-  expect(result.responseCount).toBe(1);
-  expect(result.terms).toEqual(
+  expect(result.closedTerms).toEqual(
     expect.arrayContaining([
       expect.objectContaining({ text: "هوش مصنوعی", count: 1 }),
       expect.objectContaining({ text: "کار تیمی", count: 1 }),
     ]),
   );
+  expect(result.moderationTerms).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        canonical_key: "هوش مصنوعی",
+        text: "هوش مصنوعی",
+        count: 1,
+        hidden: false,
+      }),
+    ]),
+  );
+
+  expect(result.raceStatuses).toEqual([201, 409]);
+  expect(result.moderated.canonical_key).toBe("هوش مصنوعی");
+  expect(result.moderated.hidden).toBe(true);
+  expect(result.duplicateModeration.duplicate).toBe(true);
+  expect(result.duplicateModeration.state_version).toBe(
+    result.moderated.state_version,
+  );
+  expect(result.staleStatus).toBe(409);
+
+  expect(result.hiddenManagerTerms).toEqual([
+    expect.objectContaining({ text: "کار تیمی", count: 1 }),
+  ]);
+  expect(result.hiddenModerationTerms).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        canonical_key: "هوش مصنوعی",
+        hidden: true,
+      }),
+    ]),
+  );
+
+  expect(result.revealedPhase).toBe("revealed");
+  for (const terms of [
+    result.hiddenStageTerms,
+    result.hiddenParticipantTerms,
+    result.hiddenReportTerms,
+  ]) {
+    expect(terms).toEqual([
+      expect.objectContaining({ text: "کار تیمی", count: 1 }),
+    ]);
+  }
+  expect(
+    JSON.stringify(result.rawReportResponses),
+  ).toContain("هوش مصنوعی");
+
+  expect(result.restored.hidden).toBe(false);
+  for (const terms of [
+    result.restoredStageTerms,
+    result.restoredParticipantTerms,
+    result.restoredReportTerms,
+  ]) {
+    expect(terms).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ text: "هوش مصنوعی", count: 1 }),
+        expect.objectContaining({ text: "کار تیمی", count: 1 }),
+      ]),
+    );
+  }
+
+  expect(result.historicalReportTerms).toEqual([
+    expect.objectContaining({ text: "کار تیمی", count: 1 }),
+  ]);
+  expect(JSON.stringify(result.historicalRawResponses)).toContain("هوش مصنوعی");
   expect(failures).toEqual([]);
 });
 

@@ -802,6 +802,13 @@ func (s *PostgresStore) ManagerSnapshot(c context.Context, session, manager stri
 			return x, resultErr
 		}
 		x.ActivityResult = &result
+		if result.ActivityKind == presentations.ActivityKindText {
+			moderation, moderationErr := wordCloudModerationState(c, tx, session, *x.Session.ActiveItemID)
+			if moderationErr != nil {
+				return x, moderationErr
+			}
+			x.WordCloudModeration = moderation
+		}
 
 		rows, rowsErr := tx.Query(c, `WITH ranked AS (
 			SELECT a.id,p.id AS participant_id,p.display_name,COALESCE(p.avatar,'') AS avatar,
@@ -1125,7 +1132,7 @@ func insertEvent(c context.Context, tx pgx.Tx, session string, version int64, na
 		return err
 	}
 	schemaVersion := 1
-	if name == "activity.result_updated" || name == "ranking.updated" {
+	if name == "activity.result_updated" || name == "activity.moderation_updated" || name == "ranking.updated" {
 		schemaVersion = 2
 	}
 	_, e := tx.Exec(c, `INSERT INTO live_events(schema_version,session_id,state_version,name,payload)VALUES($1,$2,$3,$4,$5)`, schemaVersion, session, version, name, b)
@@ -1207,6 +1214,14 @@ func activityResult(c context.Context, tx pgx.Tx, session, item string) (Activit
 				COALESCE(a.answer->'terms','[]'::jsonb)
 			) term(value)
 			WHERE a.session_id=$1 AND a.question_slide_id=$2
+			  AND NOT EXISTS (
+				SELECT 1
+				FROM live_word_cloud_moderation m
+				WHERE m.session_id=a.session_id
+				  AND m.activity_item_id=a.question_slide_id
+				  AND m.canonical_key=term.value
+				  AND m.hidden
+			  )
 			GROUP BY term.value
 			ORDER BY count(*) DESC,term.value
 			LIMIT 100`
@@ -1222,6 +1237,14 @@ func activityResult(c context.Context, tx pgx.Tx, session, item string) (Activit
 					COALESCE(a.answer->'terms','[]'::jsonb)
 				) WITH ORDINALITY term(value, ordinality)
 				WHERE a.session_id=$1 AND a.question_slide_id=$2
+				  AND NOT EXISTS (
+					SELECT 1
+					FROM live_word_cloud_moderation m
+					WHERE m.session_id=a.session_id
+					  AND m.activity_item_id=a.question_slide_id
+					  AND m.canonical_key=term.value
+					  AND m.hidden
+				  )
 			),
 			counts AS (
 				SELECT aggregation_key,count(*)::int AS count

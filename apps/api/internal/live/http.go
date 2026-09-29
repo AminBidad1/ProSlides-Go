@@ -56,6 +56,7 @@ func (h *HTTP) Register(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/live/sessions/resolve", h.resolveSession)
 	m.HandleFunc("POST /api/v1/live/sessions/{sessionId}/join", h.join)
 	m.HandleFunc("POST /api/v1/live/sessions/{sessionId}/actions", h.action)
+	m.HandleFunc("POST /api/v1/live/sessions/{sessionId}/word-cloud/moderation", h.moderateWordCloud)
 	m.HandleFunc("POST /api/v1/live/sessions/{sessionId}/answers", h.answer)
 	m.HandleFunc("GET /api/v1/live/sessions/{sessionId}/snapshot", h.snapshot)
 	m.HandleFunc("GET /api/v1/live/sessions/{sessionId}/stage", h.stage)
@@ -156,6 +157,45 @@ func (h *HTTP) action(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, map[bool]int{true: 200, false: 201}[dup], x)
 }
+func (h *HTTP) moderateWordCloud(w http.ResponseWriter, r *http.Request) {
+	r, cancel := h.bounded(r)
+	defer cancel()
+	u, e := h.manager(r, true)
+	if e != nil {
+		returnError(w, e)
+		return
+	}
+	if !h.allow(w, r, "live_word_cloud_moderation", u.ID, 240, time.Minute) {
+		return
+	}
+	var b struct {
+		RequestID            string `json:"request_id"`
+		ExpectedStateVersion int64  `json:"expected_state_version"`
+		ActivityItemID       string `json:"activity_item_id"`
+		CanonicalKey         string `json:"canonical_key"`
+		Hidden               bool   `json:"hidden"`
+	}
+	if decodeJSON(w, r, &b) != nil {
+		returnError(w, ErrInvalid)
+		return
+	}
+	result, duplicate, e := h.service.ModerateWordCloudTerm(
+		r.Context(),
+		r.PathValue("sessionId"),
+		u.ID,
+		b.RequestID,
+		b.ExpectedStateVersion,
+		b.ActivityItemID,
+		b.CanonicalKey,
+		b.Hidden,
+	)
+	if e != nil {
+		returnError(w, e)
+		return
+	}
+	writeJSON(w, map[bool]int{true: http.StatusOK, false: http.StatusCreated}[duplicate], result)
+}
+
 func (h *HTTP) answer(w http.ResponseWriter, r *http.Request) {
 	r, cancel := h.bounded(r)
 	defer cancel()
@@ -378,11 +418,14 @@ func (h *HTTP) eventViewer(r *http.Request) (eventViewer, error) {
 }
 
 func eventVisibleToViewer(role string, event Event) bool {
-	// Activity results are computed at close so managers can inspect them
-	// privately. Participants receive the authoritative result from the
-	// revealed snapshot after session.state_changed; broadcasting the close
-	// event would disclose results before the presenter reveals them.
-	return role == "manager" || event.Name != "activity.result_updated"
+	// Activity results and moderation audit details are presenter-private.
+	// Participants receive the authoritative filtered result from a revealed
+	// snapshot after session.state_changed, never from the private event stream.
+	if role == "manager" {
+		return true
+	}
+	return event.Name != "activity.result_updated" &&
+		event.Name != "activity.moderation_updated"
 }
 
 func (h *HTTP) events(w http.ResponseWriter, r *http.Request) {

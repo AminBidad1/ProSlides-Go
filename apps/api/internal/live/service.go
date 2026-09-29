@@ -69,6 +69,38 @@ func (s *Service) Action(c context.Context, session, host, request string, versi
 	}
 	return s.store.ApplyAction(c, session, host, request, version, action, item)
 }
+func (s *Service) ModerateWordCloudTerm(
+	c context.Context,
+	session string,
+	host string,
+	request string,
+	version int64,
+	item string,
+	canonicalKey string,
+	hidden bool,
+) (WordCloudModerationResult, bool, error) {
+	canonicalKey = strings.TrimSpace(canonicalKey)
+	if !validUUID(session) ||
+		!validUUID(host) ||
+		!validUUID(request) ||
+		!validUUID(item) ||
+		version < 1 ||
+		canonicalKey == "" ||
+		len([]rune(canonicalKey)) > 512 {
+		return WordCloudModerationResult{}, false, ErrInvalid
+	}
+	return s.store.ModerateWordCloudTerm(
+		c,
+		session,
+		host,
+		request,
+		version,
+		item,
+		canonicalKey,
+		hidden,
+	)
+}
+
 func (s *Service) Submit(c context.Context, session, participantToken, request, item string, response ActivityResponsePayload) (AnswerResult, error) {
 	if !validUUID(session) ||
 		!validUUID(participantToken) ||

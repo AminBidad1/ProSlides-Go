@@ -1,4 +1,4 @@
-import type { AnswerResult, LiveEvent, LiveSessionLocator, LiveSessionResult, LiveSnapshot, ParticipantResult, RosterPage, StageSnapshot } from "./types";
+import type { AnswerResult, LiveEvent, LiveSessionLocator, LiveSessionResult, LiveSnapshot, ParticipantResult, RosterPage, StageSnapshot, WordCloudModerationResult } from "./types";
 import { createSecureUUID } from "../../../shared/browser/secureUuid.ts";
 
 const normalizeBase = (value: string) => value.trim().replace(/\/+$/, "");
@@ -126,6 +126,22 @@ export const submitLiveAnswer = (
     { method: "POST", body: JSON.stringify(input) },
   );
 export const applyLiveAction = (id: string, input: { request_id: string; expected_state_version: number; action: string; item_id?: string }) => requestJSON<LiveSessionResult>(`live/sessions/${encodeURIComponent(id)}/actions`, { method: "POST", body: JSON.stringify(input) }, true);
+
+export const moderateLiveWordCloudTerm = (
+  id: string,
+  input: {
+    request_id: string;
+    expected_state_version: number;
+    activity_item_id: string;
+    canonical_key: string;
+    hidden: boolean;
+  },
+) =>
+  requestJSON<WordCloudModerationResult>(
+    `live/sessions/${encodeURIComponent(id)}/word-cloud/moderation`,
+    { method: "POST", body: JSON.stringify(input) },
+    true,
+  );
 
 export const getRosterPage = (id: string, order: "joined" | "score", cursor = "", limit = 100, signal?: AbortSignal) => {
   const query = new URLSearchParams({ order, limit: String(limit) });

@@ -19,6 +19,44 @@ type snapshotStore struct {
 	lastRosterQuery RosterQuery
 }
 
+type replayStore struct {
+	snapshotStore
+	events []Event
+}
+
+func (s *replayStore) Events(_ context.Context, _ string, after int64, _ int) ([]Event, error) {
+	out := make([]Event, 0, len(s.events))
+	for _, event := range s.events {
+		if event.EventID > after {
+			out = append(out, event)
+		}
+	}
+	return out, nil
+}
+
+func (s *replayStore) LatestEventID(_ context.Context, _ string) (int64, error) {
+	var latest int64
+	for _, event := range s.events {
+		if event.EventID > latest {
+			latest = event.EventID
+		}
+	}
+	return latest, nil
+}
+
+type flushSignalRecorder struct {
+	*httptest.ResponseRecorder
+	flushed chan struct{}
+}
+
+func (w *flushSignalRecorder) Flush() {
+	w.ResponseRecorder.Flush()
+	select {
+	case w.flushed <- struct{}{}:
+	default:
+	}
+}
+
 const (
 	testSessionID        = "11111111-1111-4111-8111-111111111111"
 	testPresentationID   = "22222222-2222-4222-8222-222222222222"
@@ -45,6 +83,9 @@ func (s *snapshotStore) Join(context.Context, string, string, string, string, []
 }
 func (s *snapshotStore) ApplyAction(context.Context, string, string, string, int64, string, string) (Session, bool, error) {
 	return Session{}, false, errors.New("unexpected ApplyAction")
+}
+func (s *snapshotStore) ModerateWordCloudTerm(context.Context, string, string, string, int64, string, string, bool) (WordCloudModerationResult, bool, error) {
+	return WordCloudModerationResult{}, false, errors.New("unexpected ModerateWordCloudTerm")
 }
 func (s *snapshotStore) SubmitAnswer(context.Context, string, []byte, string, string, ActivityResponsePayload, ScoringPolicy) (AnswerResult, error) {
 	return AnswerResult{}, errors.New("unexpected SubmitAnswer")
@@ -232,11 +273,94 @@ func (l *captureRateLimiter) Allow(
 	return false, 2 * time.Second, nil
 }
 
-func snapshotHandler(store *snapshotStore) http.Handler {
+func snapshotHandler(store Store) http.Handler {
 	mux := http.NewServeMux()
 	service := NewService(store, DeductionPolicy{})
 	NewHTTP(service, NewEventBroker(store, time.Hour, 1), snapshotAuth{}, false).Register(mux)
 	return mux
+}
+
+func TestWordCloudModerationAuditEventIsManagerOnly(t *testing.T) {
+	event := Event{Name: "activity.moderation_updated"}
+	if !eventVisibleToViewer("manager", event) {
+		t.Fatal("manager should receive moderation audit event")
+	}
+	if eventVisibleToViewer("participant", event) {
+		t.Fatal("participant must not receive moderation audit event")
+	}
+	if eventVisibleToViewer("stage", event) {
+		t.Fatal("stage must not receive moderation audit event")
+	}
+}
+
+func TestWordCloudModerationReplayIsManagerOnly(t *testing.T) {
+	event := Event{
+		EventID:       44,
+		SchemaVersion: 2,
+		SessionID:     testSessionID,
+		StateVersion:  6,
+		Name:          "activity.moderation_updated",
+		Payload:       json.RawMessage(`{"activity_item_id":"22222222-2222-4222-8222-222222222222","canonical_key":"هوش مصنوعی","hidden":true}`),
+		OccurredAt:    time.Now().UTC(),
+	}
+
+	for _, tc := range []struct {
+		name          string
+		viewer        string
+		managerCookie bool
+		wantEvent     bool
+	}{
+		{name: "manager", viewer: "manager", managerCookie: true, wantEvent: true},
+		{name: "participant", viewer: "participant", wantEvent: false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			store := &replayStore{events: []Event{event}}
+			handler := snapshotHandler(store)
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			request := httptest.NewRequest(
+				http.MethodGet,
+				"/api/v1/live/sessions/"+testSessionID+"/events?viewer="+tc.viewer,
+				nil,
+			).WithContext(ctx)
+			request.Header.Set("Last-Event-ID", "0")
+			if tc.managerCookie {
+				request.AddCookie(&http.Cookie{Name: "proslides_session", Value: "manager-token"})
+			} else {
+				request.AddCookie(&http.Cookie{Name: "proslides_participant", Value: testParticipantToken})
+			}
+
+			response := &flushSignalRecorder{
+				ResponseRecorder: httptest.NewRecorder(),
+				flushed:          make(chan struct{}, 1),
+			}
+			done := make(chan struct{})
+			go func() {
+				handler.ServeHTTP(response, request)
+				close(done)
+			}()
+
+			select {
+			case <-response.flushed:
+				cancel()
+			case <-time.After(time.Second):
+				cancel()
+				t.Fatal("event replay did not flush")
+			}
+			select {
+			case <-done:
+			case <-time.After(time.Second):
+				t.Fatal("event replay handler did not stop after cancellation")
+			}
+
+			body := response.Body.String()
+			hasEvent := strings.Contains(body, "activity.moderation_updated")
+			if hasEvent != tc.wantEvent {
+				t.Fatalf("moderation replay visibility = %v, want %v; body=%q", hasEvent, tc.wantEvent, body)
+			}
+		})
+	}
 }
 
 func TestAnswerRejectsTopLevelChoiceCompatibilityField(t *testing.T) {

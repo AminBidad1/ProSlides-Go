@@ -6,6 +6,7 @@ import {
   getLiveSnapshot,
   getRosterPage,
   joinLiveSession,
+  moderateLiveWordCloudTerm,
   streamLiveEvents,
   submitLiveAnswer,
 } from "../api/liveApi.ts";
@@ -79,6 +80,7 @@ interface LiveRuntimeTransport {
   joinLiveSession: typeof joinLiveSession;
   submitLiveAnswer: typeof submitLiveAnswer;
   applyLiveAction: typeof applyLiveAction;
+  moderateLiveWordCloudTerm: typeof moderateLiveWordCloudTerm;
   streamLiveEvents: typeof streamLiveEvents;
   createRequestId: typeof createRequestId;
 }
@@ -227,6 +229,7 @@ export class LiveRuntime {
       joinLiveSession,
       submitLiveAnswer,
       applyLiveAction,
+      moderateLiveWordCloudTerm,
       streamLiveEvents,
       createRequestId,
       ...dependencies.transport,
@@ -1097,6 +1100,84 @@ export class LiveRuntime {
       return true;
     } catch (error) {
       this.publish({ connectionError: errorMessage(error) });
+      return false;
+    } finally {
+      this.commandInFlight = false;
+    }
+  };
+
+  moderateWordCloudTerm = async (
+    canonicalKey: string,
+    hidden: boolean,
+  ) => {
+    if (this.commandInFlight || this.role !== "manager") return false;
+    const id = this.selectedSessionId;
+    const current = this.snapshotValue;
+    if (
+      !id ||
+      current?.role !== "manager" ||
+      !current.session.active_item_id ||
+      !["closed", "revealed"].includes(
+        String(current.session.activity_phase ?? ""),
+      )
+    ) {
+      return false;
+    }
+
+    const moderation = current.word_cloud_moderation;
+    if (
+      !moderation ||
+      moderation.activity_item_id !== current.session.active_item_id
+    ) {
+      return false;
+    }
+
+    const term = moderation.terms.find(
+      (item) => item.canonical_key === canonicalKey,
+    );
+    if (!term || term.hidden === hidden) {
+      return term?.hidden === hidden;
+    }
+
+    this.commandInFlight = true;
+    const key = `${id}:${current.session.state_version}:moderate:${canonicalKey}:${hidden}`;
+    let requestId = this.pendingActionIds.get(key);
+    if (!requestId) {
+      requestId = this.transport.createRequestId();
+      this.pendingActionIds.set(key, requestId);
+    }
+
+    try {
+      const result = await this.transport.moderateLiveWordCloudTerm(id, {
+        request_id: requestId,
+        expected_state_version: current.session.state_version,
+        activity_item_id: moderation.activity_item_id,
+        canonical_key: canonicalKey,
+        hidden,
+      });
+
+      this.pendingActionIds.delete(key);
+      this.cursor = {
+        ...this.cursor,
+        stateVersion: Math.max(
+          this.cursor.stateVersion,
+          Number(result.state_version || 0),
+        ),
+      };
+      await this.refreshAuthoritative();
+      this.publish({ connectionError: null });
+      return true;
+    } catch (error) {
+      if (error instanceof LiveAPIError && error.status === 409) {
+        this.pendingActionIds.delete(key);
+        try {
+          await this.refreshAuthoritative();
+        } catch (refreshError) {
+          this.publish({ connectionError: errorMessage(refreshError) });
+        }
+      } else {
+        this.publish({ connectionError: errorMessage(error) });
+      }
       return false;
     } finally {
       this.commandInFlight = false;

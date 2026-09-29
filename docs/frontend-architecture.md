@@ -319,7 +319,14 @@ Shared Word Cloud rendering exposes a semantic projection profile rather than
 surface-specific styling knobs. Projection mode favors distance readability, uses a
 higher minimum font size, deterministic term colors/placement, actual font measurement
 when available, and a bounded term budget. Embedded report/editor/mobile views may use
-a denser profile without weakening the projector contract. See ADR 0005.
+a denser profile without weakening the projector contract.
+
+Word Cloud moderation controls exist only in confirmed private Backstage. They operate
+on canonical aggregation keys supplied by the manager snapshot, never on raw participant
+response objects. The runtime sends an idempotent version-guarded moderation command and
+then refreshes the authoritative snapshot; Stage/Participant learn revealed moderation
+changes through the ordinary Session state-change/resync path, not a second frontend
+state machine. See ADR 0005.
 
 Activity results and cumulative Session ranking are separate UI/domain
 concepts. The authoring rail contains only persisted Items; Activity-result and

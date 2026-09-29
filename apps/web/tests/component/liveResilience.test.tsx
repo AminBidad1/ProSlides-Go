@@ -48,6 +48,7 @@ const baseContext = (
   submitAnswer: vi.fn(async () => true),
   sendNavigation: vi.fn(async () => true),
   sendManagerAction: vi.fn(async () => true),
+  moderateWordCloudTerm: vi.fn(async () => true),
   sendEnd: vi.fn(async () => true),
   loadRoster: vi.fn(async () => true),
   loadMoreRoster: vi.fn(async () => true),

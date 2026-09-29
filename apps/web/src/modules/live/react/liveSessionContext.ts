@@ -14,6 +14,7 @@ type RuntimeCommands = Pick<
   | "submitAnswer"
   | "sendNavigation"
   | "sendManagerAction"
+  | "moderateWordCloudTerm"
   | "sendEnd"
   | "loadRoster"
   | "loadMoreRoster"

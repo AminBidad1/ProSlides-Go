@@ -140,6 +140,7 @@ type ManagerSnapshot struct {
 	HasScoring                  bool                   `json:"has_scoring"`
 	LastEventID                 int64                  `json:"last_event_id"`
 	ActivityResult        *ActivityResult            `json:"activity_result,omitempty"`
+	WordCloudModeration  *WordCloudModerationState `json:"word_cloud_moderation,omitempty"`
 	LobbyParticipants     []ManagerLobbyParticipant `json:"lobby_participants"`
 	ActivityTopPerformers []ActivityTopPerformer     `json:"activity_top_performers"`
 }
@@ -179,6 +180,26 @@ type ActivityResult struct {
 	Payload        json.RawMessage `json:"payload"`
 }
 
+type WordCloudModerationTerm struct {
+	CanonicalKey string `json:"canonical_key"`
+	Text         string `json:"text"`
+	Count        int    `json:"count"`
+	Hidden       bool   `json:"hidden"`
+}
+
+type WordCloudModerationState struct {
+	ActivityItemID string                    `json:"activity_item_id"`
+	Terms          []WordCloudModerationTerm `json:"terms"`
+}
+
+type WordCloudModerationResult struct {
+	ActivityItemID string `json:"activity_item_id"`
+	CanonicalKey  string `json:"canonical_key"`
+	Hidden        bool   `json:"hidden"`
+	StateVersion  int64  `json:"state_version"`
+	Duplicate     bool   `json:"duplicate"`
+}
+
 type RosterEntry struct {
 	ParticipantID string    `json:"participant_id"`
 	DisplayName   string    `json:"display_name"`
@@ -214,6 +235,7 @@ type Store interface {
 	ResolveSession(context.Context, string) (SessionLocator, error)
 	Join(context.Context, string, string, string, string, []byte) (Participant, bool, error)
 	ApplyAction(context.Context, string, string, string, int64, string, string) (Session, bool, error)
+	ModerateWordCloudTerm(context.Context, string, string, string, int64, string, string, bool) (WordCloudModerationResult, bool, error)
 	SubmitAnswer(context.Context, string, []byte, string, string, ActivityResponsePayload, ScoringPolicy) (AnswerResult, error)
 	ParticipantSnapshot(context.Context, string, []byte) (ParticipantSnapshot, error)
 	ManagerSnapshot(context.Context, string, string, bool) (ManagerSnapshot, error)

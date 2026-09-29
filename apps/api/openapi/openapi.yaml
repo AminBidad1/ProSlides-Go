@@ -589,6 +589,40 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { description: State version or transition conflict. }
         '429': { description: Manager action rate exceeded; Retry-After is returned. }
+  /api/v1/live/sessions/{sessionId}/word-cloud/moderation:
+    post:
+      operationId: moderateLiveWordCloudTerm
+      summary: Hide or restore one canonical Word Cloud term as the manager.
+      description: >-
+        Applies a durable, non-destructive visibility policy to the current closed
+        or revealed Text Activity. Participant answers are never edited or deleted.
+        The command is idempotent by request_id and guarded by Session state_version;
+        successful changes advance state_version so every projection resynchronizes.
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WordCloudModerationRequest' }
+      responses:
+        '201':
+          description: Visibility policy changed.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WordCloudModerationResult' }
+        '200':
+          description: Duplicate idempotent request; returns the original command result.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WordCloudModerationResult' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/CSRFError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: "State version, Activity lifecycle, or concurrent-command conflict." }
+        '429': { description: Manager moderation command rate exceeded; Retry-After is returned. }
   /api/v1/live/sessions/{sessionId}/snapshot:
     get:
       operationId: getLiveSnapshot
@@ -1113,6 +1147,46 @@ components:
         expected_state_version: { type: integer, minimum: 1 }
         action: { type: string, enum: [start, present_item, close_activity, reveal_activity, show_overall_ranking, end] }
         item_id: { type: string, format: uuid }
+    WordCloudModerationRequest:
+      type: object
+      required: [request_id, expected_state_version, activity_item_id, canonical_key, hidden]
+      additionalProperties: false
+      properties:
+        request_id: { type: string, format: uuid }
+        expected_state_version: { type: integer, format: int64, minimum: 1 }
+        activity_item_id: { type: string, format: uuid }
+        canonical_key: { type: string, minLength: 1, maxLength: 512 }
+        hidden: { type: boolean }
+    WordCloudModerationResult:
+      type: object
+      required: [activity_item_id, canonical_key, hidden, state_version, duplicate]
+      additionalProperties: false
+      properties:
+        activity_item_id: { type: string, format: uuid }
+        canonical_key: { type: string, minLength: 1, maxLength: 512 }
+        hidden: { type: boolean }
+        state_version: { type: integer, format: int64, minimum: 1 }
+        duplicate: { type: boolean }
+    WordCloudModerationTerm:
+      type: object
+      required: [canonical_key, text, count, hidden]
+      additionalProperties: false
+      properties:
+        canonical_key: { type: string, minLength: 1, maxLength: 512 }
+        text: { type: string, minLength: 1, maxLength: 500 }
+        count: { type: integer, minimum: 1 }
+        hidden: { type: boolean }
+    WordCloudModerationState:
+      type: object
+      required: [activity_item_id, terms]
+      additionalProperties: false
+      properties:
+        activity_item_id: { type: string, format: uuid }
+        terms:
+          type: array
+          maxItems: 200
+          description: Up to 100 currently visible terms plus up to 100 hidden terms, keeping moderation bounded while allowing newly surfaced terms to remain manageable.
+          items: { $ref: '#/components/schemas/WordCloudModerationTerm' }
     LiveSession:
       type: object
       required: [id, presentation_id, host_id, join_code, state, state_version, activity_phase, stage_view]
@@ -1452,6 +1526,8 @@ components:
         has_scoring: { type: boolean, description: True when the frozen Session contains at least one scored Activity. }
         last_event_id: { type: integer, format: int64, minimum: 0 }
         activity_result: { $ref: '#/components/schemas/ActivityResultPayload' }
+        word_cloud_moderation:
+          $ref: '#/components/schemas/WordCloudModerationState'
         lobby_participants:
           type: array
           maxItems: 36
@@ -1493,17 +1569,18 @@ components:
         schema_version:
           type: integer
           enum: [1, 2]
-          description: Version 2 is used by activity.result_updated generic result envelopes and aggregate-only ranking.updated payloads; other current events remain version 1.
+          description: Version 2 is used by activity.result_updated, activity.moderation_updated, and aggregate-only ranking.updated payloads; other current events remain version 1.
         session_id: { type: string, format: uuid }
         state_version: { type: integer, format: int64 }
         name:
           type: string
-          enum: [session.created, presence.updated, session.state_changed, activity.result_updated, ranking.updated]
+          enum: [session.created, presence.updated, session.state_changed, activity.result_updated, activity.moderation_updated, ranking.updated]
         payload:
           oneOf:
             - { $ref: '#/components/schemas/SessionEventPayload' }
             - { $ref: '#/components/schemas/PresenceUpdatedPayload' }
             - { $ref: '#/components/schemas/ActivityResultPayload' }
+            - { $ref: '#/components/schemas/WordCloudModerationEventPayload' }
             - { $ref: '#/components/schemas/RankingUpdatedPayload' }
         occurred_at: { type: string, format: date-time }
     SessionEventPayload:
@@ -1519,7 +1596,10 @@ components:
           nullable: true
         stage_view: { type: string, enum: [item, overall_ranking] }
         ends_at: { type: string, format: date-time, nullable: true }
-        reason: { type: string, enum: [deadline_elapsed], description: Present only when the server closes an Activity at its authoritative deadline. }
+        reason:
+          type: string
+          enum: [deadline_elapsed, word_cloud_moderation]
+          description: Optional server reason for an authoritative lifecycle/version refresh.
     PresenceUpdatedPayload:
       type: object
       required: [participant_delta, active_participant_delta]
@@ -1556,6 +1636,14 @@ components:
           oneOf:
             - $ref: '#/components/schemas/ReportChoiceResultPayload'
             - $ref: '#/components/schemas/WordFrequencyResultPayload'
+    WordCloudModerationEventPayload:
+      type: object
+      required: [activity_item_id, canonical_key, hidden]
+      additionalProperties: false
+      properties:
+        activity_item_id: { type: string, format: uuid }
+        canonical_key: { type: string, minLength: 1, maxLength: 512 }
+        hidden: { type: boolean }
     RankingUpdatedPayload:
       type: object
       required: [participant_count]

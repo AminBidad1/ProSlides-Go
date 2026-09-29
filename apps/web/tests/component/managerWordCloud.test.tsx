@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { expect, test, vi } from "vitest";
 
@@ -128,6 +128,23 @@ const snapshot: LiveSnapshot = {
       ],
     },
   },
+  word_cloud_moderation: {
+    activity_item_id: "cloud-1",
+    terms: [
+      {
+        canonical_key: "خلاق",
+        text: "خلاق",
+        count: 3,
+        hidden: false,
+      },
+      {
+        canonical_key: "سریع",
+        text: "سریع",
+        count: 2,
+        hidden: false,
+      },
+    ],
+  },
   activity_top_performers: [],
 };
 
@@ -150,6 +167,7 @@ const context: LiveSessionContextValue = {
   submitAnswer: vi.fn(async () => true),
   sendNavigation: vi.fn(async () => true),
   sendManagerAction: vi.fn(async () => true),
+  moderateWordCloudTerm: vi.fn(async () => true),
   sendEnd: vi.fn(async () => true),
   loadRoster: vi.fn(async () => true),
   loadMoreRoster: vi.fn(async () => true),
@@ -225,7 +243,24 @@ test("private Backstage does not disclose results before presenter confirmation"
   expect(
     await screen.findByLabelText("پیش‌نمایش خصوصی ابر واژه"),
   ).not.toBeNull();
-  expect(await screen.findByText("خلاق")).not.toBeNull();
+  expect((await screen.findAllByText("خلاق")).length).toBeGreaterThan(0);
+  expect(
+    screen.getByRole("heading", { name: "مدیریت واژه‌های ابر" }),
+  ).not.toBeNull();
+
+  const moderationSearch = screen.getByRole("searchbox", {
+    name: "جست‌وجوی واژه برای مدیریت",
+  });
+  const moderationList = screen.getByLabelText("فهرست مدیریت واژه‌های ابر");
+  fireEvent.change(moderationSearch, { target: { value: "سريع" } });
+  expect(within(moderationList).getByText("سریع")).not.toBeNull();
+  expect(within(moderationList).queryByText("خلاق")).toBeNull();
+  fireEvent.change(moderationSearch, { target: { value: "" } });
+
+  fireEvent.click(
+    screen.getByRole("button", { name: "پنهان کردن خلاق" }),
+  );
+  expect(context.moderateWordCloudTerm).toHaveBeenCalledWith("خلاق", true);
 
   fireEvent.click(
     screen.getByRole("button", { name: "پوشاندن اطلاعات" }),
