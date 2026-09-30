@@ -1,0 +1,41 @@
+name: Media storage provider smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: S3-compatible provider environment to verify
+        required: true
+        type: choice
+        options:
+          - r2
+          - arvan
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment:
+      name: media-${{ inputs.provider }}-smoke
+    defaults:
+      run:
+        working-directory: apps/api
+    env:
+      MEDIA_S3_ENDPOINT: ${{ vars.MEDIA_S3_ENDPOINT }}
+      MEDIA_S3_REGION: ${{ vars.MEDIA_S3_REGION }}
+      MEDIA_S3_BUCKET: ${{ vars.MEDIA_S3_BUCKET }}
+      MEDIA_S3_FORCE_PATH_STYLE: ${{ vars.MEDIA_S3_FORCE_PATH_STYLE }}
+      MEDIA_S3_ACCESS_KEY_ID: ${{ secrets.MEDIA_S3_ACCESS_KEY_ID }}
+      MEDIA_S3_SECRET_ACCESS_KEY: ${{ secrets.MEDIA_S3_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: apps/api/go.mod
+      - name: Verify provider Put/Get/Delete contract
+        run: go run ./cmd/media-storage-smoke

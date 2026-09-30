@@ -110,9 +110,12 @@ jobs:
           PUBLIC_WEB_URL: https://proslides.example.com
           SMTP_HOST: smtp.example.com
           SMTP_FROM_ADDRESS: no-reply@example.com
-          MEDIA_R2_ACCOUNT_ID: ci-account
-          MEDIA_R2_BUCKET: ci-media
-          MEDIA_R2_API_TOKEN: ci-token
+          MEDIA_S3_ENDPOINT: https://storage.example.test
+          MEDIA_S3_REGION: auto
+          MEDIA_S3_BUCKET: ci-media
+          MEDIA_S3_ACCESS_KEY_ID: ci-access-key
+          MEDIA_S3_SECRET_ACCESS_KEY: ci-secret-key
+          MEDIA_S3_FORCE_PATH_STYLE: "false"
         run: docker compose --env-file deploy/.env.production.example -f deploy/compose.production.yaml config --quiet
 
       - name: Validate operational shell commands

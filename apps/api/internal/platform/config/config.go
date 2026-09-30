@@ -25,9 +25,12 @@ type Config struct {
 	RedisURL                string
 	MediaStorageBackend     string
 	MediaStoragePath        string
-	MediaR2AccountID        string
-	MediaR2Bucket           string
-	MediaR2APIToken         string
+	MediaS3Endpoint         string
+	MediaS3Region           string
+	MediaS3Bucket           string
+	MediaS3AccessKeyID      string
+	MediaS3SecretAccessKey  string
+	MediaS3ForcePathStyle   bool
 	DependencyCheckTimeout  time.Duration
 	MigrationTimeout        time.Duration
 	LiveRequestTimeout      time.Duration
@@ -66,24 +69,35 @@ func Load() (Config, error) {
 		"MEDIA_STORAGE_PATH",
 		"/var/lib/proslides-media",
 	)
-	cfg.MediaR2AccountID = strings.TrimSpace(os.Getenv("MEDIA_R2_ACCOUNT_ID"))
-	cfg.MediaR2Bucket = strings.TrimSpace(os.Getenv("MEDIA_R2_BUCKET"))
-	cfg.MediaR2APIToken = strings.TrimSpace(os.Getenv("MEDIA_R2_API_TOKEN"))
+	cfg.MediaS3Endpoint = strings.TrimSpace(os.Getenv("MEDIA_S3_ENDPOINT"))
+	cfg.MediaS3Region = strings.TrimSpace(os.Getenv("MEDIA_S3_REGION"))
+	cfg.MediaS3Bucket = strings.TrimSpace(os.Getenv("MEDIA_S3_BUCKET"))
+	cfg.MediaS3AccessKeyID = strings.TrimSpace(os.Getenv("MEDIA_S3_ACCESS_KEY_ID"))
+	cfg.MediaS3SecretAccessKey = strings.TrimSpace(os.Getenv("MEDIA_S3_SECRET_ACCESS_KEY"))
+	mediaS3ForcePathStyle, mediaConfigErr := boolValue("MEDIA_S3_FORCE_PATH_STYLE", false)
+	if mediaConfigErr != nil {
+		return Config{}, mediaConfigErr
+	}
+	cfg.MediaS3ForcePathStyle = mediaS3ForcePathStyle
 	switch cfg.MediaStorageBackend {
 	case "filesystem":
 		if strings.TrimSpace(cfg.MediaStoragePath) == "" {
 			return Config{}, fmt.Errorf("MEDIA_STORAGE_PATH is required for filesystem media storage")
 		}
-	case "r2":
-		if cfg.MediaR2AccountID == "" || cfg.MediaR2Bucket == "" || cfg.MediaR2APIToken == "" {
-			return Config{}, fmt.Errorf("MEDIA_R2_ACCOUNT_ID, MEDIA_R2_BUCKET, and MEDIA_R2_API_TOKEN are required for R2 media storage")
+	case "s3":
+		if cfg.MediaS3Endpoint == "" ||
+			cfg.MediaS3Region == "" ||
+			cfg.MediaS3Bucket == "" ||
+			cfg.MediaS3AccessKeyID == "" ||
+			cfg.MediaS3SecretAccessKey == "" {
+			return Config{}, fmt.Errorf("MEDIA_S3_ENDPOINT, MEDIA_S3_REGION, MEDIA_S3_BUCKET, MEDIA_S3_ACCESS_KEY_ID, and MEDIA_S3_SECRET_ACCESS_KEY are required for S3 media storage")
 		}
 	case "memory":
 		if cfg.Environment != "test" {
 			return Config{}, fmt.Errorf("MEDIA_STORAGE_BACKEND=memory is allowed only in test")
 		}
 	default:
-		return Config{}, fmt.Errorf("MEDIA_STORAGE_BACKEND must be filesystem, r2, or memory")
+		return Config{}, fmt.Errorf("MEDIA_STORAGE_BACKEND must be filesystem, s3, or memory")
 	}
 
 	sessionTTL, err := time.ParseDuration(valueOrDefault("SESSION_TTL", "168h"))
@@ -144,8 +158,15 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("SMTP_HOST and SMTP_FROM_ADDRESS must be configured together")
 	}
 	if cfg.Environment == "production" {
-		if cfg.MediaStorageBackend != "r2" {
-			return Config{}, fmt.Errorf("MEDIA_STORAGE_BACKEND must be r2 in production")
+		if cfg.MediaStorageBackend != "s3" {
+			return Config{}, fmt.Errorf("MEDIA_STORAGE_BACKEND must be s3 in production")
+		}
+		mediaEndpoint, mediaEndpointErr := url.Parse(cfg.MediaS3Endpoint)
+		if mediaEndpointErr != nil ||
+			mediaEndpoint.Scheme != "https" ||
+			mediaEndpoint.Host == "" ||
+			mediaEndpoint.User != nil {
+			return Config{}, fmt.Errorf("MEDIA_S3_ENDPOINT must be an HTTPS endpoint in production")
 		}
 		databaseURL, parseErr := url.Parse(cfg.DatabaseURL)
 		if parseErr != nil ||

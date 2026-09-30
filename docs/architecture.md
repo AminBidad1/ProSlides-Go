@@ -28,7 +28,7 @@ Browser (manager/player)
                                            |           presence/fan-out optional later)
                                            `-- media module --> private object storage
                                                               (filesystem locally,
-                                                               R2 in production)
+                                                               S3-compatible in production)
 CDN/cache <-------------------------- immutable first-party media delivery path
 Telemetry backend <---------------- bounded Prometheus metrics now; traces later
 ```

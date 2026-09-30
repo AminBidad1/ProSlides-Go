@@ -4,10 +4,13 @@ import "testing"
 
 func setProductionMedia(t *testing.T) {
 	t.Helper()
-	t.Setenv("MEDIA_STORAGE_BACKEND", "r2")
-	t.Setenv("MEDIA_R2_ACCOUNT_ID", "account-id")
-	t.Setenv("MEDIA_R2_BUCKET", "proslides-media")
-	t.Setenv("MEDIA_R2_API_TOKEN", "test-token")
+	t.Setenv("MEDIA_STORAGE_BACKEND", "s3")
+	t.Setenv("MEDIA_S3_ENDPOINT", "https://storage.example.test")
+	t.Setenv("MEDIA_S3_REGION", "auto")
+	t.Setenv("MEDIA_S3_BUCKET", "proslides-media")
+	t.Setenv("MEDIA_S3_ACCESS_KEY_ID", "test-access-key")
+	t.Setenv("MEDIA_S3_SECRET_ACCESS_KEY", "test-secret-key")
+	t.Setenv("MEDIA_S3_FORCE_PATH_STYLE", "false")
 }
 
 func TestLoadRequiresBothRuntimeDependencies(t *testing.T) {
@@ -166,7 +169,7 @@ func TestLoadProductionAcceptsReferenceSecurityBoundary(t *testing.T) {
 	}
 }
 
-func TestLoadProductionRequiresR2MediaStorage(t *testing.T) {
+func TestLoadProductionRequiresS3MediaStorage(t *testing.T) {
 	t.Setenv("APP_ENV", "production")
 	t.Setenv("DATABASE_URL", "postgres://localhost/proslides?sslmode=require")
 	t.Setenv("REDIS_URL", "rediss://localhost:6379/0")
@@ -179,16 +182,49 @@ func TestLoadProductionRequiresR2MediaStorage(t *testing.T) {
 	}
 }
 
-func TestLoadR2RequiresCredentials(t *testing.T) {
+func TestLoadS3RequiresCredentials(t *testing.T) {
 	t.Setenv("APP_ENV", "test")
 	t.Setenv("DATABASE_URL", "postgres://localhost/proslides?sslmode=require")
 	t.Setenv("REDIS_URL", "rediss://localhost:6379/0")
-	t.Setenv("MEDIA_STORAGE_BACKEND", "r2")
-	t.Setenv("MEDIA_R2_ACCOUNT_ID", "")
-	t.Setenv("MEDIA_R2_BUCKET", "")
-	t.Setenv("MEDIA_R2_API_TOKEN", "")
+	t.Setenv("MEDIA_STORAGE_BACKEND", "s3")
+	t.Setenv("MEDIA_S3_ENDPOINT", "")
+	t.Setenv("MEDIA_S3_REGION", "")
+	t.Setenv("MEDIA_S3_BUCKET", "")
+	t.Setenv("MEDIA_S3_ACCESS_KEY_ID", "")
+	t.Setenv("MEDIA_S3_SECRET_ACCESS_KEY", "")
 
 	if _, err := Load(); err == nil {
-		t.Fatal("R2 media storage accepted missing credentials")
+		t.Fatal("S3 media storage accepted missing credentials")
+	}
+}
+
+func TestLoadRejectsInvalidS3PathStyleFlag(t *testing.T) {
+	t.Setenv("APP_ENV", "test")
+	t.Setenv("DATABASE_URL", "postgres://localhost/proslides?sslmode=require")
+	t.Setenv("REDIS_URL", "rediss://localhost:6379/0")
+	t.Setenv("MEDIA_STORAGE_BACKEND", "s3")
+	t.Setenv("MEDIA_S3_ENDPOINT", "https://storage.example.test")
+	t.Setenv("MEDIA_S3_REGION", "auto")
+	t.Setenv("MEDIA_S3_BUCKET", "proslides-media")
+	t.Setenv("MEDIA_S3_ACCESS_KEY_ID", "test-access-key")
+	t.Setenv("MEDIA_S3_SECRET_ACCESS_KEY", "test-secret-key")
+	t.Setenv("MEDIA_S3_FORCE_PATH_STYLE", "sometimes")
+
+	if _, err := Load(); err == nil {
+		t.Fatal("S3 media storage accepted invalid MEDIA_S3_FORCE_PATH_STYLE")
+	}
+}
+
+func TestLoadProductionRequiresHTTPSS3Endpoint(t *testing.T) {
+	t.Setenv("APP_ENV", "production")
+	setProductionMedia(t)
+	t.Setenv("MEDIA_S3_ENDPOINT", "http://storage.example.test")
+	t.Setenv("DATABASE_URL", "postgres://localhost/proslides?sslmode=require")
+	t.Setenv("REDIS_URL", "rediss://localhost:6379/0")
+	t.Setenv("PUBLIC_WEB_URL", "https://proslides.example.test")
+	t.Setenv("TRUSTED_PROXY_CIDRS", "172.30.0.0/24")
+
+	if _, err := Load(); err == nil {
+		t.Fatal("production accepted a non-HTTPS MEDIA_S3_ENDPOINT")
 	}
 }

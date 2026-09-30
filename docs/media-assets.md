@@ -66,10 +66,7 @@ Go API / media bounded context
     |---- PostgreSQL: media_assets + media_variants metadata
     `---- private object storage
            |-- local filesystem in development
-           `-- current production adapter: Cloudflare R2
-
-Target accepted in ADR 0006:
-           `-- generic private S3-compatible storage
+           `-- generic S3-compatible storage in production
                  |-- Cloudflare R2
                  `-- Arvan Object Storage
 
@@ -84,12 +81,10 @@ Viewer browser
 
 No separate media application server or microservice is introduced.
 
-The current production adapter still uses Cloudflare R2's REST object API with
-a server-side token. ADR 0006 has accepted a provider-neutral replacement, but
-issue #196 has not implemented it yet. The target is one generic
-S3-compatible adapter behind the existing `ObjectStore` boundary, with
-Cloudflare R2 or Arvan Object Storage selected only by deployment
-configuration. Until #196 lands, production remains R2-only.
+Production uses one generic S3-compatible adapter behind the existing
+`ObjectStore` boundary. Cloudflare R2 and Arvan Object Storage are selected
+only by deployment configuration; neither provider is represented in product
+data or browser-visible media identity.
 
 The portability invariant is already valid: changing object-storage providers
 must not change Presentation/Session/report data, Media Asset IDs, stable
@@ -98,10 +93,9 @@ first-party delivery URLs or immutable object keys.
 ## Provider portability and migration boundary
 
 ADR 0006 owns the durable provider-portability decision. The implementation
-tracked by #196 will replace the provider-specific R2 REST client with an AWS
-SDK for Go v2 S3-compatible adapter.
+uses an AWS SDK for Go v2 S3-compatible adapter.
 
-The target production storage contract is intentionally small:
+The production storage contract is intentionally small:
 
 - private bucket;
 - server-only endpoint/region/bucket/access-key/secret configuration;
@@ -130,9 +124,11 @@ verification uses the SHA-256 and byte size already stored by ProSlides;
 rendition verification uses the durable key/byte-size/dimension/MIME metadata
 unless future evidence justifies storing additional checksums.
 
-Neither the application nor CI will claim a provider is supported solely from
-"S3-compatible" documentation. #196 requires an opt-in real-provider smoke for
-both R2 and Arvan before operational support is claimed.
+Neither the application nor CI claims a provider is supported solely from
+"S3-compatible" documentation. The opt-in provider smoke workflow must pass
+against the exact R2 or Arvan configuration before operational support is
+claimed. Cutover verification follows
+[`runbooks/media-storage-migration.md`](runbooks/media-storage-migration.md).
 
 ## Input policy
 

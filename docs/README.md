@@ -28,6 +28,7 @@ authoritative document rather than preserving two narratives.
 | Which environment values exist? | `configuration.md` + checked-in examples |
 | How do I run and verify locally? | `local-development.md` |
 | How is a release deployed? | `deployment-runbook.md` |
+| How is media storage migrated between providers? | `runbooks/media-storage-migration.md` |
 | How are backup, restore, retention, rollback and incidents handled? | `operations-runbook.md` |
 | What is the external HTTP/SSE contract? | `../apps/api/openapi/openapi.yaml` |
 | Why was a durable decision made? | `decisions/` |

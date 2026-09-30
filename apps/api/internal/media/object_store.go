@@ -5,15 +5,15 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"mime/multipart"
-	"net/http"
-	"net/textproto"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
-	"time"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 func safeStorageKey(key string) bool {
@@ -157,142 +157,96 @@ func (s *FilesystemObjectStore) Delete(_ context.Context, key string) error {
 	return nil
 }
 
-type R2ObjectStore struct {
-	client    *http.Client
-	baseURL   string
-	accountID string
-	bucket    string
-	apiToken  string
+type s3ObjectClient interface {
+	PutObject(context.Context, *s3.PutObjectInput, ...func(*s3.Options)) (*s3.PutObjectOutput, error)
+	GetObject(context.Context, *s3.GetObjectInput, ...func(*s3.Options)) (*s3.GetObjectOutput, error)
+	DeleteObject(context.Context, *s3.DeleteObjectInput, ...func(*s3.Options)) (*s3.DeleteObjectOutput, error)
 }
 
-func NewR2ObjectStore(accountID, bucket, apiToken string) (*R2ObjectStore, error) {
-	accountID = strings.TrimSpace(accountID)
+type S3ObjectStore struct {
+	client s3ObjectClient
+	bucket string
+}
+
+func NewS3ObjectStore(
+	endpoint, region, bucket, accessKeyID, secretAccessKey string,
+	forcePathStyle bool,
+) (*S3ObjectStore, error) {
+	endpoint = strings.TrimSpace(endpoint)
+	region = strings.TrimSpace(region)
 	bucket = strings.TrimSpace(bucket)
-	apiToken = strings.TrimSpace(apiToken)
-	if accountID == "" || bucket == "" || apiToken == "" {
-		return nil, fmt.Errorf("R2 account, bucket, and API token are required")
+	accessKeyID = strings.TrimSpace(accessKeyID)
+	secretAccessKey = strings.TrimSpace(secretAccessKey)
+	if endpoint == "" || region == "" || bucket == "" || accessKeyID == "" || secretAccessKey == "" {
+		return nil, fmt.Errorf("S3 endpoint, region, bucket, access key ID, and secret access key are required")
 	}
-	return newR2ObjectStoreWithEndpoint(
-		accountID,
-		bucket,
-		apiToken,
-		"https://api.cloudflare.com/client/v4",
-	), nil
+	parsedEndpoint, err := url.Parse(endpoint)
+	if err != nil || parsedEndpoint.Host == "" ||
+		(parsedEndpoint.Scheme != "http" && parsedEndpoint.Scheme != "https") {
+		return nil, fmt.Errorf("S3 endpoint must be an absolute HTTP(S) URL")
+	}
+
+	client := s3.New(s3.Options{
+		BaseEndpoint:     aws.String(strings.TrimRight(endpoint, "/")),
+		Region:           region,
+		Credentials:      aws.NewCredentialsCache(credentials.NewStaticCredentialsProvider(accessKeyID, secretAccessKey, "")),
+		UsePathStyle:     forcePathStyle,
+		RetryMaxAttempts: 3,
+	})
+	return newS3ObjectStoreWithClient(bucket, client), nil
 }
 
-func newR2ObjectStoreWithEndpoint(
-	accountID, bucket, apiToken, baseURL string,
-) *R2ObjectStore {
-	return &R2ObjectStore{
-		client:    &http.Client{Timeout: 30 * time.Second},
-		baseURL:   strings.TrimRight(baseURL, "/"),
-		accountID: strings.TrimSpace(accountID),
-		bucket:    strings.TrimSpace(bucket),
-		apiToken:  strings.TrimSpace(apiToken),
+func newS3ObjectStoreWithClient(bucket string, client s3ObjectClient) *S3ObjectStore {
+	return &S3ObjectStore{
+		client: client,
+		bucket: strings.TrimSpace(bucket),
 	}
 }
 
-func (s *R2ObjectStore) objectURL(key string) (string, error) {
-	if !safeStorageKey(key) {
-		return "", ErrStorageUnavailable
-	}
-	return s.baseURL + "/accounts/" +
-		url.PathEscape(s.accountID) +
-		"/r2/buckets/" + url.PathEscape(s.bucket) +
-		"/objects/" + url.PathEscape(key), nil
-}
-
-func (s *R2ObjectStore) request(ctx context.Context, method, key, contentType string, body io.Reader) (*http.Response, error) {
-	endpoint, err := s.objectURL(key)
-	if err != nil {
-		return nil, err
-	}
-	req, err := http.NewRequestWithContext(ctx, method, endpoint, body)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrStorageUnavailable, err)
-	}
-	req.Header.Set("Authorization", "Bearer "+s.apiToken)
-	if contentType != "" {
-		req.Header.Set("Content-Type", contentType)
-	}
-	response, err := s.client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrStorageUnavailable, err)
-	}
-	return response, nil
-}
-
-func storageResponseError(response *http.Response) error {
-	defer response.Body.Close()
-	body, _ := io.ReadAll(io.LimitReader(response.Body, 4096))
-	return fmt.Errorf(
-		"%w: object storage returned HTTP %d: %s",
-		ErrStorageUnavailable,
-		response.StatusCode,
-		strings.TrimSpace(string(body)),
-	)
-}
-
-func (s *R2ObjectStore) Put(ctx context.Context, key, contentType string, data []byte) error {
-	var body bytes.Buffer
-	writer := multipart.NewWriter(&body)
-	header := make(textproto.MIMEHeader)
-	header.Set("Content-Disposition", fmt.Sprintf(
-		`form-data; name="body"; filename="%s"`,
-		strings.ReplaceAll(key, `"`, ""),
-	))
-	header.Set("Content-Type", contentType)
-	part, err := writer.CreatePart(header)
-	if err != nil {
-		return fmt.Errorf("%w: %v", ErrStorageUnavailable, err)
-	}
-	if _, err = part.Write(data); err != nil {
-		return fmt.Errorf("%w: %v", ErrStorageUnavailable, err)
-	}
-	if err = writer.Close(); err != nil {
-		return fmt.Errorf("%w: %v", ErrStorageUnavailable, err)
-	}
-
-	response, err := s.request(
-		ctx,
-		http.MethodPut,
-		key,
-		writer.FormDataContentType(),
-		&body,
-	)
-	if err != nil {
-		return err
-	}
-	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		return storageResponseError(response)
-	}
-	response.Body.Close()
-	return nil
-}
-
-func (s *R2ObjectStore) Open(ctx context.Context, key string) (io.ReadCloser, error) {
-	response, err := s.request(ctx, http.MethodGet, key, "", nil)
-	if err != nil {
-		return nil, err
-	}
-	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		return nil, storageResponseError(response)
-	}
-	return response.Body, nil
-}
-
-func (s *R2ObjectStore) Delete(ctx context.Context, key string) error {
-	response, err := s.request(ctx, http.MethodDelete, key, "", nil)
-	if err != nil {
-		return err
-	}
-	if response.StatusCode == http.StatusNotFound {
-		response.Body.Close()
+func wrapStorageError(err error) error {
+	if err == nil {
 		return nil
 	}
-	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		return storageResponseError(response)
+	return fmt.Errorf("%w: %w", ErrStorageUnavailable, err)
+}
+
+func (s *S3ObjectStore) Put(ctx context.Context, key, contentType string, data []byte) error {
+	if !safeStorageKey(key) {
+		return ErrStorageUnavailable
 	}
-	response.Body.Close()
-	return nil
+	_, err := s.client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket:      aws.String(s.bucket),
+		Key:         aws.String(key),
+		ContentType: aws.String(contentType),
+		Body:        bytes.NewReader(data),
+	})
+	return wrapStorageError(err)
+}
+
+func (s *S3ObjectStore) Open(ctx context.Context, key string) (io.ReadCloser, error) {
+	if !safeStorageKey(key) {
+		return nil, ErrStorageUnavailable
+	}
+	output, err := s.client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		return nil, wrapStorageError(err)
+	}
+	if output == nil || output.Body == nil {
+		return nil, fmt.Errorf("%w: S3 returned an empty object body", ErrStorageUnavailable)
+	}
+	return output.Body, nil
+}
+
+func (s *S3ObjectStore) Delete(ctx context.Context, key string) error {
+	if !safeStorageKey(key) {
+		return ErrStorageUnavailable
+	}
+	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(key),
+	})
+	return wrapStorageError(err)
 }

@@ -14,11 +14,14 @@ cookies, participant credentials, or provider tokens.
 | `LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARN`/`WARNING`, or `ERROR`. |
 | `DATABASE_URL` | required | PostgreSQL connection URL; required in every environment. Production requires `sslmode=require`, `verify-ca`, or `verify-full`. |
 | `REDIS_URL` | required | Redis connection URL; required for readiness and distributed identity limits. Production requires `rediss://`. |
-| `MEDIA_STORAGE_BACKEND` | `filesystem` locally | Media binary adapter: `filesystem`, `r2`, or test-only `memory`. Production requires `r2`. |
-| `MEDIA_STORAGE_PATH` | `/var/lib/proslides-media` | Local/development filesystem root for media objects. It is not used by the production R2 adapter. |
-| `MEDIA_R2_ACCOUNT_ID` | empty | Cloudflare account ID used by the private R2 object adapter; required in production. |
-| `MEDIA_R2_BUCKET` | empty | Private R2 bucket used for immutable media objects; required in production. |
-| `MEDIA_R2_API_TOKEN` | empty | Server-only Cloudflare API token for the REST object adapter. It requires the `Workers R2 Storage Write` permission (which includes object read/write). Never expose it to Vite/browser configuration. |
+| `MEDIA_STORAGE_BACKEND` | `filesystem` locally | Media binary adapter: `filesystem`, `s3`, or test-only `memory`. Production requires `s3`. |
+| `MEDIA_STORAGE_PATH` | `/var/lib/proslides-media` | Local/development filesystem root for media objects. It is not used by the production S3 adapter. |
+| `MEDIA_S3_ENDPOINT` | empty | S3-compatible HTTPS endpoint. Required for the `s3` backend; production rejects non-HTTPS endpoints. |
+| `MEDIA_S3_REGION` | empty | Provider/deployment S3 region. R2 uses `auto`; Arvan uses the region supplied by the account. |
+| `MEDIA_S3_BUCKET` | empty | Private bucket used for immutable media objects. |
+| `MEDIA_S3_ACCESS_KEY_ID` | empty | Server-only S3 access-key ID. Never expose it to Vite/browser configuration. |
+| `MEDIA_S3_SECRET_ACCESS_KEY` | empty | Server-only S3 secret access key. Never expose it to Vite/browser configuration or logs. |
+| `MEDIA_S3_FORCE_PATH_STYLE` | `false` | S3 addressing mode. Set only when the exact provider endpoint requires path-style addressing and prove it with the provider smoke. |
 | `DEPENDENCY_CHECK_TIMEOUT` | `2s` | Positive Go duration bounding each readiness ping. |
 | `MIGRATION_TIMEOUT` | `2m` | Positive duration bounding advisory-lock wait and startup migrations. |
 | `LIVE_REQUEST_TIMEOUT` | `10s` | Positive deadline for non-streaming live requests; SSE is exempt. |
@@ -65,9 +68,11 @@ the filesystem adapter. The API image seeds that mount point with ownership for
 the non-root `proslides` runtime user, and filesystem startup verifies the
 configured directory is writable before the server begins serving requests.
 Production startup rejects filesystem or memory media storage and requires the
-private R2 adapter. The R2 token remains API-only; the
-browser uploads through the authenticated ProSlides media endpoint and never
-receives bucket credentials or storage keys.
+generic private S3-compatible adapter. Cloudflare R2 and Arvan Object Storage
+are deployment configurations of the same adapter; application code does not
+branch on provider names. S3 credentials remain API-only. The browser uploads
+through the authenticated ProSlides media endpoint and never receives bucket
+credentials, provider URLs or storage keys.
 
 Keep `TRUSTED_PROXY_CIDRS` empty when clients reach Go directly in local/test
 topologies. The supported production topology always places the web proxy in
@@ -152,11 +157,16 @@ credentials.
 4. Set `PUBLIC_WEB_URL`, use the documented same-origin ingress, and keep
    `APP_ENV=production`; confirm cookie, CSRF, and reset-link behavior through
    the public HTTPS hostname.
-5. Create a private R2 bucket and a dedicated Cloudflare API token limited to
-   the required R2 permission/account, configure
-   `MEDIA_R2_ACCOUNT_ID`, `MEDIA_R2_BUCKET`, and `MEDIA_R2_API_TOKEN`, then
-   verify upload, immutable first-party read, cache headers, and token rotation.
-6. Confirm `/healthz` and `/readyz`, migration startup, backups, restore, and
+5. Create a private S3-compatible media bucket and dedicated least-privilege
+   credentials. Configure the `MEDIA_S3_*` values, then run the provider smoke
+   for the exact R2 or Arvan environment before claiming support. For R2 use the
+   S3 endpoint and region `auto`; for Arvan use the endpoint/region supplied by
+   the account and prove the addressing mode rather than hardcoding it.
+6. Before any provider switch, follow
+   [the media storage migration runbook](runbooks/media-storage-migration.md),
+   preserve object keys, reconcile the destination against PostgreSQL and keep
+   the source unchanged for the rollback window.
+7. Confirm `/healthz` and `/readyz`, migration startup, backups, restore, and
    secret rotation in a non-production environment before cutover.
 
 Canonical local examples live in

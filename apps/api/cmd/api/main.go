@@ -80,11 +80,14 @@ func main() {
 	switch cfg.MediaStorageBackend {
 	case "filesystem":
 		mediaObjects, err = media.NewFilesystemObjectStore(cfg.MediaStoragePath)
-	case "r2":
-		mediaObjects, err = media.NewR2ObjectStore(
-			cfg.MediaR2AccountID,
-			cfg.MediaR2Bucket,
-			cfg.MediaR2APIToken,
+	case "s3":
+		mediaObjects, err = media.NewS3ObjectStore(
+			cfg.MediaS3Endpoint,
+			cfg.MediaS3Region,
+			cfg.MediaS3Bucket,
+			cfg.MediaS3AccessKeyID,
+			cfg.MediaS3SecretAccessKey,
+			cfg.MediaS3ForcePathStyle,
 		)
 	case "memory":
 		mediaObjects = media.NewMemoryObjectStore()

@@ -1,6 +1,6 @@
 # ADR 0006: Provider-neutral S3-compatible media storage
 
-Status: Accepted for implementation
+Status: Accepted and implemented
 
 Date: 2026-09-30
 
@@ -14,7 +14,7 @@ immutable asset/rendition metadata, while binary bytes live behind
 Asset identities and stable first-party delivery URLs such as
 `/api/v1/media/assets/{id}/content`; provider URLs are not product truth.
 
-The current production implementation is nevertheless provider-specific:
+At the time of this decision, the production implementation was provider-specific:
 
 - `MEDIA_STORAGE_BACKEND=r2` is required in production;
 - `R2ObjectStore` talks to Cloudflare's REST object API with a Bearer token;
@@ -103,9 +103,9 @@ memory       tests only
 Cloudflare R2 and Arvan Object Storage are configurations of `s3`, not separate
 product backends.
 
-### 2. Planned configuration boundary
+### 2. Configuration boundary
 
-The implementation is expected to introduce configuration equivalent to:
+The implementation uses:
 
 ```text
 MEDIA_STORAGE_BACKEND=s3
@@ -117,8 +117,8 @@ MEDIA_S3_SECRET_ACCESS_KEY=
 MEDIA_S3_FORCE_PATH_STYLE=false
 ```
 
-These names are design intent until #196 implements them. The implementation PR
-must make the checked-in env examples and `docs/configuration.md` authoritative.
+The checked-in env examples and `docs/configuration.md` are authoritative for
+these names.
 
 Rules:
 
@@ -245,17 +245,20 @@ R2 and Arvan that at minimum prove:
 A provider is not called "supported" by ProSlides merely because its marketing
 page says S3-compatible.
 
-## Implementation sequence
+## Implementation record
 
-Issue #196 owns delivery. The intended order is:
+Issue #196 delivered the decision through the following sequence:
 
-1. add AWS SDK for Go v2 S3 dependencies;
-2. implement/test generic `S3ObjectStore`;
-3. replace R2-specific production configuration with generic S3 configuration;
-4. update production Compose/env examples and configuration documentation;
-5. add provider smoke procedures for R2 and Arvan;
-6. add migration reconciliation tooling and operational cutover instructions;
-7. keep existing browser media flows unchanged and run all required CI.
+1. added AWS SDK for Go v2 S3 dependencies;
+2. implemented and contract-tested the generic `S3ObjectStore`;
+3. replaced R2-specific production configuration with generic S3 configuration;
+4. updated production Compose/env examples and configuration documentation;
+5. added opt-in provider smoke procedures for R2 and Arvan;
+6. added bounded migration reconciliation tooling and operational cutover instructions;
+7. kept browser media identities and flows unchanged behind the existing media boundary.
+
+Normal repository CI remains provider-independent; real-provider smoke evidence is
+environment-specific and is recorded by the manual provider-smoke workflow.
 
 No database migration is expected for the adapter change because persisted
 object keys and product references are already provider-neutral.
@@ -303,7 +306,7 @@ Positive:
 
 Costs:
 
-- the production credential contract changes from the current R2 REST token to
+- the production credential contract changed from the former R2 REST token to
   S3 access-key credentials;
 - real-provider smokes are required before claiming support;
 - provider migration remains an operational procedure rather than an
