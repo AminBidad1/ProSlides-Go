@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  Suspense,
+  lazy,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   CheckCircle2,
   LoaderCircle,
@@ -27,6 +33,10 @@ import {
 } from "../model/designDraft.ts";
 import { useRequiredDesignDraft } from "../model/useDesignDraftContext.ts";
 import BackgroundImageControl from "./BackgroundImageControl.tsx";
+
+const BackgroundFocalPointControl = lazy(
+  () => import("./BackgroundFocalPointControl.tsx"),
+);
 
 type DesignInspectorProps = {
   quizId: string;
@@ -59,6 +69,7 @@ export default function DesignInspector({
     markSaved,
     setBackgroundColor,
     setBackgroundImage,
+    setBackgroundImageFocal,
     setTextColor,
     setAccentColor,
     setVisualizationPalette,
@@ -84,6 +95,8 @@ export default function DesignInspector({
       background: {
         color: draft.backgroundColor,
         image: draft.backgroundImageUrl,
+        focal_x: draft.backgroundImageFocalX,
+        focal_y: draft.backgroundImageFocalY,
         text_color: draft.textColor,
       },
       text_color: draft.textColor,
@@ -93,6 +106,8 @@ export default function DesignInspector({
     [
       draft.backgroundColor,
       draft.backgroundImageUrl,
+      draft.backgroundImageFocalX,
+      draft.backgroundImageFocalY,
       draft.textColor,
       draft.accentColor,
       draft.visualizationPalette,
@@ -447,17 +462,39 @@ export default function DesignInspector({
                 backgroundColor={draft.backgroundColor}
                 imageUrl={draft.backgroundImageUrl}
                 assetId={draft.backgroundImageAssetId}
+                focalX={draft.backgroundImageFocalX}
+                focalY={draft.backgroundImageFocalY}
                 maxUrlLength={DESIGN_LIMITS.imageUrl}
                 disabled={saving || conflictPending}
                 onChange={setBackgroundImage}
               />
 
               {draft.backgroundImageUrl ? (
-                <p className="mt-2 text-xs leading-5 text-content-muted">
-                  تصویر با پوشش کامل نمایش داده می‌شود و بسته به نسبت نمایشگر
-                  ممکن است از لبه‌ها برش بخورد. نقطه تمرکز در مرحله بعد روی همین
-                  Media Asset اضافه می‌شود.
-                </p>
+                <>
+                  <Suspense
+                    fallback={
+                      <div
+                        className="mt-3 aspect-video animate-pulse rounded-panel border border-border-subtle bg-canvas motion-reduce:animate-none"
+                        role="status"
+                        aria-label="در حال آماده‌سازی تنظیم نقطه تمرکز تصویر"
+                      />
+                    }
+                  >
+                    <BackgroundFocalPointControl
+                      imageUrl={draft.backgroundImageUrl}
+                      backgroundColor={draft.backgroundColor}
+                      focalX={draft.backgroundImageFocalX}
+                      focalY={draft.backgroundImageFocalY}
+                      disabled={saving || conflictPending}
+                      onChange={setBackgroundImageFocal}
+                    />
+                  </Suspense>
+                  <p className="mt-2 text-xs leading-5 text-content-muted">
+                    تصویر همیشه کادر را کامل می‌پوشاند و ممکن است در نسبت‌های
+                    مختلف از لبه‌ها برش بخورد؛ نقطه تمرکز مشخص می‌کند کدام بخش
+                    تصویر هنگام این برش در اولویت بماند.
+                  </p>
+                </>
               ) : null}
             </section>
 

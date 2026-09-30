@@ -28,6 +28,8 @@ test("live presentation mapper normalizes unknown settings into domain strings",
     background: {
       color: "#1e1e2e",
       image: "",
+      focal_x: 0.5,
+      focal_y: 0.5,
       text_color: "#111827",
     },
     music_url: "",
@@ -53,6 +55,8 @@ test("live presentation mapper preserves validated string settings", () => {
     settings: {
       background_color: "#312e81",
       background_image_url: "https://example.test/bg.jpg",
+      background_image_focal_x: 0.2,
+      background_image_focal_y: 0.8,
       text_color: "#ffffff",
       music_url: "https://example.test/music.mp3",
       accent_color: "#22d3ee",
@@ -66,6 +70,8 @@ test("live presentation mapper preserves validated string settings", () => {
   assert.deepEqual(model.background, {
     color: "#312e81",
     image: "https://example.test/bg.jpg",
+    focal_x: 0.2,
+    focal_y: 0.8,
     text_color: "#ffffff",
   });
   assert.equal(model.music_url, "https://example.test/music.mp3");
@@ -86,6 +92,8 @@ test("manager frozen Session items are sufficient when mutable Presentation load
       title: "نمونه فریز‌شده",
       background_color: "#1e1e2e",
       background_image_url: "",
+      background_image_focal_x: 0.5,
+      background_image_focal_y: 0.5,
       music_url: "",
       text_color: "#ffffff",
       accent_color: "#8b5cf6",
@@ -137,6 +145,8 @@ test("manager projection uses frozen Session presentation metadata", () => {
     background: {
       color: "#ffffff",
       image: "",
+      focal_x: 0.5,
+      focal_y: 0.5,
       text_color: "#111827",
     },
     music_url: "",
@@ -151,6 +161,8 @@ test("manager projection uses frozen Session presentation metadata", () => {
       title: "عنوان جلسه",
       background_color: "#123456",
       background_image_url: "https://example.test/frozen-bg.jpg",
+      background_image_focal_x: 0.15,
+      background_image_focal_y: 0.72,
       music_url: "https://example.test/frozen.mp3",
       text_color: "#fedcba",
       accent_color: "#f97316",
@@ -182,6 +194,8 @@ test("manager projection uses frozen Session presentation metadata", () => {
   assert.deepEqual(projected.background, {
     color: "#123456",
     image: "https://example.test/frozen-bg.jpg",
+    focal_x: 0.15,
+    focal_y: 0.72,
     text_color: "#fedcba",
   });
   assert.equal(projected.music_url, "https://example.test/frozen.mp3");

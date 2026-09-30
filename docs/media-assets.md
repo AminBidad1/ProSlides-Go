@@ -149,6 +149,18 @@ contract and falls back to the master for legacy assets without a thumbnail.
 - failed upload must never update a presentation background;
 - an already ready asset never changes bytes.
 
+## Background placement
+
+Background cropping is non-destructive. A Presentation stores normalized
+`background_image_focal_x` and `background_image_focal_y` coordinates in the
+range 0..1, defaulting to the center (0.5, 0.5). The immutable Media Asset is
+never rewritten or duplicated when the focal point changes.
+
+Stage, manager and editor cover rendering use the same placement contract.
+Participant surfaces remain image-free by design. Because Session creation
+already freezes the full Presentation settings JSON, focal placement is frozen
+alongside the background asset reference for the lifetime of the Session.
+
 ## Lifecycle
 
 Assets are reusable across Presentations, so removing a background from one
@@ -163,9 +175,8 @@ Session may still reference.
 ## Next extensions
 
 1. explicit persisted asset-id references in all authoring image slots;
-2. non-destructive focal point metadata for background cover rendering;
-3. responsive variants for question/content/option image delivery;
-4. reference accounting and safe orphan garbage collection;
+2. responsive variants for question/content/option image delivery;
+3. reference accounting and safe orphan garbage collection;
 5. optional filename search only when library size/usage data justifies it;
 6. optional CDN/direct-delivery adapter without changing domain references;
 7. Solid / Gradient / Image background-kind persistence.

@@ -1005,6 +1005,20 @@ components:
           type: string
           maxLength: 36
           description: Optional immutable Media Asset UUID. Empty string clears the asset reference.
+        background_image_focal_x:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          default: 0.5
+          description: Normalized horizontal focal coordinate used when the background covers the Stage.
+        background_image_focal_y:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          default: 0.5
+          description: Normalized vertical focal coordinate used when the background covers the Stage.
         music_url:
           type: string
           maxLength: 4096
@@ -1568,13 +1582,23 @@ components:
           $ref: '#/components/schemas/PublicLivePresentation'
     PublicLivePresentation:
       type: object
-      required: [title, background_color, background_image_url, music_url, text_color, accent_color, visualization_palette]
+      required: [title, background_color, background_image_url, background_image_focal_x, background_image_focal_y, music_url, text_color, accent_color, visualization_palette]
       additionalProperties: false
       description: Public, display-only presentation metadata safe for participant theming and presentation audio.
       properties:
         title: { type: string }
         background_color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
         background_image_url: { type: string }
+        background_image_focal_x:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+        background_image_focal_y:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
         music_url: { type: string, maxLength: 4096 }
         text_color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
         accent_color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }

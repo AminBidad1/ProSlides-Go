@@ -13,6 +13,8 @@ type BackgroundImageControlProps = {
   backgroundColor: string;
   imageUrl: string;
   assetId: string;
+  focalX?: number;
+  focalY?: number;
   disabled?: boolean;
   maxUrlLength?: number;
   onChange: (url: string, assetId: string) => void;
@@ -22,6 +24,8 @@ export default function BackgroundImageControl({
   backgroundColor,
   imageUrl,
   assetId,
+  focalX = 0.5,
+  focalY = 0.5,
   disabled = false,
   maxUrlLength = 4_096,
   onChange,
@@ -42,6 +46,8 @@ export default function BackgroundImageControl({
               style={{
                 backgroundColor,
                 backgroundImage: `url(${JSON.stringify(imageUrl)})`,
+                backgroundPosition:
+                  `${Math.round(focalX * 100)}% ${Math.round(focalY * 100)}%`,
               }}
               role="img"
               aria-label="پیش‌نمایش تصویر پس‌زمینه"

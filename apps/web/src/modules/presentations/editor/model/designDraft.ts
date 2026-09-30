@@ -24,6 +24,8 @@ export type DesignDraft = {
   backgroundColor: string;
   backgroundImageUrl: string;
   backgroundImageAssetId: string;
+  backgroundImageFocalX: number;
+  backgroundImageFocalY: number;
   textColor: string;
   accentColor: string;
   visualizationPalette: string[];
@@ -39,6 +41,7 @@ type DesignDraftAction =
   | { type: "saved"; draft: DesignDraft }
   | { type: "background-color"; value: string }
   | { type: "background-image"; url: string; assetId: string }
+  | { type: "background-image-focal"; x: number; y: number }
   | { type: "text-color"; value: string }
   | { type: "accent-color"; value: string }
   | { type: "visualization-palette"; value: string[] }
@@ -46,7 +49,13 @@ type DesignDraftAction =
 
 type DesignValidationIssue = {
   code: string;
-  field: "background_color" | "background_image" | "text_color" | "accent_color" | "visualization_palette";
+  field:
+    | "background_color"
+    | "background_image"
+    | "background_image_focal"
+    | "text_color"
+    | "accent_color"
+    | "visualization_palette";
   message: string;
 };
 
@@ -54,6 +63,14 @@ const normalizeHex = (value: unknown, fallback: string): string => {
   const candidate = String(value ?? "").trim();
   return HEX_COLOR.test(candidate) ? candidate.toLowerCase() : fallback;
 };
+
+const normalizeFocalPoint = (value: unknown): number =>
+  typeof value === "number" &&
+  Number.isFinite(value) &&
+  value >= 0 &&
+  value <= 1
+    ? value
+    : 0.5;
 
 const readableForeground = (
   backgroundColor: string,
@@ -89,6 +106,12 @@ export const createDesignDraft = (
     backgroundImageAssetId: String(
       presentation.background_image_asset_id || "",
     ).trim(),
+    backgroundImageFocalX: normalizeFocalPoint(
+      presentation.background_image_focal_x,
+    ),
+    backgroundImageFocalY: normalizeFocalPoint(
+      presentation.background_image_focal_y,
+    ),
     textColor: readableForeground(backgroundColor, requestedText),
     accentColor: normalizeHex(
       presentation.accent_color,
@@ -134,6 +157,11 @@ export function designDraftReducer(
       return patchDraft(state, {
         backgroundImageUrl: action.url.trim(),
         backgroundImageAssetId: action.assetId.trim(),
+      });
+    case "background-image-focal":
+      return patchDraft(state, {
+        backgroundImageFocalX: normalizeFocalPoint(action.x),
+        backgroundImageFocalY: normalizeFocalPoint(action.y),
       });
     case "accent-color":
       return patchDraft(state, {
@@ -182,6 +210,8 @@ export const designDraftEquals = (
   left.backgroundColor === right.backgroundColor &&
   left.backgroundImageUrl === right.backgroundImageUrl &&
   left.backgroundImageAssetId === right.backgroundImageAssetId &&
+  left.backgroundImageFocalX === right.backgroundImageFocalX &&
+  left.backgroundImageFocalY === right.backgroundImageFocalY &&
   left.textColor === right.textColor &&
   left.accentColor === right.accentColor &&
   left.visualizationPalette.length === right.visualizationPalette.length &&
@@ -225,6 +255,21 @@ export const validateDesignDraft = (
       code: "text_color_invalid",
       field: "text_color",
       message: "رنگ متن معتبر نیست.",
+    });
+  }
+
+  if (
+    !Number.isFinite(draft.backgroundImageFocalX) ||
+    !Number.isFinite(draft.backgroundImageFocalY) ||
+    draft.backgroundImageFocalX < 0 ||
+    draft.backgroundImageFocalX > 1 ||
+    draft.backgroundImageFocalY < 0 ||
+    draft.backgroundImageFocalY > 1
+  ) {
+    issues.push({
+      code: "background_image_focal_invalid",
+      field: "background_image_focal",
+      message: "نقطه تمرکز تصویر معتبر نیست.",
     });
   }
 
@@ -274,6 +319,8 @@ export const designDraftToUpdate = (
     background_color: draft.backgroundColor,
     background_image_url: draft.backgroundImageUrl,
     background_image_asset_id: draft.backgroundImageAssetId,
+    background_image_focal_x: draft.backgroundImageFocalX,
+    background_image_focal_y: draft.backgroundImageFocalY,
     text_color: draft.textColor,
     accent_color: draft.accentColor,
     visualization_palette: draft.visualizationPalette,

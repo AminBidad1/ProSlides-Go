@@ -822,6 +822,18 @@ export interface components {
             background_image_url?: string;
             /** @description Optional immutable Media Asset UUID. Empty string clears the asset reference. */
             background_image_asset_id?: string;
+            /**
+             * Format: double
+             * @description Normalized horizontal focal coordinate used when the background covers the Stage.
+             * @default 0.5
+             */
+            background_image_focal_x: number;
+            /**
+             * Format: double
+             * @description Normalized vertical focal coordinate used when the background covers the Stage.
+             * @default 0.5
+             */
+            background_image_focal_y: number;
             music_url?: string;
             text_color?: string;
             accent_color?: string;
@@ -1211,6 +1223,10 @@ export interface components {
             title: string;
             background_color: string;
             background_image_url: string;
+            /** Format: double */
+            background_image_focal_x: number;
+            /** Format: double */
+            background_image_focal_y: number;
             music_url: string;
             text_color: string;
             accent_color: string;

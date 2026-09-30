@@ -31,6 +31,14 @@ const numberValue = (value: unknown, fallback: number): number => {
   return Number.isFinite(number) ? number : fallback;
 };
 
+const focalValue = (value: unknown): number =>
+  typeof value === "number" &&
+  Number.isFinite(value) &&
+  value >= 0 &&
+  value <= 1
+    ? value
+    : 0.5;
+
 export const presentationToEditor = (presentation: PresentationDTO): EditorPresentation => {
   const settings = presentation.settings || {};
   const backgroundColor =
@@ -45,6 +53,12 @@ export const presentationToEditor = (presentation: PresentationDTO): EditorPrese
     typeof settings.background_image_asset_id === "string"
       ? settings.background_image_asset_id
       : "";
+  const backgroundImageFocalX = focalValue(
+    settings.background_image_focal_x,
+  );
+  const backgroundImageFocalY = focalValue(
+    settings.background_image_focal_y,
+  );
   const textColor =
     typeof settings.text_color === "string"
       ? settings.text_color
@@ -74,6 +88,8 @@ export const presentationToEditor = (presentation: PresentationDTO): EditorPrese
     background_color: backgroundColor,
     background_image_url: backgroundImage,
     background_image_asset_id: backgroundImageAssetID,
+    background_image_focal_x: backgroundImageFocalX,
+    background_image_focal_y: backgroundImageFocalY,
     text_color: textColor,
     accent_color: accentColor,
     visualization_palette: visualizationPalette,
@@ -81,6 +97,8 @@ export const presentationToEditor = (presentation: PresentationDTO): EditorPrese
     background: {
       color: backgroundColor,
       image: backgroundImage,
+      focal_x: backgroundImageFocalX,
+      focal_y: backgroundImageFocalY,
       text_color: textColor,
     },
     slides: (presentation.slides || []).map(editorSlideFromTransport),
@@ -104,7 +122,20 @@ const queueSlideMutation = <T>(presentationID: string, slideID: string, mutation
   return next;
 };
 
-type PresentationUpdate = Partial<Pick<EditorPresentation, "title" | "quiz_name" | "background_color" | "background_image_url" | "background_image_asset_id" | "text_color" | "accent_color" | "visualization_palette" | "music_url">> & {
+type PresentationUpdate = Partial<Pick<
+  EditorPresentation,
+  | "title"
+  | "quiz_name"
+  | "background_color"
+  | "background_image_url"
+  | "background_image_asset_id"
+  | "background_image_focal_x"
+  | "background_image_focal_y"
+  | "text_color"
+  | "accent_color"
+  | "visualization_palette"
+  | "music_url"
+>> & {
   revision?: number;
   background?: Partial<EditorPresentation["background"]>;
 };
@@ -114,6 +145,8 @@ const updatePresentation = async (quizID: string, data: PresentationUpdate): Pro
   if (data.background_color !== undefined || data.background?.color !== undefined) settings.background_color = data.background_color ?? data.background?.color;
   if (data.background_image_url !== undefined || data.background?.image !== undefined) settings.background_image_url = data.background_image_url ?? data.background?.image;
   if (data.background_image_asset_id !== undefined) settings.background_image_asset_id = data.background_image_asset_id;
+  if (data.background_image_focal_x !== undefined || data.background?.focal_x !== undefined) settings.background_image_focal_x = data.background_image_focal_x ?? data.background?.focal_x;
+  if (data.background_image_focal_y !== undefined || data.background?.focal_y !== undefined) settings.background_image_focal_y = data.background_image_focal_y ?? data.background?.focal_y;
   if (data.text_color !== undefined || data.background?.text_color !== undefined) settings.text_color = data.text_color ?? data.background?.text_color;
   if (data.accent_color !== undefined) settings.accent_color = data.accent_color;
   if (data.visualization_palette !== undefined) settings.visualization_palette = data.visualization_palette;

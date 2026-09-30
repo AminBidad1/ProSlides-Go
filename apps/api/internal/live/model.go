@@ -61,10 +61,12 @@ type SessionLocator struct {
 }
 
 type PublicLivePresentation struct {
-	Title                string   `json:"title"`
-	BackgroundColor      string   `json:"background_color"`
-	BackgroundImageURL   string   `json:"background_image_url"`
-	MusicURL             string   `json:"music_url"`
+	Title                 string   `json:"title"`
+	BackgroundColor       string   `json:"background_color"`
+	BackgroundImageURL    string   `json:"background_image_url"`
+	BackgroundImageFocalX float64  `json:"background_image_focal_x"`
+	BackgroundImageFocalY float64  `json:"background_image_focal_y"`
+	MusicURL              string   `json:"music_url"`
 	TextColor            string   `json:"text_color"`
 	AccentColor          string   `json:"accent_color"`
 	VisualizationPalette []string `json:"visualization_palette"`

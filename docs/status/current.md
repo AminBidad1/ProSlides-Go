@@ -70,7 +70,9 @@ mobile views preserve the theme without downloading the decorative background.
 The media slice now includes upload-first immutable background assets plus an
 owner-scoped recent-media picker, thumbnail delivery and same-owner digest reuse,
 so a background can be used in multiple Presentations without another upload.
-Focal-point placement and broader responsive variants remain follow-up work.
+Background focal-point placement is now non-destructive, shared across editor,
+Stage and manager rendering, and frozen with the live Session. Broader responsive
+variants for non-background image slots remain follow-up work.
 
 ## Release boundary
 

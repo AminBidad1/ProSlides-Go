@@ -63,6 +63,13 @@ export function useDesignDraft(
     [],
   );
 
+  const setBackgroundImageFocal = useCallback(
+    (x: number, y: number) => {
+      dispatch({ type: "background-image-focal", x, y });
+    },
+    [],
+  );
+
   const setTextColor = useCallback((value: string) => {
     dispatch({ type: "text-color", value });
   }, []);
@@ -86,6 +93,7 @@ export function useDesignDraft(
     markSaved,
     setBackgroundColor,
     setBackgroundImage,
+    setBackgroundImageFocal,
     setTextColor,
     setAccentColor,
     setVisualizationPalette,

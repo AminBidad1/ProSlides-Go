@@ -62,6 +62,23 @@ func validatePresentationSettings(raw json.RawMessage) error {
 		}
 	}
 
+	for _, key := range []string{
+		"background_image_focal_x",
+		"background_image_focal_y",
+	} {
+		value, ok := values[key]
+		if !ok {
+			continue
+		}
+		var focal *float64
+		if json.Unmarshal(value, &focal) != nil ||
+			focal == nil ||
+			*focal < 0 ||
+			*focal > 1 {
+			return errInvalidPresentationSettings
+		}
+	}
+
 	if value, ok := values["music_url"]; ok {
 		var resourceURL string
 		if json.Unmarshal(value, &resourceURL) != nil ||

@@ -113,7 +113,10 @@ The Design inspector order is:
 3. visualization palette;
 4. optional background image selected through one media picker: upload new,
    reuse the owner's recent immutable assets, or use a legacy external URL;
-5. explicit Stage/mobile preview switch and base-color contrast status;
+5. non-destructive background focal point selection on a 16:9 preview; the
+   image remains immutable and the Presentation stores normalized x/y
+   placement coordinates;
+6. explicit Stage/mobile preview switch and base-color contrast status;
 6. save/discard/conflict actions.
 
 The preview must describe itself as representative/approximate rather than claiming

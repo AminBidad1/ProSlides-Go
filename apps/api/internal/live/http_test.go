@@ -75,7 +75,7 @@ func (s *snapshotStore) ResolveSession(_ context.Context, code string) (SessionL
 	}
 	return SessionLocator{
 		SessionID: testSessionID, PresentationID: testPresentationID,
-		Presentation: PublicLivePresentation{Title: "آزمون نمونه", BackgroundColor: "#123456", BackgroundImageURL: "https://example.test/theme.webp", MusicURL: "https://example.test/theme.mp3", TextColor: "#ffffff", AccentColor: "#22d3ee", VisualizationPalette: []string{"#22d3ee", "#34d399", "#fbbf24"}},
+		Presentation: PublicLivePresentation{Title: "آزمون نمونه", BackgroundColor: "#123456", BackgroundImageURL: "https://example.test/theme.webp", BackgroundImageFocalX: 0.2, BackgroundImageFocalY: 0.8, MusicURL: "https://example.test/theme.mp3", TextColor: "#ffffff", AccentColor: "#22d3ee", VisualizationPalette: []string{"#22d3ee", "#34d399", "#fbbf24"}},
 	}, nil
 }
 func (s *snapshotStore) Join(context.Context, string, string, string, string, []byte) (Participant, bool, error) {
@@ -187,7 +187,7 @@ func (s *snapshotStore) StageSnapshot(_ context.Context, session, manager string
 		Role:         "stage",
 		Session:      PublicSession{ID: session, PresentationID: testPresentationID, State: Presenting, StateVersion: 5, ActiveItemID: &itemID, ActivityPhase: &accepting, StageView: StageItem, RemainingSeconds: &remaining},
 		JoinCode:     "JOIN1",
-		Presentation: PublicLivePresentation{Title: "آزمون نمونه", BackgroundColor: "#123456", BackgroundImageURL: "", MusicURL: "https://example.test/theme.mp3", TextColor: "#ffffff", AccentColor: "#22d3ee", VisualizationPalette: []string{"#22d3ee", "#34d399", "#fbbf24"}},
+		Presentation: PublicLivePresentation{Title: "آزمون نمونه", BackgroundColor: "#123456", BackgroundImageURL: "", BackgroundImageFocalX: 0.2, BackgroundImageFocalY: 0.8, MusicURL: "https://example.test/theme.mp3", TextColor: "#ffffff", AccentColor: "#22d3ee", VisualizationPalette: []string{"#22d3ee", "#34d399", "#fbbf24"}},
 		ActiveItem:   json.RawMessage(`{"id":"item-1","kind":"activity","content":{"evaluation":{"mode":"correctness"},"response":{"options":[{"id":"a","text":"الف"}]}}}`),
 		ParticipantCount:   10_000,
 		HasScoring:         true,
@@ -557,7 +557,7 @@ func TestResolveSessionUsesPublicJoinCode(t *testing.T) {
 	var payload struct {
 		Presentation PublicLivePresentation `json:"presentation"`
 	}
-	if err := json.Unmarshal(response.Body.Bytes(), &payload); err != nil || payload.Presentation.BackgroundColor != "#123456" || payload.Presentation.MusicURL != "https://example.test/theme.mp3" || payload.Presentation.TextColor != "#ffffff" || payload.Presentation.Title != "آزمون نمونه" {
+	if err := json.Unmarshal(response.Body.Bytes(), &payload); err != nil || payload.Presentation.BackgroundColor != "#123456" || payload.Presentation.BackgroundImageFocalX != 0.2 || payload.Presentation.BackgroundImageFocalY != 0.8 || payload.Presentation.MusicURL != "https://example.test/theme.mp3" || payload.Presentation.TextColor != "#ffffff" || payload.Presentation.Title != "آزمون نمونه" {
 		t.Fatalf("resolve theme = %#v, err = %v", payload.Presentation, err)
 	}
 
@@ -805,7 +805,10 @@ func TestStageSnapshotIsManagerOnlyAndProjectionScoped(t *testing.T) {
 		t.Fatalf("unexpected stage projection: %#v", payload)
 	}
 	presentation, ok := payload["presentation"].(map[string]any)
-	if !ok || presentation["accent_color"] != "#22d3ee" {
+	if !ok ||
+		presentation["accent_color"] != "#22d3ee" ||
+		presentation["background_image_focal_x"] != float64(0.2) ||
+		presentation["background_image_focal_y"] != float64(0.8) {
 		t.Fatalf("stage projection missing theme metadata: %#v", payload["presentation"])
 	}
 	palette, ok := presentation["visualization_palette"].([]any)

@@ -2121,10 +2121,47 @@ test("design editor projects a contrast-safe presentation draft and preserves co
     mediaPicker.getByText("هنوز تصویری ذخیره نکرده‌اید"),
   ).toBeVisible();
   await expectAccessible(page, "background media picker");
+
   await mediaPicker
-    .getByRole("button", { name: "بستن", exact: true })
+    .getByRole("button", { name: "استفاده از لینک خارجی" })
     .click();
   await expect(mediaPicker).toBeHidden();
+
+  const imageUrlDialog = page.getByRole("dialog", {
+    name: "استفاده از لینک تصویر پس‌زمینه",
+  });
+  await expect(imageUrlDialog).toBeVisible();
+  const sameOriginImageUrl = new URL("/bg.jpg", page.url()).href;
+  await imageUrlDialog
+    .getByRole("textbox", { name: "آدرس تصویر" })
+    .fill(sameOriginImageUrl);
+  await imageUrlDialog
+    .getByRole("button", { name: "بررسی تصویر" })
+    .click();
+  await expect(
+    imageUrlDialog.getByRole("img", {
+      name: "پیش‌نمایش تصویر انتخاب‌شده",
+    }),
+  ).toBeVisible();
+  await imageUrlDialog
+    .getByRole("button", { name: "استفاده از تصویر" })
+    .click();
+  await expect(imageUrlDialog).toBeHidden();
+
+  const focalControl = inspector.getByRole("button", {
+    name: /تنظیم نقطه تمرکز تصویر پس‌زمینه/,
+  });
+  await expect(focalControl).toBeVisible();
+  await focalControl.focus();
+  await focalControl.press("ArrowRight");
+  await focalControl.press("ArrowRight");
+  await focalControl.press("ArrowRight");
+  await focalControl.press("ArrowDown");
+  await focalControl.press("ArrowDown");
+
+  await expect.poll(async () =>
+    preview.evaluate((element) => element.style.backgroundPosition)
+  ).toContain("56% 54%");
 
   const backgroundInput = inspector.locator("#design-background-custom");
   const textInput = inspector.locator("#design-text-custom");
@@ -2167,6 +2204,12 @@ test("design editor projects a contrast-safe presentation draft and preserves co
   const savedPresentation = await saveResponse.json();
   expect(savedPresentation.settings.background_color).toBe("#312e81");
   expect(savedPresentation.settings.text_color).toBe("#ffffff");
+  expect(savedPresentation.settings.background_image_focal_x).toBeCloseTo(0.56);
+  expect(savedPresentation.settings.background_image_focal_y).toBeCloseTo(0.54);
+  expect(savedPresentation.settings.background_image_url).toBe(
+    sameOriginImageUrl,
+  );
+  expect(savedPresentation.settings.background_image_asset_id).toBe("");
   await expect(
     inspector.getByText(/طراحی ذخیره شده است/),
   ).toBeVisible();

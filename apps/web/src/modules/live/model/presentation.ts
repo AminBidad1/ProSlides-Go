@@ -4,6 +4,8 @@ import type { LegacyLiveSlide } from "./serverData.ts";
 interface LivePresentationBackground {
   color: string;
   image: string;
+  focal_x?: number;
+  focal_y?: number;
   text_color?: string;
 }
 

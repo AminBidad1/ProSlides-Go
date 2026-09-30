@@ -114,6 +114,18 @@ func (s *PostgresStore) ResolveSession(c context.Context, code string) (SessionL
 			ELSE '#1e1e2e'
 		END,
 		COALESCE(COALESCE(ls.presentation_settings_snapshot,p.settings)->>'background_image_url',''),
+		CASE
+			WHEN jsonb_typeof(COALESCE(ls.presentation_settings_snapshot,p.settings)->'background_image_focal_x')='number'
+				AND (COALESCE(ls.presentation_settings_snapshot,p.settings)->>'background_image_focal_x')::numeric BETWEEN 0 AND 1
+			THEN (COALESCE(ls.presentation_settings_snapshot,p.settings)->>'background_image_focal_x')::double precision
+			ELSE 0.5
+		END,
+		CASE
+			WHEN jsonb_typeof(COALESCE(ls.presentation_settings_snapshot,p.settings)->'background_image_focal_y')='number'
+				AND (COALESCE(ls.presentation_settings_snapshot,p.settings)->>'background_image_focal_y')::numeric BETWEEN 0 AND 1
+			THEN (COALESCE(ls.presentation_settings_snapshot,p.settings)->>'background_image_focal_y')::double precision
+			ELSE 0.5
+		END,
 		COALESCE(COALESCE(ls.presentation_settings_snapshot,p.settings)->>'music_url',''),
 		CASE
 			WHEN (COALESCE(ls.presentation_settings_snapshot,p.settings)->>'text_color') ~ '^#[0-9A-Fa-f]{6}$'
@@ -143,6 +155,8 @@ func (s *PostgresStore) ResolveSession(c context.Context, code string) (SessionL
 		WHERE ls.join_code=$1 AND ls.state<>'ended' LIMIT 1`, code).Scan(
 		&out.SessionID, &out.PresentationID, &out.Presentation.Title,
 		&out.Presentation.BackgroundColor, &out.Presentation.BackgroundImageURL,
+		&out.Presentation.BackgroundImageFocalX,
+		&out.Presentation.BackgroundImageFocalY,
 		&out.Presentation.MusicURL, &out.Presentation.TextColor,
 		&out.Presentation.AccentColor, &out.Presentation.VisualizationPalette)
 	if errors.Is(err, pgx.ErrNoRows) {

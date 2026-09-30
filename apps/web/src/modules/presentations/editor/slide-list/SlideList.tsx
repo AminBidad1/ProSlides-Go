@@ -32,6 +32,8 @@ type SlidesPanelProps = {
   deleteSlide: (slideId: string) => void | Promise<void>;
   quizBackground?: string;
   quizBackgroundImage?: string;
+  quizBackgroundFocalX?: number;
+  quizBackgroundFocalY?: number;
   isReordering: boolean;
   reorderDisabled?: boolean;
   onReorder: (
@@ -48,6 +50,8 @@ export default function SlidesPanel({
   deleteSlide,
   quizBackground = "#ffffff",
   quizBackgroundImage = "",
+  quizBackgroundFocalX = 0.5,
+  quizBackgroundFocalY = 0.5,
   isReordering,
   reorderDisabled = false,
   onReorder,
@@ -67,6 +71,12 @@ export default function SlidesPanel({
       designController?.draft.backgroundImageUrl ?? quizBackgroundImage;
     const backgroundColor =
       designController?.draft.backgroundColor ?? quizBackground;
+    const focalX =
+      designController?.draft.backgroundImageFocalX ??
+      quizBackgroundFocalX;
+    const focalY =
+      designController?.draft.backgroundImageFocalY ??
+      quizBackgroundFocalY;
 
     if (backgroundImage) {
       return {
@@ -74,7 +84,8 @@ export default function SlidesPanel({
         backgroundImage:
           `linear-gradient(rgba(0,0,0,.12), rgba(0,0,0,.18)), url(${JSON.stringify(backgroundImage)})`,
         backgroundSize: "cover",
-        backgroundPosition: "center",
+        backgroundPosition:
+          `${Math.round(focalX * 100)}% ${Math.round(focalY * 100)}%`,
       };
     }
 

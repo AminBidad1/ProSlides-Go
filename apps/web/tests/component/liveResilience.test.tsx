@@ -65,6 +65,8 @@ const managerSnapshot = (
       title: "ارائه آزمایشی",
       background_color: "#1e1e2e",
       background_image_url: "",
+      background_image_focal_x: 0.5,
+      background_image_focal_y: 0.5,
       music_url: "",
       text_color: "#ffffff",
       accent_color: "#8b5cf6",

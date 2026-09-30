@@ -32,6 +32,41 @@ test("presentation theme uses foreground-aware image overlays", () => {
   assert.match(String(light.style.backgroundImage), /rgba\(255,255,255,.62\)/);
 });
 
+test("background focal point controls only the covered image layer", () => {
+  const theme = presentationTheme({
+    background: {
+      color: "#111827",
+      image: "https://example.com/bg.jpg",
+      focal_x: 0.23,
+      focal_y: 0.81,
+    },
+    text_color: "#ffffff",
+  });
+
+  assert.equal(theme.focalX, 0.23);
+  assert.equal(theme.focalY, 0.81);
+  assert.equal(theme.style.backgroundPosition, "center, 23% 81%");
+  assert.equal(theme.style.backgroundSize, "cover, cover");
+});
+
+test("background focal point defaults to center and clamps unsafe runtime values", () => {
+  const centered = presentationTheme({
+    background: {
+      image: "https://example.com/bg.jpg",
+    },
+  });
+  assert.equal(centered.style.backgroundPosition, "center, 50% 50%");
+
+  const clamped = presentationTheme({
+    background: {
+      image: "https://example.com/bg.jpg",
+      focal_x: 3,
+      focal_y: -2,
+    },
+  });
+  assert.equal(clamped.style.backgroundPosition, "center, 100% 0%");
+});
+
 test("visualization palettes are bounded and cycle through CSS theme slots", () => {
   const palette = ["#112233", "#445566", "#778899"];
   const theme = presentationTheme({

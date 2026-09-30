@@ -21,6 +21,8 @@ type QuestionCanvasProps = {
   slide: EditorSlide;
   quizBackground?: string;
   quizBackgroundImage?: string;
+  quizBackgroundFocalX?: number;
+  quizBackgroundFocalY?: number;
   textColor?: string;
   accentColor?: string;
   visualizationPalette?: string[];
@@ -71,6 +73,8 @@ export default function QuestionCanvas({
   slide,
   quizBackground,
   quizBackgroundImage,
+  quizBackgroundFocalX = 0.5,
+  quizBackgroundFocalY = 0.5,
   textColor = "#111827",
   accentColor = "#8b5cf6",
   visualizationPalette,
@@ -98,6 +102,12 @@ export default function QuestionCanvas({
         background: {
           color: designController?.draft.backgroundColor ?? quizBackground,
           image: designController?.draft.backgroundImageUrl ?? quizBackgroundImage,
+          focal_x:
+            designController?.draft.backgroundImageFocalX ??
+            quizBackgroundFocalX,
+          focal_y:
+            designController?.draft.backgroundImageFocalY ??
+            quizBackgroundFocalY,
           text_color: designController?.draft.textColor ?? textColor,
         },
         text_color: designController?.draft.textColor ?? textColor,
@@ -108,6 +118,8 @@ export default function QuestionCanvas({
     [
       designController?.draft.backgroundColor,
       designController?.draft.backgroundImageUrl,
+      designController?.draft.backgroundImageFocalX,
+      designController?.draft.backgroundImageFocalY,
       designController?.draft.textColor,
       designController?.draft.accentColor,
       designController?.draft.visualizationPalette,
@@ -115,6 +127,8 @@ export default function QuestionCanvas({
       visualizationPalette,
       quizBackground,
       quizBackgroundImage,
+      quizBackgroundFocalX,
+      quizBackgroundFocalY,
       textColor,
     ],
   );

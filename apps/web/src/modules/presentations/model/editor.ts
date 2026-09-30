@@ -66,11 +66,19 @@ export interface EditorPresentation {
   background_color: string;
   background_image_url: string;
   background_image_asset_id?: string;
+  background_image_focal_x: number;
+  background_image_focal_y: number;
   text_color: string;
   accent_color: string;
   visualization_palette: string[];
   music_url: string;
-  background: { color: string; image: string; text_color: string };
+  background: {
+    color: string;
+    image: string;
+    focal_x: number;
+    focal_y: number;
+    text_color: string;
+  };
   slides: EditorSlide[];
   created_at: string;
   last_update: string;

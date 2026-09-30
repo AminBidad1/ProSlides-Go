@@ -39,6 +39,8 @@ const toResolvedMeta = (
   background: {
     color: data.presentation.background_color,
     image: data.presentation.background_image_url,
+    focal_x: data.presentation.background_image_focal_x,
+    focal_y: data.presentation.background_image_focal_y,
     text_color: data.presentation.text_color,
   },
   music_url: data.presentation.music_url || "",

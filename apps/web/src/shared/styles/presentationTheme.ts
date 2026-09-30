@@ -5,6 +5,8 @@ export interface PresentationThemeInput {
   background?: {
     color?: string;
     image?: string;
+    focal_x?: number;
+    focal_y?: number;
     text_color?: string;
   };
   text_color?: string;
@@ -168,6 +170,11 @@ const readableForeground = (
     : "#0f172a";
 };
 
+const normalizeFocalPoint = (value: unknown): number =>
+  typeof value === "number" && Number.isFinite(value)
+    ? Math.min(1, Math.max(0, value))
+    : 0.5;
+
 const presentationColorHash = (value: string | number): number => {
   const input = String(value);
   let hash = 2166136261;
@@ -236,6 +243,8 @@ export const presentationTheme = (
     input?.visualization_palette,
   );
   const image = input?.background?.image?.trim() ?? "";
+  const focalX = normalizeFocalPoint(input?.background?.focal_x);
+  const focalY = normalizeFocalPoint(input?.background?.focal_y);
   const showsBackgroundImage =
     image.length > 0 && surface !== "participant";
   const foregroundIsLight = luminance(foreground) > 0.45;
@@ -259,6 +268,8 @@ export const presentationTheme = (
     surface,
     contrastRatio: presentationContrastRatio(background, foreground),
     image,
+    focalX,
+    focalY,
     hasBackgroundImage: image.length > 0,
     showsBackgroundImage,
     style: {
@@ -281,6 +292,14 @@ export const presentationTheme = (
       backgroundImage: showsBackgroundImage
         ? `linear-gradient(${imageOverlay}, ${imageOverlay}), url(${JSON.stringify(image)})`
         : decorativeBackground,
+      ...(showsBackgroundImage
+        ? {
+            backgroundPosition:
+              `center, ${focalX * 100}% ${focalY * 100}%`,
+            backgroundSize: "cover, cover",
+            backgroundRepeat: "no-repeat, no-repeat",
+          }
+        : {}),
     } as CSSProperties,
   };
 };

@@ -18,6 +18,8 @@ const presentation = {
   background_color: "#ffffff",
   background_image_url: "",
   background_image_asset_id: "",
+  background_image_focal_x: 0.5,
+  background_image_focal_y: 0.5,
   text_color: "#ffffff",
   accent_color: "#8b5cf6",
   visualization_palette: ["#8b5cf6", "#06b6d4", "#10b981"],
@@ -25,6 +27,8 @@ const presentation = {
   background: {
     color: "#ffffff",
     image: "",
+    focal_x: 0.5,
+    focal_y: 0.5,
     text_color: "#ffffff",
   },
   slides: [],
@@ -107,6 +111,35 @@ test("design draft accepts and serializes immutable first-party media assets", (
   const update = designDraftToUpdate(state.draft);
   assert.equal(update.background_image_url, imageURL);
   assert.equal(update.background_image_asset_id, assetID);
+});
+
+test("background focal placement is non-destructive, bounded and serialized", () => {
+  const draft = createDesignDraft({
+    ...presentation,
+    background_image_focal_x: 0.2,
+    background_image_focal_y: 0.8,
+  });
+  assert.equal(draft.backgroundImageFocalX, 0.2);
+  assert.equal(draft.backgroundImageFocalY, 0.8);
+
+  const moved = designDraftReducer(
+    { baseline: draft, draft },
+    { type: "background-image-focal", x: 0.37, y: 0.64 },
+  ).draft;
+  assert.equal(moved.backgroundImageFocalX, 0.37);
+  assert.equal(moved.backgroundImageFocalY, 0.64);
+  assert.equal(designDraftEquals(draft, moved), false);
+
+  const update = designDraftToUpdate(moved);
+  assert.equal(update.background_image_focal_x, 0.37);
+  assert.equal(update.background_image_focal_y, 0.64);
+
+  const normalized = designDraftReducer(
+    { baseline: moved, draft: moved },
+    { type: "background-image-focal", x: 2, y: -1 },
+  ).draft;
+  assert.equal(normalized.backgroundImageFocalX, 0.5);
+  assert.equal(normalized.backgroundImageFocalY, 0.5);
 });
 
 test("design dirty comparison and serialization preserve presentation revision", () => {

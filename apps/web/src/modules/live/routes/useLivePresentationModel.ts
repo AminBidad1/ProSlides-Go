@@ -25,6 +25,14 @@ type LivePresentationModelState = {
 const stringValue = (value: unknown, fallback = ""): string =>
   typeof value === "string" ? value : fallback;
 
+const focalValue = (value: unknown): number =>
+  typeof value === "number" &&
+  Number.isFinite(value) &&
+  value >= 0 &&
+  value <= 1
+    ? value
+    : 0.5;
+
 export const toLivePresentationModel = (
   presentation: Awaited<ReturnType<typeof getPresentationForLive>>,
 ): LivePresentationModel => {
@@ -44,6 +52,8 @@ export const toLivePresentationModel = (
     background: {
       color: stringValue(settings.background_color, "#1e1e2e"),
       image: stringValue(settings.background_image_url),
+      focal_x: focalValue(settings.background_image_focal_x),
+      focal_y: focalValue(settings.background_image_focal_y),
       text_color: textColor,
     },
     music_url: stringValue(settings.music_url),
@@ -71,6 +81,12 @@ export const projectManagerLivePresentation = (
     background: {
       color: snapshot.presentation.background_color,
       image: snapshot.presentation.background_image_url,
+      focal_x: focalValue(
+        snapshot.presentation.background_image_focal_x,
+      ),
+      focal_y: focalValue(
+        snapshot.presentation.background_image_focal_y,
+      ),
       text_color: snapshot.presentation.text_color,
     },
     music_url: snapshot.presentation.music_url,

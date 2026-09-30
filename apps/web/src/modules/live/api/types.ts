@@ -200,6 +200,8 @@ export interface LiveSessionLocator {
     title: string;
     background_color: string;
     background_image_url: string;
+    background_image_focal_x: number;
+    background_image_focal_y: number;
     music_url: string;
     text_color: string;
     accent_color: string;

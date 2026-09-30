@@ -14,7 +14,9 @@ func TestValidatePresentationSettingsAcceptsKnownValues(t *testing.T) {
 		"accent_color":"#8b5cf6",
 		"visualization_palette":["#8b5cf6","#06b6d4","#10b981"],
 		"music_url":"https://example.com/music.mp3",
-		"background_image_asset_id":"123e4567-e89b-12d3-a456-426614174000"
+		"background_image_asset_id":"123e4567-e89b-12d3-a456-426614174000",
+		"background_image_focal_x":0.2,
+		"background_image_focal_y":0.8
 	}`)
 
 	if err := validatePresentationSettings(raw); err != nil {
@@ -34,6 +36,10 @@ func TestValidatePresentationSettingsRejectsInvalidKnownValues(t *testing.T) {
 		`{"background_image_url":123}`,
 		`{"background_image_url":"/api/v1/media/assets/not-a-uuid/content"}`,
 		`{"background_image_asset_id":"not-a-uuid"}`,
+		`{"background_image_focal_x":-0.01}`,
+		`{"background_image_focal_x":1.01}`,
+		`{"background_image_focal_y":"0.5"}`,
+		`{"background_image_focal_y":null}`,
 		`{"background_color":null}`,
 		`{"music_url":"javascript:alert(1)"}`,
 		`{"music_url":123}`,
@@ -85,7 +91,9 @@ func TestValidatePresentationSettingsRejectsOversizedMusicURL(t *testing.T) {
 func TestValidatePresentationSettingsAcceptsFirstPartyMediaBackground(t *testing.T) {
 	raw := json.RawMessage(`{
 		"background_image_url":"/api/v1/media/assets/123e4567-e89b-12d3-a456-426614174000/content",
-		"background_image_asset_id":"123e4567-e89b-12d3-a456-426614174000"
+		"background_image_asset_id":"123e4567-e89b-12d3-a456-426614174000",
+		"background_image_focal_x":0.5,
+		"background_image_focal_y":0.5
 	}`)
 
 	if err := validatePresentationSettings(raw); err != nil {

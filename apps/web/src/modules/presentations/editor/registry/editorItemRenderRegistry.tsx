@@ -22,6 +22,8 @@ type EditorCanvasProps = {
   slide: EditorSlide;
   quizBackground?: string;
   quizBackgroundImage?: string;
+  quizBackgroundFocalX?: number;
+  quizBackgroundFocalY?: number;
   textColor?: string;
   accentColor?: string;
   visualizationPalette?: string[];
@@ -93,6 +95,8 @@ function ContentCanvasAdapter(props: EditorCanvasProps) {
       slide={props.slide}
       quizBackground={props.quizBackground}
       quizBackgroundImage={props.quizBackgroundImage}
+      quizBackgroundFocalX={props.quizBackgroundFocalX}
+      quizBackgroundFocalY={props.quizBackgroundFocalY}
       textColor={props.textColor}
       accentColor={props.accentColor}
       visualizationPalette={props.visualizationPalette}

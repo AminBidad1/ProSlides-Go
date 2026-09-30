@@ -426,6 +426,8 @@ function QuestionEditor({
       deleteSlide={slideMutations.deleteSlide}
       quizBackground={quiz.background_color}
       quizBackgroundImage={quiz.background_image_url}
+      quizBackgroundFocalX={quiz.background_image_focal_x}
+      quizBackgroundFocalY={quiz.background_image_focal_y}
       isReordering={slideOrder.isReordering}
       reorderDisabled={hasUnsavedChanges}
       onReorder={slideOrder.reorderSlides}
@@ -439,6 +441,8 @@ function QuestionEditor({
           slide={activeSlide}
           quizBackground={quiz.background_color}
           quizBackgroundImage={quiz.background_image_url}
+          quizBackgroundFocalX={quiz.background_image_focal_x}
+          quizBackgroundFocalY={quiz.background_image_focal_y}
           textColor={quiz.text_color}
           accentColor={quiz.accent_color}
           visualizationPalette={quiz.visualization_palette}

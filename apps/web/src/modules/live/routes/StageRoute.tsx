@@ -572,6 +572,8 @@ export default function StageRoute() {
     background: {
       color: snapshot.presentation.background_color,
       image: snapshot.presentation.background_image_url,
+      focal_x: snapshot.presentation.background_image_focal_x,
+      focal_y: snapshot.presentation.background_image_focal_y,
       text_color: snapshot.presentation.text_color,
     },
     text_color: snapshot.presentation.text_color,
