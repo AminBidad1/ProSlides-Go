@@ -230,7 +230,7 @@ export default function QuestionOptionsEditor({
                                 onTextChange(option.id, event.target.value)
                               }
                               placeholder={`متن گزینه ${formatPersianNumber(index + 1)}`}
-                              className="h-9 w-full rounded-control border border-border-subtle bg-surface px-3 text-sm text-content outline-none transition placeholder:text-content-muted focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
+                              className="h-9 w-full rounded-control border border-border-control bg-surface px-3 text-sm text-content outline-none transition placeholder:text-content-muted focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
                             />
 
                             {error && (
@@ -273,7 +273,7 @@ export default function QuestionOptionsEditor({
                                     onChange={(event) =>
                                       onImageAltText(option.id, event.target.value)
                                     }
-                                    className="mt-1 h-9 w-full rounded-control border border-border-subtle bg-surface px-2.5 text-xs text-content outline-none transition focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
+                                    className="mt-1 h-9 w-full rounded-control border border-border-control bg-surface px-2.5 text-xs text-content outline-none transition focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
                                   />
                                 </label>
                               </>

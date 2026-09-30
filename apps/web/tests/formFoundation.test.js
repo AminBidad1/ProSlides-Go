@@ -5,8 +5,13 @@ import {
   formatPersianNumber,
   normalizeDigits,
   normalizeNumericInput,
+  parseLocalizedInteger,
   parseLocalizedNumber,
 } from "../src/shared/forms/numbers.ts";
+import {
+  isValidAccessCode,
+  normalizeAccessCode,
+} from "../src/shared/forms/accessCode.ts";
 import {
   ApiError,
   normalizeApiErrorPayload,
@@ -17,8 +22,20 @@ test("normalizes Persian and Arabic-Indic digits without coercing identifiers", 
   assert.equal(normalizeDigits("۰۱۲٣٤5"), "012345");
   assert.equal(normalizeNumericInput("۱۲٬۳۴۵٫۶"), "12345.6");
   assert.equal(parseLocalizedNumber(" ١٢٣٫٥ "), 123.5);
+  assert.equal(parseLocalizedInteger("۱۲۳"), 123);
+  assert.equal(parseLocalizedInteger("۱۲٫۵"), null);
   assert.equal(parseLocalizedNumber(""), null);
   assert.equal(formatPersianNumber(1234), "۱٬۲۳۴");
+});
+
+
+test("normalizes Persian access codes without changing the identifier contract", () => {
+  assert.equal(normalizeAccessCode(" ab-۱۲c "), "AB12C");
+  assert.equal(normalizeAccessCode("room١٢٣"), "ROOM123");
+  assert.equal(normalizeAccessCode("abcdefghijklmnop"), "ABCDEFGHIJKL");
+  assert.equal(isValidAccessCode("AB12C"), true);
+  assert.equal(isValidAccessCode("AB۱۲C"), false);
+  assert.equal(isValidAccessCode("A12"), false);
 });
 
 test("reset password schema mirrors the server password constraints", () => {

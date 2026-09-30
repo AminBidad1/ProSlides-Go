@@ -85,6 +85,45 @@ test("landing mobile responsive layout contract", async ({ page }) => {
   expect(documentHeight).toBeLessThan(7200);
 });
 
+
+test("public and identity surfaces reflow at 320 CSS pixels", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+
+  for (const path of ["/", "/auth", "/reset-password"]) {
+    await page.goto(path);
+    await settleVisualSurface(page);
+
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(overflow, `${path} horizontal overflow`).toBeLessThanOrEqual(1);
+  }
+});
+
+test("landing tolerates WCAG text-spacing overrides", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await settleVisualSurface(page);
+
+  await page.addStyleTag({
+    content: `
+      :where(p, li, label, input, textarea, button, a, span) {
+        line-height: 1.5 !important;
+        letter-spacing: 0.12em !important;
+        word-spacing: 0.16em !important;
+      }
+      p { margin-block-end: 2em !important; }
+    `,
+  });
+
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - window.innerWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(1);
+  await expect(page.getByRole("link", { name: "رایگان شروع کنید" })).toBeVisible();
+  await expect(page.locator("#live-demo")).toBeVisible();
+});
+
 test("authentication mobile visual baseline", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/auth");

@@ -124,6 +124,7 @@ export function ParticipantJoinPage({
           </label>
           <input
             id="participant-name"
+            dir="auto"
             autoComplete="nickname"
             autoFocus
             enterKeyHint="go"

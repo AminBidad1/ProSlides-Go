@@ -7,7 +7,10 @@ import {
 } from "lucide-react";
 
 import { ApiError } from "../../../../shared/api/http.ts";
-import { formatPersianNumber } from "../../../../shared/forms/numbers.ts";
+import {
+  formatPersianNumber,
+  parseLocalizedInteger,
+} from "../../../../shared/forms/numbers.ts";
 import {
   emptyImagePlacement,
   IMAGE_ALT_TEXT_MAX_LENGTH,
@@ -19,6 +22,7 @@ import Notice, {
   type NoticeTone,
 } from "../../../../shared/ui/Notice.tsx";
 import { Button } from "../../../../shared/ui/primitives/Button.tsx";
+import { Input } from "../../../../shared/ui/primitives/Input.tsx";
 import { ConfirmDialog } from "../../../../shared/ui/primitives/ConfirmDialog.tsx";
 import { quizService } from "../../api/presentationRepository.ts";
 import {
@@ -241,7 +245,7 @@ export default function WordCloudInspector({
                 disabled={saving || conflictPending}
                 onChange={(event) => controller.setTitle(event.target.value)}
                 placeholder="مثلاً: نظر جمع"
-                className="mt-2 h-11 w-full rounded-control border border-border-subtle bg-surface px-3 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-2 h-11 w-full rounded-control border border-border-control bg-surface px-3 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
               />
             </section>
 
@@ -270,7 +274,7 @@ export default function WordCloudInspector({
                 aria-invalid={Boolean(promptError)}
                 onChange={(event) => controller.setPrompt(event.target.value)}
                 placeholder="مثلاً: این جلسه را با چه واژه‌هایی توصیف می‌کنید؟"
-                className="mt-2 min-h-28 w-full resize-y rounded-control border border-border-subtle bg-surface px-3 py-2.5 text-sm leading-6 outline-none focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-2 min-h-28 w-full resize-y rounded-control border border-border-control bg-surface px-3 py-2.5 text-sm leading-6 outline-none focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
               />
               {promptError && (
                 <p role="alert" className="mt-1.5 text-xs text-danger-ink">
@@ -290,42 +294,51 @@ export default function WordCloudInspector({
               <div className="mt-3 grid grid-cols-2 gap-3">
                 <label className="text-xs font-semibold">
                   تعداد عبارت
-                  <input
-                    type="number"
+                  <Input
+                    type="text"
                     inputMode="numeric"
-                    min={TEXT_ACTIVITY_LIMITS.minWords}
-                    max={TEXT_ACTIVITY_LIMITS.maxWords}
-                    value={draft.maxWords}
+                    pattern="[0-9۰-۹٠-٩]*"
+                    dir="ltr"
+                    value={formatPersianNumber(draft.maxWords)}
                     disabled={saving || conflictPending}
                     aria-invalid={Boolean(maxWordsError)}
-                    onChange={(event) =>
-                      controller.setMaxWords(Number(event.target.value))
-                    }
-                    className="mt-1.5 h-11 w-full rounded-control border border-border-subtle bg-surface px-3 text-sm"
+                    aria-describedby={maxWordsError ? "word-cloud-max-words-error" : undefined}
+                    onChange={(event) => {
+                      const next = parseLocalizedInteger(event.target.value);
+                      if (next !== null) controller.setMaxWords(next);
+                    }}
+                    className="mt-1.5 text-center"
                   />
                 </label>
                 <label className="text-xs font-semibold">
                   نویسه هر عبارت
-                  <input
-                    type="number"
+                  <Input
+                    type="text"
                     inputMode="numeric"
-                    min={TEXT_ACTIVITY_LIMITS.minResponseLength}
-                    max={TEXT_ACTIVITY_LIMITS.maxResponseLength}
-                    value={draft.maxLength}
+                    pattern="[0-9۰-۹٠-٩]*"
+                    dir="ltr"
+                    value={formatPersianNumber(draft.maxLength)}
                     disabled={saving || conflictPending}
                     aria-invalid={Boolean(maxLengthError)}
-                    onChange={(event) =>
-                      controller.setMaxLength(Number(event.target.value))
-                    }
-                    className="mt-1.5 h-11 w-full rounded-control border border-border-subtle bg-surface px-3 text-sm"
+                    aria-describedby={maxLengthError ? "word-cloud-max-length-error" : undefined}
+                    onChange={(event) => {
+                      const next = parseLocalizedInteger(event.target.value);
+                      if (next !== null) controller.setMaxLength(next);
+                    }}
+                    className="mt-1.5 text-center"
                   />
                 </label>
               </div>
-              {(maxWordsError || maxLengthError) && (
-                <p role="alert" className="mt-1.5 text-xs text-danger-ink">
-                  {maxWordsError || maxLengthError}
+              {maxWordsError ? (
+                <p id="word-cloud-max-words-error" role="alert" className="mt-1.5 text-xs text-danger-ink">
+                  {maxWordsError}
                 </p>
-              )}
+              ) : null}
+              {maxLengthError ? (
+                <p id="word-cloud-max-length-error" role="alert" className="mt-1.5 text-xs text-danger-ink">
+                  {maxLengthError}
+                </p>
+              ) : null}
             </section>
 
             <section>
@@ -333,24 +346,26 @@ export default function WordCloudInspector({
                 زمان پاسخ‌گویی
               </label>
               <div className="mt-2 flex items-center gap-2">
-                <input
+                <Input
                   id="word-cloud-duration"
-                  type="number"
+                  type="text"
                   inputMode="numeric"
-                  min={TEXT_ACTIVITY_LIMITS.minDurationSeconds}
-                  max={TEXT_ACTIVITY_LIMITS.maxDurationSeconds}
-                  value={draft.durationSeconds}
+                  pattern="[0-9۰-۹٠-٩]*"
+                  dir="ltr"
+                  value={formatPersianNumber(draft.durationSeconds)}
                   disabled={saving || conflictPending}
                   aria-invalid={Boolean(durationError)}
-                  onChange={(event) =>
-                    controller.setDurationSeconds(Number(event.target.value))
-                  }
-                  className="h-11 min-w-0 flex-1 rounded-control border border-border-subtle bg-surface px-3 text-sm"
+                  aria-describedby={durationError ? "word-cloud-duration-error" : undefined}
+                  onChange={(event) => {
+                    const next = parseLocalizedInteger(event.target.value);
+                    if (next !== null) controller.setDurationSeconds(next);
+                  }}
+                  className="min-w-0 flex-1 text-center"
                 />
                 <span className="text-sm text-content-muted">ثانیه</span>
               </div>
               {durationError && (
-                <p role="alert" className="mt-1.5 text-xs text-danger-ink">
+                <p id="word-cloud-duration-error" role="alert" className="mt-1.5 text-xs text-danger-ink">
                   {durationError}
                 </p>
               )}
@@ -416,7 +431,7 @@ export default function WordCloudInspector({
                         })
                       }
                       placeholder="توضیح کوتاه تصویر"
-                      className="mt-1.5 h-10 w-full rounded-control border border-border-subtle bg-surface px-3 text-sm text-content outline-none transition placeholder:text-content-muted focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="mt-1.5 h-10 w-full rounded-control border border-border-control bg-surface px-3 text-sm text-content outline-none transition placeholder:text-content-muted focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
                     />
                   </label>
                 </>
@@ -435,7 +450,7 @@ export default function WordCloudInspector({
           </div>
         </div>
 
-        <footer className="sticky bottom-0 z-10 border-t border-border-subtle bg-surface/95 px-1 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur">
+        <footer className="sticky bottom-0 z-10 border-t border-border-control bg-surface/95 px-1 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur">
           <div className="mb-2 min-h-5 text-xs">
             {saving ? (
               <span className="inline-flex items-center gap-1.5 text-info">

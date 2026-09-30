@@ -6,6 +6,7 @@ import type {
 
 import { normalizeDigits } from "../../../shared/forms/numbers.ts";
 import Notice from "../../../shared/ui/Notice.tsx";
+import { Button } from "../../../shared/ui/primitives/Button.tsx";
 import type {
   AuthMode,
   AuthStatus,
@@ -88,11 +89,16 @@ function EyeIcon({ open }: { open: boolean }) {
 }
 
 const fieldShell = (hasError: boolean) =>
-  `flex items-center overflow-hidden rounded-control border bg-surface transition focus-within:ring-2 focus-within:ring-focus/30 ${
-    hasError ? "border-danger-border" : "border-border-subtle"
-  }`;
+  [
+    "flex min-h-12 items-stretch overflow-hidden rounded-control border bg-surface",
+    "transition focus-within:border-focus focus-within:ring-2 focus-within:ring-focus/25",
+    hasError
+      ? "border-danger"
+      : "border-border-control hover:border-border-control-strong",
+  ].join(" ");
 
-const errorText = "mt-1 text-start text-xs text-danger-ink";
+const fieldLabel = "mb-1.5 block text-start text-xs font-semibold text-content";
+const errorText = "mt-1.5 text-start text-xs text-danger-ink";
 
 export default function AuthCard({
   mode,
@@ -125,7 +131,7 @@ export default function AuthCard({
   const submitLabel = isVerify ? "تأیید" : isSignup ? "ثبت‌نام" : "ورود";
 
   return (
-    <div className="relative z-[2] w-[min(92vw,430px)] max-h-[78vh] overflow-y-auto rounded-[28px] bg-surface px-6 pb-7 pt-8 text-center shadow-panel animate-[auth-card-in_0.6s_ease-out_both] sm:max-h-none sm:overflow-visible sm:px-8 sm:pb-8 sm:pt-9 md:px-6 md:pt-8">
+    <div className="relative z-[2] w-[min(92vw,430px)] max-h-[78vh] overflow-y-auto rounded-feature bg-surface px-6 pb-7 pt-8 text-center shadow-panel motion-safe:animate-[auth-card-in_0.6s_ease-out_both] sm:max-h-none sm:overflow-visible sm:px-8 sm:pb-8 sm:pt-9 md:px-6 md:pt-8">
       <h1 className="text-[28px] font-semibold leading-tight text-content">
         {isVerify ? "تأیید ایمیل" : isSignup ? "ثبت‌نام" : "ورود"}
       </h1>
@@ -170,15 +176,16 @@ export default function AuthCard({
 
       {!isVerify && (
         <>
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={onGoogleSignIn}
             disabled={submitting}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-control border border-border-subtle bg-surface px-4 py-2.5 text-sm font-semibold text-content transition hover:border-brand-border hover:bg-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-4 h-11 w-full"
           >
             <GoogleIcon />
             {isSignup ? "ثبت‌نام با گوگل" : "ورود با گوگل"}
-          </button>
+          </Button>
           <div className="my-4 flex items-center gap-3 text-xs text-content-muted">
             <span className="h-px flex-1 bg-border-subtle" />
             یا
@@ -189,11 +196,13 @@ export default function AuthCard({
 
       <form className="flex flex-col gap-3" onSubmit={(event) => { event.preventDefault(); onSubmit(); }} noValidate>
         <div>
-          <label className={fieldShell(Boolean(errors.email))}>
+          <label htmlFor="auth-email" className={fieldLabel}>ایمیل</label>
+          <div className={fieldShell(Boolean(errors.email))}>
             <span className="flex h-12 w-12 shrink-0 items-center justify-center border-e border-border-subtle text-content-muted">
               <MailIcon />
             </span>
             <input
+              id="auth-email"
               className="min-w-0 flex-1 border-none bg-transparent px-3 text-sm text-content outline-none placeholder:text-content-muted read-only:bg-canvas read-only:text-content-muted"
               type="email"
               autoComplete="email"
@@ -205,17 +214,19 @@ export default function AuthCard({
               dir="ltr"
               {...register("email")}
             />
-          </label>
+          </div>
           {errors.email?.message && <div id="auth-email-error" className={errorText}>{errors.email.message}</div>}
         </div>
 
         {!isVerify && (
           <div>
-            <label className={fieldShell(Boolean(errors.password))}>
+            <label htmlFor="auth-password" className={fieldLabel}>رمز عبور</label>
+            <div className={fieldShell(Boolean(errors.password))}>
               <span className="flex h-12 w-12 shrink-0 items-center justify-center border-e border-border-subtle text-content-muted">
                 <LockIcon />
               </span>
               <input
+                id="auth-password"
                 className="min-w-0 flex-1 border-none bg-transparent px-3 text-sm text-content outline-none placeholder:text-content-muted"
                 type={showPassword ? "text" : "password"}
                 autoComplete={isSignup ? "new-password" : "current-password"}
@@ -233,7 +244,7 @@ export default function AuthCard({
               >
                 <EyeIcon open={showPassword} />
               </button>
-            </label>
+            </div>
             {errors.password?.message && <div id="auth-password-error" className={errorText}>{errors.password.message}</div>}
           </div>
         )}
@@ -260,11 +271,13 @@ export default function AuthCard({
 
         {isVerify ? (
           <div>
-            <label className={fieldShell(Boolean(errors.verificationCode))}>
+            <label htmlFor="auth-verification-code" className={fieldLabel}>کد تأیید</label>
+            <div className={fieldShell(Boolean(errors.verificationCode))}>
               <span className="flex h-12 w-12 shrink-0 items-center justify-center border-e border-border-subtle text-content-muted">
                 <LockIcon />
               </span>
               <input
+                id="auth-verification-code"
                 className="min-w-0 flex-1 border-none bg-transparent px-3 text-sm text-content outline-none placeholder:text-content-muted"
                 type="text"
                 inputMode="numeric"
@@ -279,16 +292,19 @@ export default function AuthCard({
                     normalizeDigits(String(value)).replace(/\D/g, "").slice(0, 6),
                 })}
               />
-            </label>
+            </div>
             {errors.verificationCode?.message && <div id="auth-code-error" className={errorText}>{errors.verificationCode.message}</div>}
           </div>
         ) : isSignup ? (
           <div>
-            <label className={fieldShell(Boolean(errors.fullName))}>
+            <label htmlFor="auth-full-name" className={fieldLabel}>نام و نام خانوادگی</label>
+            <div className={fieldShell(Boolean(errors.fullName))}>
               <span className="flex h-12 w-12 shrink-0 items-center justify-center border-e border-border-subtle text-content-muted">
                 <UserIcon />
               </span>
               <input
+                id="auth-full-name"
+                dir="auto"
                 className="min-w-0 flex-1 border-none bg-transparent px-3 text-sm text-content outline-none placeholder:text-content-muted"
                 type="text"
                 autoComplete="name"
@@ -297,7 +313,7 @@ export default function AuthCard({
                 aria-describedby={errors.fullName ? "auth-name-error" : undefined}
                 {...register("fullName")}
               />
-            </label>
+            </div>
             {errors.fullName?.message && <div id="auth-name-error" className={errorText}>{errors.fullName.message}</div>}
           </div>
         ) : (
@@ -367,13 +383,14 @@ export default function AuthCard({
           </Notice>
         )}
 
-        <button
+        <Button
           type="submit"
-          className="rounded-control bg-brand py-2.5 text-sm font-semibold text-content-inverse transition enabled:hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-border-subtle disabled:text-content-muted"
+          className="w-full"
           disabled={!ready || submitting}
+          aria-busy={submitting || undefined}
         >
           {submitting ? "در حال پردازش..." : submitLabel}
-        </button>
+        </Button>
       </form>
     </div>
   );

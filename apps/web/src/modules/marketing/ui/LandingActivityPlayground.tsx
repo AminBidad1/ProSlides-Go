@@ -29,22 +29,31 @@ const ACTIVITIES: Array<{
   },
 ];
 
+const WORD_CLOUD_WORDS = [
+  ["مشارکت", "text-xl", "text-data-violet-on-stage"],
+  ["یادگیری", "text-base", "text-data-cyan-on-stage"],
+  ["گفت‌وگو", "text-lg", "text-data-emerald-on-stage"],
+  ["بازخورد", "text-sm", "text-data-amber-on-stage"],
+  ["ایده", "text-base", "text-data-rose-on-stage"],
+] as const;
+
+const POLL_ROWS = [
+  ["گزینه اول", 68, "bg-data-violet"],
+  ["گزینه دوم", 47, "bg-data-cyan"],
+  ["گزینه سوم", 31, "bg-data-emerald"],
+] as const;
+
 function ActivityPreview({ type }: { type: "wordcloud" | "quiz" | "poll" }) {
   if (type === "wordcloud") {
     return (
-      <div className="flex min-h-36 flex-wrap content-center items-center justify-center gap-x-3 gap-y-2 rounded-2xl bg-content p-4 text-content-inverse">
-        {[
-          ["مشارکت", "text-xl"],
-          ["یادگیری", "text-base"],
-          ["گفت‌وگو", "text-lg"],
-          ["بازخورد", "text-sm"],
-          ["ایده", "text-base"],
-        ].map(([word, size], index) => (
+      <div className="flex min-h-36 flex-wrap content-center items-center justify-center gap-x-3 gap-y-2 rounded-card bg-stage p-4 text-content-inverse">
+        {WORD_CLOUD_WORDS.map(([word, size, tone], index) => (
           <span
             key={word}
             className={[
-              "font-black",
+              "font-bold",
               size,
+              tone,
               index % 2 === 0 ? "-rotate-2" : "rotate-2",
             ].join(" ")}
           >
@@ -57,18 +66,18 @@ function ActivityPreview({ type }: { type: "wordcloud" | "quiz" | "poll" }) {
 
   if (type === "quiz") {
     return (
-      <div className="min-h-36 rounded-2xl bg-content p-4 text-content-inverse">
-        <p className="text-[11px] font-black text-brand-border">نتیجه نمونه</p>
+      <div className="min-h-36 rounded-card bg-stage p-4 text-content-inverse">
+        <p className="text-[11px] font-bold text-stage-accent">نتیجه نمونه</p>
         <div className="mt-3 space-y-2">
           {["مشارکت زنده مخاطبان", "متن طولانی‌تر", "اسلایدهای بیشتر"].map(
             (item, index) => (
               <div
                 key={item}
                 className={[
-                  "rounded-xl border px-3 py-2 text-xs font-bold",
+                  "rounded-control border px-3 py-2 text-xs font-semibold",
                   index === 0
                     ? "border-success-border bg-success-soft text-success-ink"
-                    : "border-white/10 bg-white/5",
+                    : "border-stage-border bg-stage-soft",
                 ].join(" ")}
               >
                 {item}
@@ -81,22 +90,18 @@ function ActivityPreview({ type }: { type: "wordcloud" | "quiz" | "poll" }) {
   }
 
   return (
-    <div className="min-h-36 rounded-2xl bg-content p-4 text-content-inverse">
-      <p className="text-[11px] font-black text-brand-border">نتیجه نمونه</p>
+    <div className="min-h-36 rounded-card bg-stage p-4 text-content-inverse">
+      <p className="text-[11px] font-bold text-stage-accent">نتیجه نمونه</p>
       <div className="mt-4 space-y-3">
-        {[
-          ["گزینه اول", 68],
-          ["گزینه دوم", 47],
-          ["گزینه سوم", 31],
-        ].map(([label, value]) => (
-          <div key={String(label)}>
-            <div className="flex items-center justify-between text-[11px] font-bold">
-              <span>{String(label)}</span>
-              <span>{Number(value).toLocaleString("fa-IR")}٪</span>
+        {POLL_ROWS.map(([label, value, tone]) => (
+          <div key={label}>
+            <div className="flex items-center justify-between text-[11px] font-semibold">
+              <span>{label}</span>
+              <span>{value.toLocaleString("fa-IR")}٪</span>
             </div>
-            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/10">
+            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-stage-soft">
               <span
-                className="block h-full rounded-full bg-brand-border"
+                className={["block h-full rounded-full", tone].join(" ")}
                 style={{ width: `${value}%` }}
               />
             </div>
@@ -113,13 +118,13 @@ export default function LandingActivityPlayground() {
       {ACTIVITIES.map(({ title, description, Icon, preview }) => (
         <article
           key={title}
-          className="rounded-[28px] border border-border-subtle bg-surface p-4 shadow-sm sm:p-5"
+          className="rounded-feature border border-border-subtle bg-surface p-4 shadow-card sm:p-5"
         >
           <div className="flex items-center gap-3">
-            <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-2xl bg-brand-soft text-brand">
+            <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-card bg-brand-soft text-brand">
               <Icon className="size-5" aria-hidden="true" />
             </span>
-            <h3 className="text-lg font-black text-content">{title}</h3>
+            <h3 className="text-lg font-bold text-content">{title}</h3>
           </div>
           <p className="mt-3 min-h-14 text-sm leading-7 text-content-muted md:min-h-20">
             {description}

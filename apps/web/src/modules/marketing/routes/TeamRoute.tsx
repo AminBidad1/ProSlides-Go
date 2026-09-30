@@ -76,7 +76,7 @@ export default function TeamRoute() {
         />
 
         <header className="text-center">
-          <h1 className="text-4xl font-black leading-tight tracking-tight text-content sm:text-5xl">
+          <h1 className="text-4xl font-bold leading-tight tracking-tight text-content sm:text-5xl">
             تیم ProSlides
           </h1>
         </header>
@@ -91,7 +91,7 @@ export default function TeamRoute() {
               className="basis-[calc(50%-0.5rem)] sm:basis-[calc(33.333%-1rem)] lg:basis-[calc(25%-1.125rem)]"
             >
               <article className="text-center">
-                <div className="aspect-square overflow-hidden rounded-[28px] border border-border-subtle bg-surface shadow-sm">
+                <div className="aspect-square overflow-hidden rounded-feature border border-border-subtle bg-surface shadow-sm">
                   <img
                     src={member.avatar}
                     alt=""
@@ -103,7 +103,7 @@ export default function TeamRoute() {
                 </div>
 
                 <div className="px-1 pt-4">
-                  <h2 className="text-base font-black text-content sm:text-lg">
+                  <h2 className="text-base font-bold text-content sm:text-lg">
                     {member.name}
                   </h2>
                   <p className="mt-1 text-xs font-semibold text-content-muted sm:text-sm">

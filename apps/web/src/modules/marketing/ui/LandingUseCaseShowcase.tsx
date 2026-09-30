@@ -49,25 +49,27 @@ const SCENARIOS: Array<{
 
 export default function LandingUseCaseShowcase() {
   return (
-    <div className="mt-10 grid gap-4 sm:grid-cols-2">
+    <div className="mt-10 grid gap-x-10 sm:grid-cols-2">
       {SCENARIOS.map(({ label, title, description, tags, Icon }) => (
         <article
           key={label}
-          className="rounded-[28px] border border-border-subtle bg-surface p-5 shadow-sm sm:p-6"
+          className="group border-t border-border-subtle py-7 sm:py-8"
         >
-          <div className="flex items-center gap-3">
-            <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-2xl bg-brand-soft text-brand">
+          <div className="flex items-start gap-4">
+            <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-card bg-brand-soft text-brand transition-colors group-hover:bg-brand-muted">
               <Icon className="size-5" aria-hidden="true" />
             </span>
-            <p className="text-sm font-black text-brand">{label}</p>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-brand">{label}</p>
+              <h3 className="mt-2 text-xl font-bold leading-9 text-content">{title}</h3>
+            </div>
           </div>
-          <h3 className="mt-4 text-xl font-black leading-9 text-content">{title}</h3>
-          <p className="mt-3 text-sm leading-7 text-content-muted">{description}</p>
+          <p className="mt-4 text-sm leading-7 text-content-muted">{description}</p>
           <div className="mt-4 flex flex-wrap gap-2">
             {tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-full border border-brand-border bg-brand-soft px-3 py-1.5 text-xs font-bold text-brand-ink"
+                className="rounded-full border border-border-subtle bg-canvas px-3 py-1.5 text-xs font-semibold text-content-muted"
               >
                 {tag}
               </span>

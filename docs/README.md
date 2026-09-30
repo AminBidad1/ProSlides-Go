@@ -22,7 +22,7 @@ authoritative document rather than preserving two narratives.
 | What are the system/backend/live invariants? | `architecture.md`, ADR 0001/0002/0004, OpenAPI |
 | How is image-media storage/provider portability defined? | `media-assets.md`, ADR 0006 |
 | What are the frontend technical boundaries? | `frontend-architecture.md`, ADR 0003/0004; Word Cloud projection boundary: ADR 0005 |
-| What are the Persian UX/design/accessibility rules? | `frontend-professionalization.md` |
+| What are the Persian UX/design/accessibility rules? | `design-system.md`, `frontend-professionalization.md` |
 | What frontend debt is intentionally deferred? | `frontend-debt.md` |
 | What proves a capacity level? | `capacity-plan.md`; dated results live under `archive/` |
 | Which environment values exist? | `configuration.md` + checked-in examples |

@@ -267,7 +267,7 @@ export default function AudioInspector({
                 }
                 onChange={(event) => setMusicUrl(event.target.value)}
                 placeholder="https://example.com/audio.mp3"
-                className="mt-2 h-11 w-full rounded-control border border-border-subtle bg-surface px-3 text-start text-sm text-content outline-none transition placeholder:text-content-muted focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-2 h-11 w-full rounded-control border border-border-control bg-surface px-3 text-start text-sm text-content outline-none transition placeholder:text-content-muted focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
               />
               <p
                 id="presentation-audio-url-help"
@@ -383,7 +383,7 @@ export default function AudioInspector({
           </div>
         </div>
 
-        <footer className="sticky bottom-0 z-10 border-t border-border-subtle bg-surface/95 px-1 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur">
+        <footer className="sticky bottom-0 z-10 border-t border-border-control bg-surface/95 px-1 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur">
           <div className="mb-2 min-h-5 text-xs">
             {saveState === "saving" ? (
               <span className="inline-flex items-center gap-1.5 text-info">

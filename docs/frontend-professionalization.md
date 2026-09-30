@@ -38,6 +38,9 @@ and must use safe direction boundaries rather than forced alignment.
 
 ## Design-system contract
 
+The normative implementation contract is `design-system.md`; this section
+captures the enduring product/UX rationale behind it.
+
 All product areas share one semantic design-system kernel even when they use
 different themes.
 
@@ -56,6 +59,29 @@ Shared semantics include:
 Marketing, manager/dashboard, editor and live participant surfaces may use
 different theme values. A theme does not invent new meanings for "danger",
 "focus", "disabled" or "surface".
+
+The shared visual vocabulary also distinguishes product chrome from projected
+content:
+
+- `canvas` and `surface` are ordinary application layers;
+- `stage` is the neutral dark baseline for audience-facing projection chrome
+  and lightweight marketing product previews. An authored live Stage may replace
+  these baseline values through the presentation theme; the semantic role stays
+  the same even when its colors do not;
+- expressive data-visualization colors belong to poll/quiz/word-cloud/result
+  content, not to ordinary navigation, forms or generic cards. When a data
+  accent becomes text on the neutral Stage, use its contrast-safe `on-stage`
+  role rather than assuming a chart-fill color is also readable text;
+- muted copy on tinted surfaces uses an explicit contrast-safe text role rather
+  than assuming the default muted color remains AA-compliant after blending;
+- shape roles are tokenized as control/card/feature/showcase instead of
+  page-specific arbitrary radii;
+- marketing headings use font weights actually shipped by the application.
+  New or materially changed marketing UI must not depend on synthetic 800/900
+  weights when only weights through 700 are bundled.
+
+These roles are semantic. A dark card is not automatically a `stage`, and a
+new accent color is not automatically a data-visualization color.
 
 ## Forms
 
@@ -86,8 +112,9 @@ Use stable machine-readable error codes and localized client messages.
 
 ## Responsive behavior
 
-Regression anchors remain 390x844 mobile and 1440x900 desktop. Test intermediate
-sizes when layout changes.
+Regression anchors remain 390x844 mobile and 1440x900 desktop. Public,
+identity and ordinary participant flows also keep a 320-CSS-pixel reflow gate.
+Test intermediate sizes when layout changes.
 
 Editor/live controls must account for safe areas and virtual-keyboard pressure.
 Reusable components should respond to their container when appropriate rather
@@ -164,6 +191,13 @@ speculative feature count.
   layouts into a narrow viewport.
 - Trust content uses verifiable product facts until real customer evidence exists.
   Never invent customer logos, participation rates, testimonials or usage totals.
+- Section composition should vary by information role rather than wrapping every
+  idea in the same elevated card. Product proof may use a feature/showcase
+  surface; use cases may use editorial rows; trust facts may use a quiet strip.
+  Visual rhythm must come from hierarchy and product meaning before decoration.
+- The participant-to-Stage relationship is a durable marketing signature:
+  participant controls stay light and familiar, while the audience-facing Stage
+  uses the semantic Stage surface and restrained result colors.
 - While the public landing is still being refined, browser coverage protects
   responsive layout contracts directly: no horizontal overflow, explicit-only
   journey changes, one active product scene and usable touch targets. Full-page

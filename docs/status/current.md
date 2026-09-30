@@ -1,6 +1,6 @@
 # Current project status
 
-Last reviewed: 2026-09-30
+Last reviewed: 2026-10-01
 
 This is the only mutable project-status document. Durable architecture belongs
 in architecture/ADR documents; operational procedures belong in runbooks;
@@ -67,6 +67,18 @@ release readiness.
 Presentation theming is surface-aware: Stage retains authored background
 imagery, manager views apply stronger readability protection, and participant
 mobile views preserve the theme without downloading the decorative background.
+The public marketing surface now follows the same semantic visual kernel:
+application canvas/surfaces remain quiet, audience-facing product previews use
+the neutral Stage baseline, authored live Stage colors remain presentation-theme
+driven, result previews use bounded data-visualization accents, and marketing
+shape roles use control/card/feature/showcase tokens
+instead of page-specific radii. The landing page deliberately mixes showcase,
+card, editorial-row and trust-strip composition so hierarchy does not collapse
+into one repeated card pattern. The Persian-first design-system contract is now
+explicit in `../design-system.md`: RTL/bidirectional ownership, Persian/Arabic
+digit normalization, form-control contrast, shared form primitives, focus
+visibility, 320px reflow and WCAG text-spacing behavior are part of the frontend
+acceptance boundary rather than page-local styling choices.
 The media slice now has one owner-scoped immutable image library rather than a
 background-specific storage path. The Go media service owns master validation,
 same-owner digest reuse and server-generated thumbnail/medium/large renditions;

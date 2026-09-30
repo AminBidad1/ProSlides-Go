@@ -348,6 +348,9 @@ speculative frontend state for those modes.
 
 ## Design system
 
+The normative product design/localization/accessibility contract is
+`design-system.md`. This section records the architectural boundary.
+
 Use Tailwind CSS 4 plus CSS custom properties with one semantic token
 vocabulary. Do not mix a second unbacked shadcn token dialect with product
 tokens.
@@ -387,8 +390,9 @@ keyboard reachability and obvious focus behavior. Critical flows have automated
 axe/focus/overflow coverage; final manual device/screen-reader/contrast review
 remains release evidence where automation cannot prove the experience.
 
-Retain 390x844 and 1440x900 as primary regression anchors and check relevant
-intermediate/container states when layout changes. Use container queries where
+Retain 390x844 and 1440x900 as primary regression anchors, and include a
+320-CSS-pixel reflow gate for public, identity and ordinary participant flows.
+Check relevant intermediate/container states when layout changes. Use container queries where
 component behavior depends on available component space rather than the global
 viewport.
 

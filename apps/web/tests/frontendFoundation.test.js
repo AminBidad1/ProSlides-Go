@@ -125,6 +125,7 @@ test("marketing routes are typed, module-owned, RTL-safe and deliberately concis
   const journey = source("src/modules/marketing/ui/LandingProductJourney.tsx");
   const useCases = source("src/modules/marketing/ui/LandingUseCaseShowcase.tsx");
   const indexCss = source("src/index.css");
+  const marketingSurfaces = [landing, team, liveDemo, playground, journey, useCases].join("\n");
 
   assert.match(landing, /dir="rtl"/);
   assert.match(landing, /aria-label="کد ورود"/);
@@ -134,7 +135,7 @@ test("marketing routes are typed, module-owned, RTL-safe and deliberately concis
   assert.match(landing, /LandingActivityPlayground/);
   assert.match(landing, /LandingProductJourney/);
   assert.match(landing, /LandingUseCaseShowcase/);
-  assert.match(landing, /\^\[A-Z0-9\]\{5,12\}\$/);
+  assert.match(landing, /isValidAccessCode/);
   assert.match(landing, /همین حالا امتحان کنید/);
   assert.match(landing, /در مرورگر پاسخ می‌دهند.*در زمان مناسب روی صفحه ارائه نمایش می‌دهید/s);
   assert.doesNotMatch(landing, /مخاطبان با موبایل|پاسخ از موبایل|Stage همان لحظه تغییر می‌کند/);
@@ -161,6 +162,19 @@ test("marketing routes are typed, module-owned, RTL-safe and deliberately concis
   assert.doesNotMatch(useCases, /useState|onClick/);
   assert.match(indexCss, /prefers-reduced-motion: reduce/);
   assert.match(indexCss, /--font-brand: "Outfit", "Vazirmatn"/);
+  assert.match(indexCss, /--color-content-muted-on-tint:/);
+  assert.match(indexCss, /--color-stage:/);
+  assert.match(indexCss, /--color-data-violet:/);
+  assert.match(indexCss, /--color-data-violet-on-stage:/);
+  assert.match(indexCss, /--radius-feature:/);
+  assert.match(indexCss, /--radius-showcase:/);
+  assert.match(indexCss, /--shadow-feature:/);
+  assert.match(marketingSurfaces, /bg-stage/);
+  assert.match(marketingSurfaces, /bg-data-(?:violet|cyan|emerald)/);
+  assert.match(marketingSurfaces, /rounded-showcase/);
+  assert.doesNotMatch(marketingSurfaces, /rounded-\[[^\]]+\]/);
+  assert.doesNotMatch(marketingSurfaces, /font-black/);
+  assert.match(landing, /shared\/ui\/primitives\/Button\.tsx/);
   assert.match(landing, /normalizeAccessCode/);
   assert.doesNotMatch(landing, /پاسخ باز|پرسش زنده|سؤال زنده|Q&A/);
   assert.doesNotMatch(journey, /مرورگر موبایل|Stage · نظرسنجی/);
@@ -386,13 +400,26 @@ test("participant live UI is Persian, theme-driven, and disclosure-safe", () => 
 test("shared design primitives use the ProSlides token vocabulary and accessible alert dialogs", () => {
   const button = source("src/shared/ui/primitives/Button.tsx");
   const variants = source("src/shared/ui/primitives/button.variants.ts");
+  const input = source("src/shared/ui/primitives/Input.tsx");
+  const inputVariants = source("src/shared/ui/primitives/input.variants.ts");
   const confirm = source("src/shared/ui/primitives/ConfirmDialog.tsx");
+  const indexCss = source("src/index.css");
 
   assert.match(button, /shared\/lib|\.\.\/\.\.\/lib\/cn/);
   assert.match(variants, /bg-brand/);
   assert.match(variants, /bg-danger/);
   assert.match(variants, /ring-focus/);
+  assert.match(variants, /border-border-control/);
   assert.doesNotMatch(variants, /bg-primary|text-primary-foreground|ring-ring|border-input/);
+
+  assert.match(input, /inputVariants/);
+  assert.match(inputVariants, /border-border-control/);
+  assert.match(inputVariants, /aria-\[invalid=true\]:border-danger/);
+  assert.match(inputVariants, /focus-visible:border-focus/);
+  assert.match(indexCss, /--color-border-control:\s*#7b899d/);
+  assert.match(indexCss, /font-synthesis:\s*none/);
+  assert.match(indexCss, /scroll-padding-block-start:\s*5rem/);
+  assert.match(indexCss, /input::placeholder,[\s\S]*opacity:\s*1/);
 
   assert.match(confirm, /@radix-ui\/react-alert-dialog/);
   assert.match(confirm, /AlertDialogPrimitive\.Title/);
@@ -401,6 +428,49 @@ test("shared design primitives use the ProSlides token vocabulary and accessible
   assert.match(confirm, /aria-busy/);
 });
 
+
+test("Persian design-system boundaries normalize digits and mixed-direction content", () => {
+  const accessCode = source("src/shared/forms/accessCode.ts");
+  const numbers = source("src/shared/forms/numbers.ts");
+  const landing = source("src/modules/marketing/routes/LandingRoute.tsx");
+  const notFound = source("src/app/router/NotFoundRoute.tsx");
+  const share = source("src/modules/presentations/sharing/ShareDialog.tsx");
+  const reset = source("src/modules/identity/routes/ResetPasswordRoute.tsx");
+  const auth = source("src/modules/identity/ui/AuthCard.tsx");
+  const wordCloud = source("src/modules/presentations/editor/inspector/WordCloudInspector.tsx");
+  const dashboardHeader = source("src/modules/presentations/dashboard/ui/DashboardHeader.tsx");
+  const participantJoin = source("src/modules/live/participant/ui/ParticipantJoinPage.tsx");
+  const designSystem = readFileSync(
+    new URL("../../../docs/design-system.md", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(accessCode, /normalizeDigits/);
+  assert.match(accessCode, /toUpperCase\(\)/);
+  assert.match(accessCode, /ACCESS_CODE_MIN_LENGTH = 5/);
+  assert.match(accessCode, /ACCESS_CODE_MAX_LENGTH = 12/);
+  assert.match(numbers, /parseLocalizedInteger/);
+  assert.match(landing, /shared\/forms\/accessCode\.ts/);
+  assert.match(notFound, /shared\/forms\/accessCode\.ts/);
+  assert.match(share, /shared\/forms\/accessCode\.ts/);
+  assert.match(share, /<Input/);
+  assert.match(reset, /AuthBackdrop/);
+  assert.match(reset, /<Button/);
+  assert.match(reset, /<Notice/);
+  assert.doesNotMatch(reset, /#[0-9a-fA-F]{3,8}/);
+  assert.doesNotMatch(reset, /style=\{\{/);
+  assert.match(auth, /htmlFor="auth-email"/);
+  assert.match(auth, /htmlFor="auth-password"/);
+  assert.match(auth, /id="auth-full-name"[\s\S]*dir="auto"/);
+  assert.match(wordCloud, /parseLocalizedInteger/);
+  assert.doesNotMatch(wordCloud, /type="number"/);
+  assert.match(dashboardHeader, /type="search"[\s\S]*dir="auto"/);
+  assert.match(participantJoin, /id="participant-name"[\s\S]*dir="auto"/);
+  assert.match(designSystem, /WCAG 2\.2/);
+  assert.match(designSystem, /Persian and bidirectional behavior/);
+  assert.match(designSystem, /320 CSS px/);
+  assert.match(designSystem, /border-control/);
+});
 
 test("manager and player routes are explicit and reports use the session-first typed boundary", () => {
   const router = source("src/app/router/router.tsx");

@@ -11,7 +11,9 @@ import {
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+import { isValidAccessCode, normalizeAccessCode } from "../../../shared/forms/accessCode.ts";
 import Seo from "../../../shared/ui/Seo.tsx";
+import { Button } from "../../../shared/ui/primitives/Button.tsx";
 import LandingActivityPlayground from "../ui/LandingActivityPlayground.tsx";
 import LandingLiveDemo from "../ui/LandingLiveDemo.tsx";
 import LandingProductJourney from "../ui/LandingProductJourney.tsx";
@@ -39,31 +41,29 @@ function SectionHeader({
   eyebrow,
   title,
   description,
+  onTint = false,
 }: {
   eyebrow: string;
   title: string;
   description: string;
+  onTint?: boolean;
 }) {
   return (
     <div className="mx-auto max-w-3xl text-center">
-      <p className="text-xs font-black text-brand">{eyebrow}</p>
-      <h2 className="mt-3 text-2xl font-black leading-tight text-content md:text-4xl">
+      <p className="text-xs font-bold text-brand">{eyebrow}</p>
+      <h2 className="mt-3 text-2xl font-bold leading-tight text-content md:text-4xl">
         {title}
       </h2>
-      <p className="mt-3 text-sm leading-7 text-content-muted md:text-base md:leading-8">
+      <p
+        className={[
+          "mt-3 text-sm leading-7 md:text-base md:leading-8",
+          onTint ? "text-content-muted-on-tint" : "text-content-muted",
+        ].join(" ")}
+      >
         {description}
       </p>
     </div>
   );
-}
-
-function normalizeAccessCode(value: string) {
-  return value
-    .replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 1776))
-    .replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 1632))
-    .replace(/[^a-zA-Z0-9]/g, "")
-    .toUpperCase()
-    .slice(0, 12);
 }
 
 function JoinForm({
@@ -85,7 +85,7 @@ function JoinForm({
     <form
       onSubmit={onSubmit}
       className={[
-        "relative flex items-center gap-2 rounded-2xl border border-border-subtle bg-surface p-2 shadow-sm",
+        "relative flex items-center gap-2 rounded-card border border-border-subtle bg-surface p-2 shadow-card",
         mobile ? "w-full" : "rounded-full px-2.5 py-1.5",
       ].join(" ")}
     >
@@ -114,17 +114,18 @@ function JoinForm({
           ].join(" ")}
         />
       </div>
-      <button
+      <Button
         type="submit"
-        className="min-h-10 shrink-0 rounded-xl bg-content px-4 py-2 text-xs font-bold text-content-inverse transition hover:bg-brand-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+        size="sm"
+        className="h-10 shrink-0 rounded-control bg-stage px-4 text-xs font-bold text-content-inverse hover:bg-stage-soft"
       >
         ورود
-      </button>
+      </Button>
       {error ? (
         <p
           id={errorId}
           role="alert"
-          className="absolute inset-x-0 top-full z-50 mt-2 rounded-xl border border-danger-border bg-danger-soft px-3 py-2 text-xs font-semibold text-danger-ink shadow-panel"
+          className="absolute inset-x-0 top-full z-50 mt-2 rounded-control border border-danger-border bg-danger-soft px-3 py-2 text-xs font-semibold text-danger-ink shadow-card"
         >
           {error}
         </p>
@@ -144,7 +145,7 @@ export default function LandingRoute() {
   const handleJoin = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const code = accessCode.trim().toUpperCase();
-    if (!/^[A-Z0-9]{5,12}$/.test(code)) {
+    if (!isValidAccessCode(code)) {
       setJoinError("کد ورود باید بین ۵ تا ۱۲ حرف یا عدد انگلیسی باشد.");
       return;
     }
@@ -250,7 +251,7 @@ export default function LandingRoute() {
                 className={[
                   "min-h-10 rounded-full px-4 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
                   activeSection === item.id
-                    ? "bg-content text-content-inverse"
+                    ? "bg-stage text-content-inverse"
                     : "hover:bg-canvas hover:text-content",
                 ].join(" ")}
               >
@@ -262,13 +263,13 @@ export default function LandingRoute() {
           <div className="hidden items-center gap-2 text-sm font-semibold sm:flex">
             <Link
               to="/login"
-              className="min-h-11 rounded-xl border border-border-subtle bg-surface px-4 py-2.5 transition hover:border-brand-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+              className="min-h-11 rounded-control border border-border-subtle bg-surface px-4 py-2.5 transition hover:border-brand-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
             >
               ورود
             </Link>
             <Link
               to="/signup"
-              className="min-h-11 rounded-xl bg-brand px-4 py-2.5 text-content-inverse transition hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+              className="min-h-11 rounded-control bg-brand px-4 py-2.5 text-content-inverse transition hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
             >
               ثبت‌نام رایگان
             </Link>
@@ -282,7 +283,7 @@ export default function LandingRoute() {
                 setIsMobileJoinOpen((open) => !open);
                 setIsMenuOpen(false);
               }}
-              className="min-h-11 rounded-xl border border-border-subtle bg-surface px-3 text-xs font-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+              className="min-h-11 rounded-control border border-border-subtle bg-surface px-3 text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
             >
               ورود با کد
             </button>
@@ -294,7 +295,7 @@ export default function LandingRoute() {
                 setIsMenuOpen((open) => !open);
                 setIsMobileJoinOpen(false);
               }}
-              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-border-subtle transition hover:border-brand-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control border border-border-subtle transition hover:border-brand-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
             >
               <span className="sr-only">باز و بسته کردن منو</span>
               <span aria-hidden="true">☰</span>
@@ -326,7 +327,7 @@ export default function LandingRoute() {
                 key={item.id}
                 type="button"
                 onClick={() => scrollTo(item.id)}
-                className="block min-h-11 w-full rounded-xl px-4 py-3 text-start font-semibold hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+                className="block min-h-11 w-full rounded-control px-4 py-3 text-start font-semibold hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
               >
                 {item.label}
               </button>
@@ -334,13 +335,13 @@ export default function LandingRoute() {
             <div className="mt-2 grid grid-cols-2 gap-2 border-t border-border-subtle pt-3">
               <Link
                 to="/login"
-                className="min-h-11 rounded-xl border border-border-subtle px-3 py-3 text-center text-sm font-bold"
+                className="min-h-11 rounded-control border border-border-subtle px-3 py-3 text-center text-sm font-bold"
               >
                 ورود
               </Link>
               <Link
                 to="/signup"
-                className="min-h-11 rounded-xl bg-brand px-3 py-3 text-center text-sm font-bold text-content-inverse"
+                className="min-h-11 rounded-control bg-brand px-3 py-3 text-center text-sm font-bold text-content-inverse"
               >
                 ثبت‌نام رایگان
               </Link>
@@ -349,20 +350,20 @@ export default function LandingRoute() {
         ) : null}
       </header>
 
-      <main className="relative mx-auto flex max-w-6xl flex-col gap-20 px-4 pb-16 pt-9 sm:px-6 md:gap-28 md:pb-20 md:pt-16">
+      <main className="relative mx-auto flex max-w-6xl flex-col gap-24 px-4 pb-16 pt-9 sm:px-6 md:gap-32 md:pb-20 md:pt-16">
         <div
           className="landing-ambient pointer-events-none absolute inset-x-0 top-0 -z-10 h-[44rem]"
           aria-hidden="true"
         />
 
         <section id="home" className="scroll-mt-32">
-          <div className="grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
+          <div className="grid items-center gap-12 lg:grid-cols-[0.88fr_1.12fr] lg:gap-16">
             <div className="text-center lg:text-start">
               <p className="inline-flex items-center gap-2 rounded-full border border-brand-border bg-brand-soft/80 px-4 py-2 text-xs font-bold text-brand-ink">
                 <Sparkles className="size-4" aria-hidden="true" />
                 از ارائه یک‌طرفه تا مشارکت زنده
               </p>
-              <h1 className="mt-6 text-4xl font-black leading-[1.3] tracking-tight md:text-6xl md:leading-[1.2]">
+              <h1 className="mt-6 text-4xl font-bold leading-[1.28] tracking-tight md:text-6xl md:leading-[1.16]">
                 ارائه‌ای بسازید که مخاطب فقط تماشاگر آن نباشد
               </h1>
               <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-content-muted md:text-lg lg:mx-0">
@@ -371,7 +372,7 @@ export default function LandingRoute() {
               <div className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
                 <Link
                   to="/signup"
-                  className="inline-flex min-h-12 items-center gap-2 rounded-2xl bg-brand px-7 py-3 font-bold text-content-inverse shadow-panel transition hover:-translate-y-0.5 hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus motion-reduce:transform-none"
+                  className="inline-flex min-h-12 items-center gap-2 rounded-card bg-brand px-7 py-3 font-bold text-content-inverse shadow-card transition hover:-translate-y-0.5 hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus motion-reduce:transform-none"
                 >
                   رایگان شروع کنید
                   <ArrowLeft className="size-4" aria-hidden="true" />
@@ -379,7 +380,7 @@ export default function LandingRoute() {
                 <button
                   type="button"
                   onClick={focusDemo}
-                  className="min-h-12 rounded-2xl border border-border-subtle bg-surface px-7 py-3 font-bold shadow-sm transition hover:-translate-y-0.5 hover:border-brand-border hover:bg-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus motion-reduce:transform-none"
+                  className="min-h-12 rounded-card border border-border-subtle bg-surface px-7 py-3 font-bold shadow-sm transition hover:-translate-y-0.5 hover:border-brand-border hover:bg-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus motion-reduce:transform-none"
                 >
                   همین حالا امتحان کنید
                 </button>
@@ -399,11 +400,12 @@ export default function LandingRoute() {
           <LandingProductJourney />
         </section>
 
-        <section id="activities" className="scroll-mt-32">
+        <section id="activities" className="scroll-mt-32 rounded-showcase bg-brand-soft/45 px-4 py-10 sm:px-8 md:py-14">
           <SectionHeader
             eyebrow="فعالیت‌های اصلی"
             title="برای هر لحظه، یک نوع مشارکت"
             description="سه نمونه کوتاه کافی است تا تفاوت فعالیت‌ها را ببینید؛ تعامل واقعی را همان دمو ابتدای صفحه نگه داشته‌ایم تا مسیر صفحه شلوغ نشود."
+            onTint
           />
           <div className="mt-10">
             <LandingActivityPlayground />
@@ -420,34 +422,38 @@ export default function LandingRoute() {
         </section>
 
         <section aria-labelledby="landing-trust-title">
-          <div className="rounded-[34px] border border-border-subtle bg-surface p-6 shadow-panel sm:p-8">
-            <div className="flex flex-col gap-2 text-center">
-              <p className="text-xs font-black text-brand">واقعیت‌های محصول، نه عددهای تبلیغاتی</p>
-              <h2 id="landing-trust-title" className="text-2xl font-black text-content">
-                برای اجرای واقعی جلسه طراحی شده است
-              </h2>
-            </div>
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-              {TRUST_ITEMS.map(({ label, Icon }) => (
-                <div
-                  key={label}
-                  className="flex min-h-28 flex-col items-center justify-center rounded-2xl border border-border-subtle bg-canvas p-4 text-center"
-                >
-                  <Icon className="size-5 text-brand" aria-hidden="true" />
-                  <p className="mt-3 text-xs font-black leading-6 text-content">{label}</p>
-                </div>
-              ))}
-            </div>
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="text-xs font-bold text-brand">واقعیت‌های محصول، نه عددهای تبلیغاتی</p>
+            <h2 id="landing-trust-title" className="mt-3 text-2xl font-bold text-content">
+              برای اجرای واقعی جلسه طراحی شده است
+            </h2>
+          </div>
+          <div className="mt-7 grid grid-cols-2 border-y border-border-subtle sm:grid-cols-3 lg:grid-cols-6">
+            {TRUST_ITEMS.map(({ label, Icon }, index) => (
+              <div
+                key={label}
+                className={[
+                  "flex min-h-24 items-center justify-center gap-2 px-3 py-4 text-center",
+                  index % 2 === 1 ? "border-s border-border-subtle" : "",
+                  index >= 2 ? "border-t border-border-subtle sm:border-t-0" : "",
+                  index >= 3 ? "sm:border-t border-border-subtle lg:border-t-0" : "",
+                  index > 0 ? "lg:border-s lg:border-border-subtle" : "",
+                ].join(" ")}
+              >
+                <Icon className="size-5 shrink-0 text-brand" aria-hidden="true" />
+                <p className="text-xs font-bold leading-6 text-content">{label}</p>
+              </div>
+            ))}
           </div>
         </section>
 
         <section aria-labelledby="final-cta">
-          <div className="relative overflow-hidden rounded-[34px] bg-content px-6 py-10 text-content-inverse shadow-panel sm:px-10">
+          <div className="relative overflow-hidden rounded-showcase bg-stage px-6 py-10 text-content-inverse shadow-feature sm:px-10">
             <div className="landing-dark-glow pointer-events-none absolute inset-0" aria-hidden="true" />
             <div className="relative grid gap-6 md:grid-cols-[1fr_auto] md:items-center">
               <div>
-                <p className="text-xs font-black text-brand-border">جلسه بعدی می‌تواند دوطرفه باشد</p>
-                <h2 id="final-cta" className="mt-3 text-2xl font-black md:text-3xl">
+                <p className="text-xs font-bold text-brand-border">جلسه بعدی می‌تواند دوطرفه باشد</p>
+                <h2 id="final-cta" className="mt-3 text-2xl font-bold md:text-3xl">
                   ارائه را بسازید؛ مخاطب را وارد جریان کنید.
                 </h2>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-white/75">
@@ -456,7 +462,7 @@ export default function LandingRoute() {
               </div>
               <Link
                 to="/signup"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-surface px-6 py-3 text-sm font-black text-content transition hover:bg-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-card bg-surface px-6 py-3 text-sm font-bold text-content shadow-card transition hover:bg-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
               >
                 ایجاد حساب رایگان
                 <ArrowLeft className="size-4" aria-hidden="true" />

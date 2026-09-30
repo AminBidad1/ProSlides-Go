@@ -28,6 +28,7 @@ function SearchField({
       />
       <input
         type="search"
+        dir="auto"
         placeholder="جست‌وجوی ارائه‌ها"
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -40,7 +41,7 @@ function SearchField({
         }}
         aria-label="جست‌وجوی ارائه‌ها"
         autoFocus={mobile}
-        className={`w-full rounded-control border border-border-subtle bg-canvas text-content transition-colors placeholder:text-content-muted focus:border-transparent focus:outline-none focus:ring-2 focus:ring-focus ${
+        className={`w-full rounded-control border border-border-control bg-canvas text-content transition-colors placeholder:text-content-muted focus:border-transparent focus:outline-none focus:ring-2 focus:ring-focus ${
           mobile ? "py-2 pe-10 ps-10 text-sm" : "py-2.5 pe-10 ps-12"
         }`}
       />

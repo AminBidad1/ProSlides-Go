@@ -2,19 +2,22 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
-import Seo from "../../../shared/ui/Seo.tsx";
 import { ApiError } from "../../../shared/api/http.ts";
 import { formatPersianNumber } from "../../../shared/forms/numbers.ts";
 import { createZodResolver } from "../../../shared/forms/zodResolver.ts";
+import Notice from "../../../shared/ui/Notice.tsx";
+import Seo from "../../../shared/ui/Seo.tsx";
+import { Button } from "../../../shared/ui/primitives/Button.tsx";
 import { identityApi } from "../api/identityApi.ts";
 import {
   resetPasswordSchema,
   type ResetPasswordFormValues,
 } from "../model/resetPasswordSchema.ts";
+import AuthBackdrop from "../ui/AuthBackdrop.tsx";
 
 function LockIcon() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="size-5">
       <rect
         x="4"
         y="10"
@@ -37,7 +40,7 @@ function LockIcon() {
 
 function EyeIcon({ open }: { open: boolean }) {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="size-5">
       <path
         d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z"
         fill="none"
@@ -52,17 +55,24 @@ function EyeIcon({ open }: { open: boolean }) {
         stroke="currentColor"
         strokeWidth="1.5"
       />
-      {!open && (
+      {!open ? (
         <path
           d="M4 4l16 16"
           fill="none"
           stroke="currentColor"
           strokeWidth="1.5"
         />
-      )}
+      ) : null}
     </svg>
   );
 }
+
+const fieldShell = (hasError: boolean) =>
+  [
+    "flex min-h-12 items-stretch overflow-hidden rounded-control border bg-surface",
+    "transition focus-within:border-focus focus-within:ring-2 focus-within:ring-focus/25",
+    hasError ? "border-danger" : "border-border-control hover:border-border-control-strong",
+  ].join(" ");
 
 const passwordStrength = (value: string) => {
   if (!value) return { score: 0, label: "ضعیف" };
@@ -162,12 +172,8 @@ export default function ResetPasswordRoute() {
 
   return (
     <div
-      className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 pb-8 pt-8 sm:px-5 sm:pb-10 sm:pt-14 md:pb-[70px] md:pt-[120px]"
-      style={{
-        fontFamily: '"Vazirmatn", "Outfit", "Segoe UI", sans-serif',
-        background:
-          "radial-gradient(circle at 15% 20%, #ffffff 0%, #f3f8ff 45%, transparent 65%), radial-gradient(circle at 90% 15%, #eef5ff 0%, transparent 55%), radial-gradient(circle at 80% 90%, #e8f2ff 0%, transparent 55%), linear-gradient(180deg, #f8fbff 0%, #f1f6ff 100%)",
-      }}
+      className="relative flex min-h-screen items-center justify-center overflow-hidden bg-canvas px-4 pb-8 pt-20 font-sans sm:px-5 sm:pb-10 sm:pt-24"
+      dir="rtl"
     >
       <Seo
         title="بازنشانی رمز عبور | ProSlides"
@@ -175,63 +181,48 @@ export default function ResetPasswordRoute() {
         canonical="https://proslides.ir/reset-password"
       />
 
-      <div
-        className="pointer-events-none absolute inset-0 opacity-35"
-        style={{
-          backgroundImage: "radial-gradient(#dce6f4 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
-      />
+      <AuthBackdrop decorate={false} />
 
-      <div className="absolute inset-x-0 top-6 z-10 px-6 md:px-4">
-        <div className="flex justify-center">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 text-lg font-semibold text-[#1b2430] before:text-xl before:content-['✱']"
-          >
-            ProSlides
-          </Link>
-        </div>
-      </div>
-
-      <main className="relative z-[2] w-[min(92vw,430px)] animate-[auth-card-in_0.6s_ease-out_both] rounded-[28px] bg-white px-6 pb-7 pt-8 text-center shadow-[0_28px_60px_rgba(15,23,42,0.14)] sm:px-8 sm:pb-8 sm:pt-9 md:px-6 md:pt-8">
-        <h1 className="text-[28px] font-semibold leading-tight text-[#1f2937]">
+      <main className="relative z-[2] w-[min(92vw,430px)] rounded-feature bg-surface px-6 pb-7 pt-8 text-center shadow-panel motion-safe:animate-[auth-card-in_0.6s_ease-out_both] sm:px-8 sm:pb-8 sm:pt-9">
+        <h1 className="text-3xl font-semibold leading-tight text-content">
           بازنشانی رمز عبور
         </h1>
-        <p className="mt-2 text-sm text-[#6b7280]">
+        <p className="mt-2 text-sm leading-6 text-content-muted">
           یک رمز عبور جدید برای حساب خود تعیین کنید.
         </p>
 
         {!uid || !token ? (
-          <div className="mt-6 rounded-xl bg-[#fee2e2] px-3 py-2 text-start text-xs text-[#991b1b]" role="alert">
+          <Notice tone="error" className="mt-6 items-start text-start text-xs">
             لینک بازنشانی ناقص یا نامعتبر است. دوباره درخواست بازنشانی رمز عبور بدهید.
-          </div>
+          </Notice>
         ) : (
           <form className="mt-6 flex flex-col" onSubmit={onSubmit} noValidate>
-            <label className="mb-2 text-start text-sm font-medium text-[#374151]" htmlFor="new-password">
+            <label
+              className="mb-2 text-start text-sm font-medium text-content"
+              htmlFor="new-password"
+            >
               رمز عبور جدید
             </label>
-            <div
-              className={`mb-2 flex items-center overflow-hidden rounded-xl border bg-white ${
-                passwordError ? "border-[#fca5a5]" : "border-[#e5e7eb]"
-              }`}
-            >
-              <span className="flex h-12 w-12 items-center justify-center border-e border-[#e5e7eb] text-[#6b7280]">
+            <div className={fieldShell(Boolean(passwordError))}>
+              <span className="flex w-12 shrink-0 items-center justify-center border-e border-border-subtle text-content-muted">
                 <LockIcon />
               </span>
               <input
                 id="new-password"
-                className="min-w-0 flex-1 border-none bg-transparent px-3 text-sm text-[#1f2937] outline-none placeholder:text-[#9ca3af]"
+                className="min-w-0 flex-1 border-none bg-transparent px-3 text-sm text-content outline-none placeholder:text-content-muted"
                 type={showPassword ? "text" : "password"}
+                dir="ltr"
                 autoComplete="new-password"
                 placeholder="حداقل ۱۲ نویسه"
                 aria-invalid={Boolean(passwordError)}
-                aria-describedby={passwordError ? "new-password-error" : "new-password-help"}
+                aria-describedby={
+                  passwordError ? "new-password-error" : "new-password-help"
+                }
                 {...register("password")}
               />
               <button
                 type="button"
-                className="flex h-12 w-12 items-center justify-center text-[#6b7280]"
+                className="flex w-12 shrink-0 items-center justify-center text-content-muted transition hover:bg-canvas hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
                 onClick={() => setShowPassword((value) => !value)}
                 aria-label={showPassword ? "پنهان کردن رمز" : "نمایش رمز"}
               >
@@ -239,99 +230,111 @@ export default function ResetPasswordRoute() {
               </button>
             </div>
             {passwordError ? (
-              <p id="new-password-error" className="mb-3 text-start text-xs text-[#b91c1c]">
+              <p
+                id="new-password-error"
+                className="mb-3 mt-1.5 text-start text-xs text-danger-ink"
+                role="alert"
+              >
                 {passwordError}
               </p>
             ) : (
-              <p id="new-password-help" className="mb-3 text-start text-xs text-[#6b7280]">
+              <p
+                id="new-password-help"
+                className="mb-3 mt-1.5 text-start text-xs leading-5 text-content-muted"
+              >
                 حداقل ۱۲ نویسه وارد کنید و از رمز عبور صرفاً عددی استفاده نکنید.
               </p>
             )}
 
-            <label className="mb-2 text-start text-sm font-medium text-[#374151]" htmlFor="confirm-password">
+            <label
+              className="mb-2 text-start text-sm font-medium text-content"
+              htmlFor="confirm-password"
+            >
               تکرار رمز عبور
             </label>
-            <div
-              className={`mb-2 flex items-center overflow-hidden rounded-xl border bg-white ${
-                confirmError ? "border-[#fca5a5]" : "border-[#e5e7eb]"
-              }`}
-            >
-              <span className="flex h-12 w-12 items-center justify-center border-e border-[#e5e7eb] text-[#6b7280]">
+            <div className={fieldShell(Boolean(confirmError))}>
+              <span className="flex w-12 shrink-0 items-center justify-center border-e border-border-subtle text-content-muted">
                 <LockIcon />
               </span>
               <input
                 id="confirm-password"
-                className="min-w-0 flex-1 border-none bg-transparent px-3 text-sm text-[#1f2937] outline-none placeholder:text-[#9ca3af]"
+                className="min-w-0 flex-1 border-none bg-transparent px-3 text-sm text-content outline-none placeholder:text-content-muted"
                 type={showConfirm ? "text" : "password"}
+                dir="ltr"
                 autoComplete="new-password"
                 placeholder="رمز عبور را دوباره وارد کنید"
                 aria-invalid={Boolean(confirmError)}
-                aria-describedby={confirmError ? "confirm-password-error" : undefined}
+                aria-describedby={
+                  confirmError ? "confirm-password-error" : undefined
+                }
                 {...register("confirmPassword")}
               />
               <button
                 type="button"
-                className="flex h-12 w-12 items-center justify-center text-[#6b7280]"
+                className="flex w-12 shrink-0 items-center justify-center text-content-muted transition hover:bg-canvas hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
                 onClick={() => setShowConfirm((value) => !value)}
-                aria-label={showConfirm ? "پنهان کردن تکرار رمز" : "نمایش تکرار رمز"}
+                aria-label={
+                  showConfirm ? "پنهان کردن تکرار رمز" : "نمایش تکرار رمز"
+                }
               >
                 <EyeIcon open={showConfirm} />
               </button>
             </div>
-            {confirmError && (
-              <p id="confirm-password-error" className="mb-3 text-start text-xs text-[#b91c1c]">
+            {confirmError ? (
+              <p
+                id="confirm-password-error"
+                className="mb-3 mt-1.5 text-start text-xs text-danger-ink"
+                role="alert"
+              >
                 {confirmError}
               </p>
-            )}
+            ) : null}
 
-            {password && (
-              <div className="mb-4 text-start text-xs text-[#6b7280]">
+            {password ? (
+              <div className="mb-4 mt-1 text-start text-xs text-content-muted">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-[#374151]">قدرت رمز:</span>
+                  <span className="font-semibold text-content">قدرت رمز:</span>
                   <span>{strength.label}</span>
                 </div>
                 <div className="mt-2 flex gap-1" aria-hidden="true">
                   {[0, 1, 2, 3].map((index) => (
                     <span
                       key={index}
-                      className={`h-1.5 flex-1 rounded-full ${
-                        strength.score > index ? "bg-[#6c4cf5]" : "bg-[#e5e7eb]"
-                      }`}
+                      className={[
+                        "h-1.5 flex-1 rounded-full",
+                        strength.score > index ? "bg-brand" : "bg-border-subtle",
+                      ].join(" ")}
                     />
                   ))}
                 </div>
               </div>
-            )}
+            ) : null}
 
-            {status && (
-              <div
-                className={`mb-3 rounded-xl px-3 py-2 text-start text-xs ${
-                  status.type === "error"
-                    ? "bg-[#fee2e2] text-[#991b1b]"
-                    : "bg-[#dcfce7] text-[#166534]"
-                }`}
-                role={status.type === "error" ? "alert" : "status"}
-                aria-live={status.type === "error" ? "assertive" : "polite"}
+            {status ? (
+              <Notice
+                tone={status.type === "error" ? "error" : "success"}
+                className="mb-3 items-start text-start text-xs"
               >
                 {status.message}
-              </div>
-            )}
+              </Notice>
+            ) : null}
 
-            <button
+            <Button
               type="submit"
-              className="rounded-xl bg-[#6c4cf5] py-2.5 text-sm font-semibold text-white transition enabled:hover:bg-[#5b3fe7] disabled:cursor-not-allowed disabled:bg-[#eceef2] disabled:text-[#b5bbc7]"
+              className="w-full"
               disabled={isSubmitting}
+              aria-busy={isSubmitting || undefined}
             >
               {isSubmitting ? "در حال به‌روزرسانی…" : "به‌روزرسانی رمز عبور"}
-            </button>
+            </Button>
           </form>
         )}
 
-        <div className="mt-4 text-xs text-[#6b7280]">
+        <div className="mt-4 text-xs text-content-muted">
           رمز عبور خود را به یاد دارید؟{" "}
           <Link
             to="/login"
-            className="font-semibold text-[#6c4cf5] transition hover:text-[#4f32e6] hover:underline"
+            className="font-semibold text-brand transition hover:text-brand-strong hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
           >
             ورود
           </Link>

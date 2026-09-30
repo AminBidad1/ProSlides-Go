@@ -10,7 +10,7 @@ export const buttonVariants = cva(
         destructive:
           "bg-danger text-content-inverse shadow-sm hover:brightness-95",
         outline:
-          "border border-border-subtle bg-surface text-content shadow-sm hover:bg-brand-soft hover:text-brand-ink",
+          "border border-border-control bg-surface text-content shadow-sm hover:border-border-control-strong hover:bg-brand-soft hover:text-brand-ink",
         secondary:
           "bg-brand-soft text-brand-ink shadow-sm hover:bg-brand-muted",
         ghost:

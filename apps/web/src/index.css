@@ -8,9 +8,36 @@
   --color-surface: #ffffff;
   --color-surface-raised: #ffffff;
   --color-border-subtle: #e2e8f0;
+  /* Separators may be subtle; control boundaries may not. This tone keeps
+     authored form controls identifiable at >=3:1 against both surface/canvas. */
+  --color-border-control: #7b899d;
+  --color-border-control-strong: #64748b;
   --color-content: #0f172a;
   --color-content-muted: #64748b;
+  --color-content-muted-on-tint: #526176;
   --color-content-inverse: #ffffff;
+
+  /* Stage is the shared audience-facing projection surface. Keep it semantic:
+     marketing previews and live presentation surfaces can share the same visual
+     language without treating a dark background as a decorative one-off. */
+  --color-stage: #0f172a;
+  --color-stage-soft: #1e293b;
+  --color-stage-border: #334155;
+  --color-stage-muted: #94a3b8;
+  --color-stage-accent: #ddd6fe;
+
+  /* Expressive colors belong to authored/live data visualization, not ordinary
+     product chrome. This keeps the application calm while results stay legible. */
+  --color-data-violet: #8b5cf6;
+  --color-data-cyan: #0891b2;
+  --color-data-emerald: #059669;
+  --color-data-amber: #d97706;
+  --color-data-rose: #e11d48;
+  --color-data-violet-on-stage: #a78bfa;
+  --color-data-cyan-on-stage: #22d3ee;
+  --color-data-emerald-on-stage: #34d399;
+  --color-data-amber-on-stage: #f59e0b;
+  --color-data-rose-on-stage: #fb7185;
 
   --color-brand: #6d28d9;
   --color-brand-strong: #5b21b6;
@@ -37,9 +64,17 @@
   --color-info-ink: #1e40af;
 
   --color-focus: #7c3aed;
+
+  /* Shape roles are semantic, not page-specific pixel guesses. */
   --radius-control: 0.75rem;
   --radius-panel: 1rem;
+  --radius-card: 1.125rem;
+  --radius-feature: 1.75rem;
+  --radius-showcase: 2rem;
+
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.06), 0 8px 24px rgb(15 23 42 / 0.05);
   --shadow-panel: 0 16px 40px rgb(15 23 42 / 0.12);
+  --shadow-feature: 0 24px 64px rgb(15 23 42 / 0.14);
   --ease-interface: cubic-bezier(0.2, 0, 0, 1);
 }
 
@@ -47,6 +82,16 @@
   color: var(--color-content);
   background: var(--color-canvas);
   font-family: var(--font-sans);
+  font-synthesis: none;
+}
+
+html {
+  /* Sticky application chrome must not fully obscure keyboard-focused content. */
+  scroll-padding-block-start: 5rem;
+}
+
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  scroll-margin-block: 0.75rem;
 }
 
 @font-face {
@@ -157,7 +202,7 @@ body,
 input::placeholder,
 textarea::placeholder {
   color: var(--color-content-muted);
-  opacity: 0.78;
+  opacity: 1;
 }
 
 /* Utility to hide native scrollbars while preserving scrolling */
@@ -342,9 +387,9 @@ textarea::placeholder {
 
 .landing-ambient {
   background:
-    radial-gradient(circle at 20% 24%, color-mix(in srgb, var(--color-info-soft) 88%, transparent), transparent 30%),
-    radial-gradient(circle at 80% 18%, color-mix(in srgb, var(--color-brand-muted) 90%, transparent), transparent 32%),
-    radial-gradient(circle at 52% 58%, color-mix(in srgb, var(--color-brand-soft) 74%, transparent), transparent 36%);
+    radial-gradient(circle at 18% 20%, color-mix(in srgb, var(--color-info-soft) 72%, transparent), transparent 28%),
+    radial-gradient(circle at 82% 14%, color-mix(in srgb, var(--color-brand-muted) 78%, transparent), transparent 31%),
+    radial-gradient(circle at 54% 54%, color-mix(in srgb, var(--color-brand-soft) 58%, transparent), transparent 38%);
 }
 
 .landing-demo-glow {

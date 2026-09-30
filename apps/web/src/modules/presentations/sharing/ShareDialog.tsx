@@ -4,8 +4,16 @@ import QRCode from "qrcode";
 import { X, Check, Loader2 } from "lucide-react";
 import { quizService } from "../api/presentationRepository.ts";
 import { ApiError } from "../../../shared/api/http.ts";
-import Notice from "../../../shared/ui/Notice";
+import {
+  ACCESS_CODE_MAX_LENGTH,
+  ACCESS_CODE_MIN_LENGTH,
+  isValidAccessCode,
+  normalizeAccessCode,
+} from "../../../shared/forms/accessCode.ts";
 import { fa } from "../../../shared/i18n/fa";
+import Notice from "../../../shared/ui/Notice";
+import { Button } from "../../../shared/ui/primitives/Button.tsx";
+import { Input } from "../../../shared/ui/primitives/Input.tsx";
 
 
 type ShareDialogProps = {
@@ -63,21 +71,14 @@ export default function ShareMenu({
   const BASE = `${baseOrigin}/`;
 
 
-  // Checking the validity of the code
   const validateCode = (input: string): string => {
-    if (!input) {
-      return "";
-    }
-    if (input.length < 5) {
+    if (!input) return "";
+    if (input.length < ACCESS_CODE_MIN_LENGTH) {
       return "کد ورود باید حداقل ۵ نویسه باشد.";
     }
-    if (input.length > 12) {
-      return "کد ورود باید حداکثر ۱۲ نویسه باشد.";
-    }
-    if (!/^[A-Za-z0-9]*$/.test(input)) {
-      return "فقط حروف انگلیسی و عدد مجاز است.";
-    }
-    return "";
+    return isValidAccessCode(input)
+      ? ""
+      : "کد ورود باید فقط شامل حروف انگلیسی و عدد باشد.";
   };
 
 
@@ -149,11 +150,12 @@ export default function ShareMenu({
     setConfirmingSave(false);
   };
 
-  const isCodeValid = code.length >= 5 && !inputError;
+  const isCodeValid = isValidAccessCode(code) && !inputError;
 
   const handleCodeChange = (nextCode: string) => {
-    setCode(nextCode);
-    setInputError(validateCode(nextCode));
+    const normalized = normalizeAccessCode(nextCode);
+    setCode(normalized);
+    setInputError(validateCode(normalized));
     setSaveError("");
     setSaveSuccess(false);
     setConfirmingSave(false);
@@ -306,8 +308,7 @@ function InviteAudienceUI({
 }: InviteAudienceProps) {
 
   const handleCodeChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const newCode = e.target.value.replace(/\s+/g, "");
-    onCodeChange(newCode);
+    onCodeChange(normalizeAccessCode(e.target.value));
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -334,16 +335,17 @@ function InviteAudienceUI({
           <label htmlFor="share-access-code" className="sr-only">
             کد ورود ارائه
           </label>
-          <input
+          <Input
             id="share-access-code"
-            className={`w-full sm:w-[16ch] md:w-[18ch] flex-none rounded-control border px-3 py-2 text-sm focus:ring-2 focus:ring-focus ${
-              inputError ? "border-danger" : "border-border-subtle"
-            }`}
+            className="w-full flex-none font-brand uppercase tracking-wider sm:w-[16ch] md:w-[18ch]"
             placeholder="ROOM1"
             value={code}
             onChange={handleCodeChange}
             onKeyDown={handleKeyDown}
-            maxLength={12}
+            maxLength={ACCESS_CODE_MAX_LENGTH}
+            autoComplete="off"
+            spellCheck={false}
+            enterKeyHint="done"
             aria-describedby={
               inputError
                 ? "access-code-help access-code-error"
@@ -352,33 +354,29 @@ function InviteAudienceUI({
             aria-invalid={Boolean(inputError)}
             dir="ltr"
           />
-          <button
+          <Button
             type="button"
             onClick={onSave}
             disabled={!isCodeValid || !hasChanges || isSaving}
-            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition ${
-              !isCodeValid || !hasChanges || isSaving
-                ? "cursor-not-allowed bg-slate-100 text-slate-400"
-                : "bg-brand text-content-inverse hover:bg-brand-strong"
-            }`}
+            aria-busy={isSaving || undefined}
           >
             {isSaving ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
                 در حال ذخیره…
               </>
             ) : (
               <>
-                <Check className="h-4 w-4" aria-hidden="true" />
+                <Check aria-hidden="true" />
                 ذخیره
               </>
             )}
-          </button>
+          </Button>
         </div>
       </div>
 
       <p id="access-code-help" className="mt-2 text-xs text-content-muted">
-        بین ۵ تا ۱۲ نویسه؛ فقط حروف انگلیسی و عدد.
+        بین ۵ تا ۱۲ نویسه؛ حروف انگلیسی و عدد. ارقام فارسی نیز پذیرفته و تبدیل می‌شوند.
       </p>
 
 
@@ -403,21 +401,22 @@ function InviteAudienceUI({
         <Notice tone="warning" className="mt-4 flex-col items-stretch">
           تغییر کد ورود، لینک قبلی را غیرفعال می‌کند. ادامه می‌دهید؟
           <div className="mt-3 flex flex-wrap gap-2">
-            <button
+            <Button
               type="button"
+              size="sm"
               onClick={onConfirmSave}
               disabled={isSaving}
-              className="rounded-control bg-warning px-3 py-1.5 text-xs font-semibold text-content-inverse hover:brightness-90 disabled:cursor-not-allowed"
             >
               تأیید و ذخیره
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              size="sm"
+              variant="outline"
               onClick={onCancelConfirm}
-              className="rounded-control border border-warning-border px-3 py-1.5 text-xs font-semibold text-warning-ink hover:bg-warning-soft"
             >
               انصراف
-            </button>
+            </Button>
           </div>
         </Notice>
       )}
@@ -429,16 +428,14 @@ function InviteAudienceUI({
           <img
             src={qr}
             alt="کد QR لینک ورود به ارائه"
-            className="w-44 h-44 border rounded-xl shadow"
+            className="size-44 rounded-card border border-border-control bg-surface shadow-card"
           />
 
-          <a
-            download="qr.png"
-            href={qr}
-            className="mt-3 rounded-control bg-brand px-4 py-1.5 text-sm text-content-inverse shadow transition hover:bg-brand-strong"
-          >
-            دریافت کد QR
-          </a>
+          <Button asChild size="sm" className="mt-3">
+            <a download="qr.png" href={qr}>
+              دریافت کد QR
+            </a>
+          </Button>
         </div>
       )}
     </div>

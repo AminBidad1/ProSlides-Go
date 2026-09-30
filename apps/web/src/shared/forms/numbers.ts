@@ -18,6 +18,11 @@ export const parseLocalizedNumber = (value: string): number | null => {
   return Number.isFinite(number) ? number : null;
 };
 
+export const parseLocalizedInteger = (value: string): number | null => {
+  const number = parseLocalizedNumber(value);
+  return number !== null && Number.isInteger(number) ? number : null;
+};
+
 export const formatPersianNumber = (
   value: number,
   options?: Intl.NumberFormatOptions,
