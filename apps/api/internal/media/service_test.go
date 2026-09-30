@@ -21,16 +21,37 @@ func newFakeStore() *fakeStore {
 	return &fakeStore{assets: make(map[string]Asset)}
 }
 
-func (s *fakeStore) CreateProcessing(_ context.Context, asset Asset) error {
+func cloneAsset(asset Asset) Asset {
+	cloned := asset
+	cloned.SHA256 = append([]byte(nil), asset.SHA256...)
+	cloned.Variants = make(map[string]Variant, len(asset.Variants))
+	for name, variant := range asset.Variants {
+		cloned.Variants[name] = variant
+	}
+	return cloned
+}
+
+func (s *fakeStore) CreateProcessing(
+	_ context.Context,
+	asset Asset,
+	variants []Variant,
+) error {
 	if s.assets == nil {
 		s.assets = make(map[string]Asset)
 	}
 	asset.Status = StatusProcessing
-	s.assets[asset.ID] = asset
+	asset.Variants = make(map[string]Variant, len(variants))
+	for _, variant := range variants {
+		asset.Variants[variant.Name] = variant
+	}
+	s.assets[asset.ID] = cloneAsset(asset)
 	return nil
 }
 
-func (s *fakeStore) SetStatus(_ context.Context, id, ownerID, status string) error {
+func (s *fakeStore) SetStatus(
+	_ context.Context,
+	id, ownerID, status string,
+) error {
 	asset, ok := s.assets[id]
 	if !ok || asset.OwnerID != ownerID {
 		return ErrNotFound
@@ -40,12 +61,15 @@ func (s *fakeStore) SetStatus(_ context.Context, id, ownerID, status string) err
 	return nil
 }
 
-func (s *fakeStore) FindReady(_ context.Context, id string) (Asset, error) {
+func (s *fakeStore) FindReady(
+	_ context.Context,
+	id string,
+) (Asset, error) {
 	asset, ok := s.assets[id]
 	if !ok || asset.Status != StatusReady {
 		return Asset{}, ErrNotFound
 	}
-	return asset, nil
+	return cloneAsset(asset), nil
 }
 
 func (s *fakeStore) FindReadyByDigest(
@@ -58,7 +82,7 @@ func (s *fakeStore) FindReadyByDigest(
 			asset.Purpose == purpose &&
 			asset.Status == StatusReady &&
 			bytes.Equal(asset.SHA256, digest) {
-			return asset, nil
+			return cloneAsset(asset), nil
 		}
 	}
 	return Asset{}, ErrNotFound
@@ -86,7 +110,7 @@ func (s *fakeStore) ListReady(
 				continue
 			}
 		}
-		assets = append(assets, asset)
+		assets = append(assets, cloneAsset(asset))
 	}
 	sort.Slice(assets, func(i, j int) bool {
 		if assets[i].CreatedAt.Equal(assets[j].CreatedAt) {
@@ -120,37 +144,36 @@ func jpegFixture(t *testing.T, width, height int) []byte {
 	return out.Bytes()
 }
 
-func TestUploadBackgroundCreatesImmutableReadyAssetWithThumbnail(t *testing.T) {
+func TestUploadImageCreatesImmutableResponsiveAsset(t *testing.T) {
 	store := newFakeStore()
 	objects := NewMemoryObjectStore()
 	service := NewService(store, objects)
 
-	asset, err := service.UploadBackground(
+	asset, err := service.UploadImage(
 		context.Background(),
 		"owner-id",
 		" camera photo.jpg ",
-		jpegFixture(t, 48, 32),
-		jpegFixture(t, 24, 16),
+		jpegFixture(t, 1300, 800),
 	)
 	if err != nil {
-		t.Fatalf("UploadBackground() error = %v", err)
+		t.Fatalf("UploadImage() error = %v", err)
 	}
 	if asset.Status != StatusReady ||
 		asset.CreatedAt.IsZero() ||
-		asset.Purpose != PurposeBackground ||
+		asset.Purpose != PurposeImage ||
 		asset.MimeType != "image/jpeg" ||
-		asset.Width != 48 ||
-		asset.Height != 32 ||
+		asset.Width != 1300 ||
+		asset.Height != 800 ||
 		asset.URL != assetContentURL(asset.ID) ||
-		asset.ThumbnailURL != assetThumbnailURL(asset.ID) ||
 		asset.OriginalFilename != "camera photo.jpg" {
 		t.Fatalf("unexpected asset: %+v", asset)
 	}
-	stored := store.assets[asset.ID]
-	if stored.Status != StatusReady ||
-		stored.StorageKey == "" ||
-		stored.ThumbnailStorageKey == "" {
-		t.Fatalf("stored asset = %+v", stored)
+	if asset.Renditions.Thumbnail == nil ||
+		asset.Renditions.Thumbnail.Width != 480 ||
+		asset.Renditions.Medium == nil ||
+		asset.Renditions.Medium.Width != 1280 ||
+		asset.Renditions.Large != nil {
+		t.Fatalf("unexpected renditions: %+v", asset.Renditions)
 	}
 
 	opened, body, err := service.Open(context.Background(), asset.ID)
@@ -166,66 +189,101 @@ func TestUploadBackgroundCreatesImmutableReadyAssetWithThumbnail(t *testing.T) {
 		t.Fatalf("payload=%d metadata=%d", len(payload), opened.ByteSize)
 	}
 
-	thumbAsset, thumbBody, err := service.OpenThumbnail(
+	_, thumbnail, thumbnailBody, err := service.OpenVariant(
 		context.Background(),
 		asset.ID,
+		VariantThumbnail,
 	)
 	if err != nil {
-		t.Fatalf("OpenThumbnail() error = %v", err)
+		t.Fatalf("OpenVariant() error = %v", err)
 	}
-	thumbPayload, err := io.ReadAll(thumbBody)
-	thumbBody.Close()
+	thumbnailPayload, err := io.ReadAll(thumbnailBody)
+	thumbnailBody.Close()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if int64(len(thumbPayload)) != thumbAsset.ThumbnailByteSize {
+	if int64(len(thumbnailPayload)) != thumbnail.ByteSize {
 		t.Fatalf(
 			"thumbnail payload=%d metadata=%d",
-			len(thumbPayload),
-			thumbAsset.ThumbnailByteSize,
+			len(thumbnailPayload),
+			thumbnail.ByteSize,
 		)
+	}
+	decoded, _, err := image.Decode(bytes.NewReader(thumbnailPayload))
+	if err != nil {
+		t.Fatalf("thumbnail is not decodable: %v", err)
+	}
+	if decoded.Bounds().Dx() != 480 {
+		t.Fatalf("thumbnail width=%d", decoded.Bounds().Dx())
+	}
+
+	if _, _, _, err = service.OpenVariant(
+		context.Background(),
+		asset.ID,
+		VariantLarge,
+	); !errors.Is(err, ErrVariantNotFound) {
+		t.Fatalf("missing large variant error=%v", err)
 	}
 }
 
-func TestUploadBackgroundReusesReadyOwnerAssetByDigest(t *testing.T) {
+func TestUploadImageDoesNotUpscaleSmallAssets(t *testing.T) {
+	service := NewService(newFakeStore(), NewMemoryObjectStore())
+	asset, err := service.UploadImage(
+		context.Background(),
+		"owner-id",
+		"small.jpg",
+		jpegFixture(t, 320, 180),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if asset.Renditions.Thumbnail != nil ||
+		asset.Renditions.Medium != nil ||
+		asset.Renditions.Large != nil {
+		t.Fatalf("small image was unnecessarily upscaled: %+v", asset.Renditions)
+	}
+}
+
+func TestUploadImageReusesReadyOwnerAssetByDigest(t *testing.T) {
 	store := newFakeStore()
 	objects := NewMemoryObjectStore()
 	service := NewService(store, objects)
-	payload := jpegFixture(t, 40, 24)
+	payload := jpegFixture(t, 640, 360)
 
-	first, err := service.UploadBackground(
+	first, err := service.UploadImage(
 		context.Background(),
 		"owner-a",
 		"first.jpg",
 		payload,
-		jpegFixture(t, 20, 12),
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := service.UploadBackground(
+	second, err := service.UploadImage(
 		context.Background(),
 		"owner-a",
 		"second.jpg",
 		payload,
-		jpegFixture(t, 16, 10),
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if first.ID != second.ID {
-		t.Fatalf("duplicate upload created a new asset: %s != %s", first.ID, second.ID)
+		t.Fatalf(
+			"duplicate upload created a new asset: %s != %s",
+			first.ID,
+			second.ID,
+		)
 	}
 	if len(store.assets) != 1 {
 		t.Fatalf("stored assets=%d, want 1", len(store.assets))
 	}
 
-	third, err := service.UploadBackground(
+	third, err := service.UploadImage(
 		context.Background(),
 		"owner-b",
 		"same.jpg",
 		payload,
-		nil,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -235,7 +293,7 @@ func TestUploadBackgroundReusesReadyOwnerAssetByDigest(t *testing.T) {
 	}
 }
 
-func TestListBackgroundsPaginatesNewestFirst(t *testing.T) {
+func TestListImagesPaginatesNewestFirst(t *testing.T) {
 	store := newFakeStore()
 	base := time.Date(2026, 9, 30, 7, 0, 0, 0, time.UTC)
 	for index, id := range []string{
@@ -246,27 +304,27 @@ func TestListBackgroundsPaginatesNewestFirst(t *testing.T) {
 		store.assets[id] = Asset{
 			ID:               id,
 			OwnerID:          "owner-a",
-			Purpose:          PurposeBackground,
+			Purpose:          PurposeImage,
 			Status:           StatusReady,
 			StorageKey:       id + ".jpg",
 			MimeType:         "image/jpeg",
 			Width:            1920,
 			Height:           1080,
 			ByteSize:         10,
-			OriginalFilename: "bg.jpg",
+			OriginalFilename: "image.jpg",
 			CreatedAt:        base.Add(time.Duration(index) * time.Minute),
 		}
 	}
 	store.assets["123e4567-e89b-42d3-a456-426614174010"] = Asset{
 		ID:        "123e4567-e89b-42d3-a456-426614174010",
 		OwnerID:   "owner-b",
-		Purpose:   PurposeBackground,
+		Purpose:   PurposeImage,
 		Status:    StatusReady,
 		CreatedAt: base.Add(10 * time.Minute),
 	}
 
 	service := NewService(store, NewMemoryObjectStore())
-	first, err := service.ListBackgrounds(
+	first, err := service.ListImages(
 		context.Background(),
 		"owner-a",
 		"",
@@ -283,7 +341,7 @@ func TestListBackgroundsPaginatesNewestFirst(t *testing.T) {
 		t.Fatalf("unexpected order: %+v", first.Items)
 	}
 
-	second, err := service.ListBackgrounds(
+	second, err := service.ListImages(
 		context.Background(),
 		"owner-a",
 		first.NextCursor,
@@ -299,25 +357,23 @@ func TestListBackgroundsPaginatesNewestFirst(t *testing.T) {
 	}
 }
 
-func TestUploadBackgroundRejectsOversizedAndCorruptInput(t *testing.T) {
+func TestUploadImageRejectsOversizedAndCorruptInput(t *testing.T) {
 	service := NewService(newFakeStore(), NewMemoryObjectStore())
 
-	if _, err := service.UploadBackground(
+	if _, err := service.UploadImage(
 		context.Background(),
 		"owner",
 		"huge.jpg",
-		make([]byte, MaxBackgroundUploadBytes+1),
-		nil,
+		make([]byte, MaxImageUploadBytes+1),
 	); !errors.Is(err, ErrMediaTooLarge) {
 		t.Fatalf("oversized error = %v", err)
 	}
 
-	if _, err := service.UploadBackground(
+	if _, err := service.UploadImage(
 		context.Background(),
 		"owner",
 		"broken.jpg",
 		[]byte("not-an-image"),
-		nil,
 	); !errors.Is(err, ErrInvalidImage) {
 		t.Fatalf("invalid error = %v", err)
 	}

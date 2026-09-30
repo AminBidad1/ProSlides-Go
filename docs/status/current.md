@@ -67,9 +67,10 @@ release readiness.
 Presentation theming is surface-aware: Stage retains authored background
 imagery, manager views apply stronger readability protection, and participant
 mobile views preserve the theme without downloading the decorative background.
-The media slice now includes upload-first immutable background assets plus an
-owner-scoped recent-media picker, thumbnail delivery and same-owner digest reuse,
-so a background can be used in multiple Presentations without another upload.
+The media slice now has one owner-scoped immutable image library rather than a
+background-specific storage path. The Go media service owns master validation,
+same-owner digest reuse and server-generated thumbnail/medium/large renditions;
+Presentation contexts own how those assets are placed and rendered.
 Background focal-point placement is now non-destructive, shared across editor,
 Stage and manager rendering, and frozen with the live Session. Broader responsive
 variants for non-background image slots remain follow-up work.

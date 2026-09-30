@@ -35,7 +35,11 @@ without introducing a second visual contract.
 Presentation settings may contain:
 
 - `background_color`: six-digit hexadecimal color.
-- `background_image_url`: optional HTTP(S) resource URL.
+- `background_image_url`: compatibility delivery reference for the optional
+  background image.
+- `background_image_asset_id`: optional immutable first-party Media Asset ID.
+- `background_image_focal_x/y`: normalized non-destructive background focal
+  point coordinates.
 - `text_color`: six-digit hexadecimal foreground color.
 - `accent_color`: six-digit hexadecimal accent used for emphasis and as the first
   visualization color.
@@ -117,7 +121,7 @@ The Design inspector order is:
    image remains immutable and the Presentation stores normalized x/y
    placement coordinates;
 6. explicit Stage/mobile preview switch and base-color contrast status;
-6. save/discard/conflict actions.
+7. save/discard/conflict actions.
 
 The preview must describe itself as representative/approximate rather than claiming
 pixel parity with every projector or phone. When an image exists, the mobile preview

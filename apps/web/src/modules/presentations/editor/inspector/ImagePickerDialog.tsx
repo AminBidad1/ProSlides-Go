@@ -18,31 +18,34 @@ import { ApiError } from "../../../../shared/api/http.ts";
 import { Button } from "../../../../shared/ui/primitives/Button.tsx";
 import { useNativeDialogLifecycle } from "../../../../shared/ui/useNativeDialogLifecycle.ts";
 import {
-  listBackgroundAssets,
+  listImageAssets,
+  mediaThumbnailUrl,
   type MediaAsset,
-  uploadBackgroundAsset,
+  uploadImageAsset,
 } from "../../api/mediaRepository.ts";
 import {
-  BackgroundImagePreparationError,
-  prepareBackgroundImage,
-} from "../lib/prepareBackgroundImage.ts";
+  ImagePreparationError,
+  prepareImageUpload,
+} from "../lib/prepareImageUpload.ts";
 
-type BackgroundImagePickerDialogProps = {
+type ImagePickerDialogProps = {
   open: boolean;
-  backgroundColor: string;
-  currentAssetId: string;
+  currentAssetId?: string;
+  matteColor?: string;
+  title?: string;
+  description?: string;
   onClose: () => void;
-  onSelect: (url: string, assetId: string) => void;
-  onUseExternalUrl: () => void;
+  onSelect: (asset: MediaAsset) => void;
+  onUseExternalUrl?: () => void;
 };
 
 const uploadErrorMessage = (error: unknown): string => {
-  if (error instanceof BackgroundImagePreparationError) {
+  if (error instanceof ImagePreparationError) {
     switch (error.code) {
       case "too_large":
         return "حجم تصویر بیش از ۱۵ مگابایت است.";
       case "unsupported":
-        return "برای پس‌زمینه فعلاً فایل JPEG یا PNG انتخاب کنید.";
+        return "فعلاً فایل JPEG یا PNG انتخاب کنید.";
       case "decode_failed":
         return "این فایل به‌عنوان تصویر معتبر باز نشد.";
       case "encode_failed":
@@ -55,7 +58,7 @@ const uploadErrorMessage = (error: unknown): string => {
       case "media_too_large":
         return "تصویر پس از پردازش هنوز بیش از حد بزرگ است.";
       case "image_dimensions_invalid":
-        return "ابعاد این تصویر برای پس‌زمینه بیش از حد بزرگ است.";
+        return "ابعاد این تصویر بیش از حد بزرگ است.";
       case "invalid_image":
         return "سرور این فایل را به‌عنوان تصویر معتبر نپذیرفت.";
       case "media_storage_unavailable":
@@ -70,16 +73,13 @@ const uploadErrorMessage = (error: unknown): string => {
   return "آپلود تصویر انجام نشد. دوباره تلاش کنید.";
 };
 
-function AssetThumbnail({
-  asset,
-}: {
-  asset: MediaAsset;
-}) {
+function AssetThumbnail({ asset }: { asset: MediaAsset }) {
   const [failed, setFailed] = useState(false);
+  const src = mediaThumbnailUrl(asset);
 
   useEffect(() => {
     setFailed(false);
-  }, [asset.thumbnail_url]);
+  }, [src]);
 
   if (failed) {
     return (
@@ -91,7 +91,7 @@ function AssetThumbnail({
 
   return (
     <img
-      src={asset.thumbnail_url}
+      src={src}
       alt=""
       loading="lazy"
       decoding="async"
@@ -101,14 +101,17 @@ function AssetThumbnail({
   );
 }
 
-export default function BackgroundImagePickerDialog({
+export default function ImagePickerDialog({
   open,
-  backgroundColor,
-  currentAssetId,
+  currentAssetId = "",
+  matteColor = "#ffffff",
+  title = "انتخاب تصویر",
+  description =
+    "تصویر جدید آپلود کنید یا بدون آپلود مجدد از تصاویر قبلی خودتان استفاده کنید.",
   onClose,
   onSelect,
   onUseExternalUrl,
-}: BackgroundImagePickerDialogProps) {
+}: ImagePickerDialogProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const uploadButtonRef = useRef<HTMLButtonElement | null>(null);
   const listAbortRef = useRef<AbortController | null>(null);
@@ -141,52 +144,53 @@ export default function BackgroundImagePickerDialog({
     initialFocus: () => uploadButtonRef.current,
   });
 
-  const loadPage = useCallback(async (
-    cursor: string,
-    append: boolean,
-  ) => {
-    listAbortRef.current?.abort();
-    const controller = new AbortController();
-    listAbortRef.current = controller;
+  const loadPage = useCallback(
+    async (cursor: string, append: boolean) => {
+      listAbortRef.current?.abort();
+      const controller = new AbortController();
+      listAbortRef.current = controller;
 
-    if (append) setLoadingMore(true);
-    else setLoading(true);
-    setLibraryError("");
+      if (append) setLoadingMore(true);
+      else setLoading(true);
+      setLibraryError("");
 
-    try {
-      const page = await listBackgroundAssets(
-        cursor,
-        18,
-        controller.signal,
-      );
-      if (controller.signal.aborted) return;
-      setItems((current) => {
-        if (!append) return page.items;
-        const ids = new Set(current.map((item) => item.id));
-        return [
-          ...current,
-          ...page.items.filter((item) => !ids.has(item.id)),
-        ];
-      });
-      setNextCursor(page.next_cursor ?? "");
-    } catch (error) {
-      if (
-        controller.signal.aborted ||
-        (error instanceof DOMException && error.name === "AbortError")
-      ) {
-        return;
+      try {
+        const page = await listImageAssets(
+          cursor,
+          18,
+          controller.signal,
+        );
+        if (controller.signal.aborted) return;
+        setItems((current) => {
+          if (!append) return page.items;
+          const ids = new Set(current.map((item) => item.id));
+          return [
+            ...current,
+            ...page.items.filter((item) => !ids.has(item.id)),
+          ];
+        });
+        setNextCursor(page.next_cursor ?? "");
+      } catch (error) {
+        if (
+          controller.signal.aborted ||
+          (error instanceof DOMException &&
+            error.name === "AbortError")
+        ) {
+          return;
+        }
+        setLibraryError(
+          "تصاویر قبلی بارگذاری نشدند. می‌توانید دوباره تلاش کنید یا تصویر جدیدی آپلود کنید.",
+        );
+      } finally {
+        if (listAbortRef.current === controller) {
+          listAbortRef.current = null;
+          if (append) setLoadingMore(false);
+          else setLoading(false);
+        }
       }
-      setLibraryError(
-        "تصاویر قبلی بارگذاری نشدند. می‌توانید دوباره تلاش کنید یا تصویر جدیدی آپلود کنید.",
-      );
-    } finally {
-      if (listAbortRef.current === controller) {
-        listAbortRef.current = null;
-        if (append) setLoadingMore(false);
-        else setLoading(false);
-      }
-    }
-  }, []);
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -213,26 +217,23 @@ export default function BackgroundImagePickerDialog({
     setUploadError("");
 
     try {
-      const prepared = await prepareBackgroundImage(
-        file,
-        backgroundColor,
-      );
+      const prepared = await prepareImageUpload(file, matteColor);
       if (controller.signal.aborted) return;
 
-      const asset = await uploadBackgroundAsset(
-        prepared.master,
-        prepared.thumbnail,
-        file.name || "background",
+      const asset = await uploadImageAsset(
+        prepared,
+        file.name || "image",
         controller.signal,
       );
       if (controller.signal.aborted) return;
 
-      onSelect(asset.url, asset.id);
+      onSelect(asset);
       close();
     } catch (error) {
       if (
         controller.signal.aborted ||
-        (error instanceof DOMException && error.name === "AbortError")
+        (error instanceof DOMException &&
+          error.name === "AbortError")
       ) {
         return;
       }
@@ -256,7 +257,7 @@ export default function BackgroundImagePickerDialog({
     <dialog
       ref={dialogRef}
       dir="rtl"
-      aria-labelledby="background-media-picker-title"
+      aria-labelledby="image-media-picker-title"
       onCancel={handleCancel}
       onClose={handleClose}
       className="m-auto max-h-[min(90dvh,54rem)] w-[min(calc(100vw-1rem),48rem)] overflow-hidden rounded-panel border border-border-subtle bg-surface-raised p-0 text-content shadow-panel backdrop:bg-content/35 backdrop:backdrop-blur-[2px]"
@@ -265,13 +266,13 @@ export default function BackgroundImagePickerDialog({
         <div className="flex items-start justify-between gap-4 border-b border-border-subtle px-4 py-4 sm:px-6">
           <div>
             <h2
-              id="background-media-picker-title"
+              id="image-media-picker-title"
               className="text-lg font-bold"
             >
-              انتخاب تصویر پس‌زمینه
+              {title}
             </h2>
             <p className="mt-1 text-sm leading-6 text-content-muted">
-              تصویر جدید آپلود کنید یا بدون آپلود مجدد از تصاویر قبلی خودتان استفاده کنید.
+              {description}
             </p>
           </div>
           <Button
@@ -290,7 +291,7 @@ export default function BackgroundImagePickerDialog({
             type="file"
             accept="image/jpeg,image/png,.jpg,.jpeg,.png"
             className="sr-only"
-            aria-label="انتخاب فایل تصویر پس‌زمینه"
+            aria-label="انتخاب فایل تصویر"
             disabled={uploading}
             onChange={(event) => {
               const file = event.currentTarget.files?.[0];
@@ -310,9 +311,7 @@ export default function BackgroundImagePickerDialog({
               event.preventDefault();
               if (!uploading) setDragActive(true);
             }}
-            onDragOver={(event) => {
-              event.preventDefault();
-            }}
+            onDragOver={(event) => event.preventDefault()}
             onDragLeave={(event) => {
               if (
                 !event.currentTarget.contains(
@@ -330,11 +329,9 @@ export default function BackgroundImagePickerDialog({
                 <Upload className="size-5" aria-hidden="true" />
               </span>
               <div className="mt-3 min-w-0 flex-1 sm:mr-3 sm:mt-0">
-                <p className="text-sm font-bold">
-                  تصویر جدید
-                </p>
+                <p className="text-sm font-bold">تصویر جدید</p>
                 <p className="mt-1 text-xs leading-5 text-content-muted">
-                  JPEG یا PNG، حداکثر ۱۵ مگابایت. فایل‌های بزرگ پیش از آپلود بهینه می‌شوند.
+                  JPEG یا PNG، حداکثر ۱۵ مگابایت. نسخه‌های مناسب نمایش به‌صورت خودکار در سرور ساخته می‌شوند.
                 </p>
               </div>
               <Button
@@ -360,24 +357,17 @@ export default function BackgroundImagePickerDialog({
               </Button>
             </div>
             {uploadError ? (
-              <p
-                className="mt-3 text-sm text-danger-ink"
-                role="alert"
-              >
+              <p className="mt-3 text-sm text-danger-ink" role="alert">
                 {uploadError}
               </p>
             ) : null}
           </div>
 
-          <div className="mt-6 flex items-end justify-between gap-3">
-            <div>
-              <h3 className="text-sm font-bold">
-                تصاویر اخیر شما
-              </h3>
-              <p className="mt-1 text-xs leading-5 text-content-muted">
-                انتخاب یک تصویر قبلی فایل جدیدی در فضای ذخیره‌سازی ایجاد نمی‌کند.
-              </p>
-            </div>
+          <div className="mt-6">
+            <h3 className="text-sm font-bold">تصاویر اخیر شما</h3>
+            <p className="mt-1 text-xs leading-5 text-content-muted">
+              یک تصویر می‌تواند در چند بخش و چند ارائه استفاده شود؛ انتخاب مجدد فایل تازه‌ای ایجاد نمی‌کند.
+            </p>
           </div>
 
           {loading ? (
@@ -426,7 +416,7 @@ export default function BackgroundImagePickerDialog({
                 هنوز تصویری ذخیره نکرده‌اید
               </p>
               <p className="mt-1 text-xs leading-5 text-content-muted">
-                اولین آپلود شما از این به بعد برای ارائه‌های دیگر هم قابل استفاده خواهد بود.
+                اولین آپلود از این به بعد در همه انتخاب‌گرهای تصویر قابل استفاده خواهد بود.
               </p>
             </div>
           ) : (
@@ -454,7 +444,7 @@ export default function BackgroundImagePickerDialog({
                       }
                       className="group overflow-hidden rounded-panel border border-border-subtle bg-surface text-right outline-none transition hover:border-brand/50 focus-visible:ring-2 focus-visible:ring-focus aria-pressed:border-brand aria-pressed:ring-1 aria-pressed:ring-brand"
                       onClick={() => {
-                        onSelect(asset.url, asset.id);
+                        onSelect(asset);
                         close();
                       }}
                     >
@@ -469,9 +459,9 @@ export default function BackgroundImagePickerDialog({
                       <div className="p-2.5">
                         <p
                           className="truncate text-xs font-semibold"
-                          title={asset.filename || "تصویر پس‌زمینه"}
+                          title={asset.filename || "تصویر"}
                         >
-                          {asset.filename || "تصویر پس‌زمینه"}
+                          {asset.filename || "تصویر"}
                         </p>
                         <p
                           dir="ltr"
@@ -513,17 +503,21 @@ export default function BackgroundImagePickerDialog({
         </div>
 
         <div className="flex flex-col-reverse gap-2 border-t border-border-subtle px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <Button
-            variant="ghost"
-            disabled={uploading}
-            onClick={() => {
-              close();
-              onUseExternalUrl();
-            }}
-          >
-            <Link2 aria-hidden="true" />
-            استفاده از لینک خارجی
-          </Button>
+          {onUseExternalUrl ? (
+            <Button
+              variant="ghost"
+              disabled={uploading}
+              onClick={() => {
+                close();
+                onUseExternalUrl();
+              }}
+            >
+              <Link2 aria-hidden="true" />
+              استفاده از لینک خارجی
+            </Button>
+          ) : (
+            <span />
+          )}
           <Button
             variant="outline"
             disabled={uploading}

@@ -28,12 +28,18 @@ func NewHTTP(sessions SessionReader, service *Service) *HTTP {
 }
 
 func (h *HTTP) Register(mux *http.ServeMux) {
-	mux.HandleFunc("GET /api/v1/media/backgrounds", h.listBackgrounds)
-	mux.HandleFunc("POST /api/v1/media/backgrounds", h.uploadBackground)
+	mux.HandleFunc("GET /api/v1/media/images", h.listImages)
+	mux.HandleFunc("POST /api/v1/media/images", h.uploadImage)
 	mux.HandleFunc("GET /api/v1/media/assets/{assetId}/content", h.content)
 	mux.HandleFunc("HEAD /api/v1/media/assets/{assetId}/content", h.content)
-	mux.HandleFunc("GET /api/v1/media/assets/{assetId}/thumbnail", h.thumbnail)
-	mux.HandleFunc("HEAD /api/v1/media/assets/{assetId}/thumbnail", h.thumbnail)
+	mux.HandleFunc(
+		"GET /api/v1/media/assets/{assetId}/renditions/{variant}",
+		h.rendition,
+	)
+	mux.HandleFunc(
+		"HEAD /api/v1/media/assets/{assetId}/renditions/{variant}",
+		h.rendition,
+	)
 }
 
 func (h *HTTP) currentUser(
@@ -75,16 +81,18 @@ func (h *HTTP) authorizedMutation(
 }
 
 type uploadPayload struct {
-	file      []byte
-	filename  string
-	thumbnail []byte
+	file     []byte
+	filename string
 }
 
-func readUploadFile(w http.ResponseWriter, r *http.Request) (uploadPayload, error) {
+func readUploadFile(
+	w http.ResponseWriter,
+	r *http.Request,
+) (uploadPayload, error) {
 	r.Body = http.MaxBytesReader(
 		w,
 		r.Body,
-		MaxBackgroundUploadBytes+MaxThumbnailUploadBytes+(1<<20),
+		MaxImageUploadBytes+(1<<20),
 	)
 	reader, err := r.MultipartReader()
 	if err != nil {
@@ -92,7 +100,7 @@ func readUploadFile(w http.ResponseWriter, r *http.Request) (uploadPayload, erro
 	}
 
 	var payload uploadPayload
-	var foundFile, foundThumbnail bool
+	var found bool
 	for {
 		part, nextErr := reader.NextPart()
 		if errors.Is(nextErr, io.EOF) {
@@ -106,47 +114,35 @@ func readUploadFile(w http.ResponseWriter, r *http.Request) (uploadPayload, erro
 			return uploadPayload{}, ErrInvalidImage
 		}
 
-		switch part.FormName() {
-		case "file":
-			if part.FileName() == "" || foundFile {
-				part.Close()
-				return uploadPayload{}, ErrInvalidImage
-			}
-			foundFile = true
-			payload.filename = part.FileName()
-			payload.file, err = io.ReadAll(
-				io.LimitReader(part, MaxBackgroundUploadBytes+1),
-			)
-		case "thumbnail":
-			if part.FileName() == "" || foundThumbnail {
-				part.Close()
-				return uploadPayload{}, ErrInvalidImage
-			}
-			foundThumbnail = true
-			payload.thumbnail, err = io.ReadAll(
-				io.LimitReader(part, MaxThumbnailUploadBytes+1),
-			)
-		default:
+		if part.FormName() != "file" || part.FileName() == "" {
 			part.Close()
 			continue
 		}
+		if found {
+			part.Close()
+			return uploadPayload{}, ErrInvalidImage
+		}
+		found = true
+		payload.filename = part.FileName()
+		payload.file, err = io.ReadAll(
+			io.LimitReader(part, MaxImageUploadBytes+1),
+		)
 		part.Close()
 		if err != nil {
 			return uploadPayload{}, ErrInvalidImage
 		}
-		if len(payload.file) > MaxBackgroundUploadBytes ||
-			len(payload.thumbnail) > MaxThumbnailUploadBytes {
+		if len(payload.file) > MaxImageUploadBytes {
 			return uploadPayload{}, ErrMediaTooLarge
 		}
 	}
 
-	if !foundFile || len(payload.file) == 0 {
+	if !found || len(payload.file) == 0 {
 		return uploadPayload{}, ErrInvalidImage
 	}
 	return payload, nil
 }
 
-func (h *HTTP) uploadBackground(w http.ResponseWriter, r *http.Request) {
+func (h *HTTP) uploadImage(w http.ResponseWriter, r *http.Request) {
 	user, ok := h.authorizedMutation(w, r)
 	if !ok {
 		return
@@ -156,12 +152,11 @@ func (h *HTTP) uploadBackground(w http.ResponseWriter, r *http.Request) {
 		writeMediaServiceError(w, err)
 		return
 	}
-	asset, err := h.service.UploadBackground(
+	asset, err := h.service.UploadImage(
 		r.Context(),
 		user.ID,
 		payload.filename,
 		payload.file,
-		payload.thumbnail,
 	)
 	if err != nil {
 		writeMediaServiceError(w, err)
@@ -170,7 +165,7 @@ func (h *HTTP) uploadBackground(w http.ResponseWriter, r *http.Request) {
 	mediaJSON(w, http.StatusCreated, asset)
 }
 
-func (h *HTTP) listBackgrounds(w http.ResponseWriter, r *http.Request) {
+func (h *HTTP) listImages(w http.ResponseWriter, r *http.Request) {
 	user, ok := h.currentUser(w, r)
 	if !ok {
 		return
@@ -185,7 +180,7 @@ func (h *HTTP) listBackgrounds(w http.ResponseWriter, r *http.Request) {
 		}
 		limit = parsed
 	}
-	page, err := h.service.ListBackgrounds(
+	page, err := h.service.ListImages(
 		r.Context(),
 		user.ID,
 		r.URL.Query().Get("cursor"),
@@ -203,57 +198,92 @@ func (h *HTTP) listBackgrounds(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *HTTP) content(w http.ResponseWriter, r *http.Request) {
-	h.serveAsset(w, r, false)
-}
-
-func (h *HTTP) thumbnail(w http.ResponseWriter, r *http.Request) {
-	h.serveAsset(w, r, true)
-}
-
-func (h *HTTP) serveAsset(
-	w http.ResponseWriter,
-	r *http.Request,
-	thumbnail bool,
-) {
 	id := r.PathValue("assetId")
 	if !validAssetUUID(id) {
 		mediaError(w, http.StatusNotFound, "not_found")
 		return
 	}
-
-	var (
-		asset Asset
-		body  io.ReadCloser
-		err   error
-	)
-	if thumbnail {
-		asset, body, err = h.service.OpenThumbnail(r.Context(), id)
-	} else {
-		asset, body, err = h.service.Open(r.Context(), id)
-	}
+	asset, body, err := h.service.Open(r.Context(), id)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			mediaError(w, http.StatusNotFound, "not_found")
-			return
-		}
-		mediaError(w, http.StatusServiceUnavailable, "media_storage_unavailable")
+		h.writeAssetReadError(w, err)
 		return
 	}
 	defer body.Close()
 
-	mimeType := asset.MimeType
-	byteSize := asset.ByteSize
-	if thumbnail && asset.ThumbnailStorageKey != "" {
-		mimeType = asset.ThumbnailMimeType
-		byteSize = asset.ThumbnailByteSize
+	h.writeImageResponse(
+		w,
+		r,
+		asset.ID,
+		"",
+		asset.MimeType,
+		asset.ByteSize,
+		hex.EncodeToString(asset.SHA256),
+		body,
+	)
+}
+
+func validVariantName(value string) bool {
+	switch value {
+	case VariantThumbnail, VariantMedium, VariantLarge:
+		return true
+	default:
+		return false
+	}
+}
+
+func (h *HTTP) rendition(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("assetId")
+	variantName := r.PathValue("variant")
+	if !validAssetUUID(id) || !validVariantName(variantName) {
+		mediaError(w, http.StatusNotFound, "not_found")
+		return
 	}
 
+	asset, variant, body, err := h.service.OpenVariant(
+		r.Context(),
+		id,
+		variantName,
+	)
+	if err != nil {
+		h.writeAssetReadError(w, err)
+		return
+	}
+	defer body.Close()
+
+	h.writeImageResponse(
+		w,
+		r,
+		asset.ID,
+		variant.Name,
+		variant.MimeType,
+		variant.ByteSize,
+		asset.ID+":"+variant.Name,
+		body,
+	)
+}
+
+func (h *HTTP) writeAssetReadError(w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, ErrNotFound),
+		errors.Is(err, ErrVariantNotFound):
+		mediaError(w, http.StatusNotFound, "not_found")
+	default:
+		mediaError(w, http.StatusServiceUnavailable, "media_storage_unavailable")
+	}
+}
+
+func (h *HTTP) writeImageResponse(
+	w http.ResponseWriter,
+	r *http.Request,
+	assetID, variant, mimeType string,
+	byteSize int64,
+	etag string,
+	body io.Reader,
+) {
 	w.Header().Set("Content-Type", mimeType)
 	w.Header().Set("Content-Length", strconv.FormatInt(byteSize, 10))
 	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-	if !thumbnail || asset.ThumbnailStorageKey == "" {
-		w.Header().Set("ETag", `"`+hex.EncodeToString(asset.SHA256)+`"`)
-	}
+	w.Header().Set("ETag", `"`+etag+`"`)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Referrer-Policy", "no-referrer")
 	w.Header().Set("Cross-Origin-Resource-Policy", "same-origin")
@@ -263,13 +293,13 @@ func (h *HTTP) serveAsset(
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	if _, err = io.Copy(w, body); err != nil {
+	if _, err := io.Copy(w, body); err != nil {
 		slog.Warn(
 			"media response interrupted",
 			"asset_id",
-			asset.ID,
-			"thumbnail",
-			thumbnail,
+			assetID,
+			"variant",
+			variant,
 			"error",
 			err,
 		)

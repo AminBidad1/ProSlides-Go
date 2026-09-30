@@ -18,17 +18,51 @@ func NewPostgresStore(pool *pgxpool.Pool) *PostgresStore {
 	return &PostgresStore{pool: pool}
 }
 
-func (s *PostgresStore) CreateProcessing(ctx context.Context, asset Asset) error {
-	_, err := s.pool.Exec(ctx, `
+type rowScanner interface {
+	Scan(...any) error
+}
+
+func scanAsset(row rowScanner) (Asset, error) {
+	var asset Asset
+	err := row.Scan(
+		&asset.ID,
+		&asset.OwnerID,
+		&asset.Purpose,
+		&asset.StorageKey,
+		&asset.MimeType,
+		&asset.Width,
+		&asset.Height,
+		&asset.ByteSize,
+		&asset.SHA256,
+		&asset.Status,
+		&asset.OriginalFilename,
+		&asset.CreatedAt,
+	)
+	return asset, err
+}
+
+const assetSelectColumns = `
+	id::text, owner_id::text, purpose, storage_key, mime_type, width,
+	height, byte_size, sha256, status, original_filename, created_at
+`
+
+func (s *PostgresStore) CreateProcessing(
+	ctx context.Context,
+	asset Asset,
+	variants []Variant,
+) error {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck
+
+	_, err = tx.Exec(ctx, `
 		INSERT INTO media_assets(
 			id, owner_id, purpose, storage_key, mime_type, width, height,
-			byte_size, sha256, status, original_filename, created_at, updated_at,
-			thumbnail_storage_key, thumbnail_mime_type, thumbnail_byte_size
+			byte_size, sha256, status, original_filename, created_at, updated_at
 		)
-		VALUES(
-			$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$12,
-			NULLIF($13,''), NULLIF($14,''), NULLIF($15,0)
-		)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$12)
 	`,
 		asset.ID,
 		asset.OwnerID,
@@ -42,14 +76,39 @@ func (s *PostgresStore) CreateProcessing(ctx context.Context, asset Asset) error
 		StatusProcessing,
 		asset.OriginalFilename,
 		asset.CreatedAt,
-		asset.ThumbnailStorageKey,
-		asset.ThumbnailMimeType,
-		asset.ThumbnailByteSize,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+
+	for _, variant := range variants {
+		_, err = tx.Exec(ctx, `
+			INSERT INTO media_variants(
+				asset_id, variant, storage_key, mime_type,
+				width, height, byte_size, created_at
+			)
+			VALUES($1,$2,$3,$4,$5,$6,$7,$8)
+		`,
+			asset.ID,
+			variant.Name,
+			variant.StorageKey,
+			variant.MimeType,
+			variant.Width,
+			variant.Height,
+			variant.ByteSize,
+			asset.CreatedAt,
+		)
+		if err != nil {
+			return err
+		}
+	}
+	return tx.Commit(ctx)
 }
 
-func (s *PostgresStore) SetStatus(ctx context.Context, id, ownerID, status string) error {
+func (s *PostgresStore) SetStatus(
+	ctx context.Context,
+	id, ownerID, status string,
+) error {
 	command, err := s.pool.Exec(ctx, `
 		UPDATE media_assets
 		SET status=$3, updated_at=now()
@@ -64,79 +123,99 @@ func (s *PostgresStore) SetStatus(ctx context.Context, id, ownerID, status strin
 	return nil
 }
 
-func (s *PostgresStore) FindReady(ctx context.Context, id string) (Asset, error) {
-	var asset Asset
-	err := s.pool.QueryRow(ctx, `
+func (s *PostgresStore) loadVariants(
+	ctx context.Context,
+	assets []Asset,
+) error {
+	if len(assets) == 0 {
+		return nil
+	}
+	ids := make([]string, 0, len(assets))
+	index := make(map[string]int, len(assets))
+	for i := range assets {
+		ids = append(ids, assets[i].ID)
+		index[assets[i].ID] = i
+		assets[i].Variants = make(map[string]Variant)
+	}
+
+	rows, err := s.pool.Query(ctx, `
 		SELECT
-			id::text, owner_id::text, purpose, storage_key, mime_type, width,
-			height, byte_size, sha256, status, original_filename, created_at,
-			COALESCE(thumbnail_storage_key, ''),
-			COALESCE(thumbnail_mime_type, ''),
-			COALESCE(thumbnail_byte_size, 0)
+			asset_id::text, variant, storage_key, mime_type,
+			width, height, byte_size
+		FROM media_variants
+		WHERE asset_id::text = ANY($1::text[])
+	`, ids)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var assetID string
+		var variant Variant
+		if err = rows.Scan(
+			&assetID,
+			&variant.Name,
+			&variant.StorageKey,
+			&variant.MimeType,
+			&variant.Width,
+			&variant.Height,
+			&variant.ByteSize,
+		); err != nil {
+			return err
+		}
+		if i, ok := index[assetID]; ok {
+			assets[i].Variants[variant.Name] = variant
+		}
+	}
+	return rows.Err()
+}
+
+func (s *PostgresStore) FindReady(
+	ctx context.Context,
+	id string,
+) (Asset, error) {
+	asset, err := scanAsset(s.pool.QueryRow(ctx, `
+		SELECT `+assetSelectColumns+`
 		FROM media_assets
 		WHERE id=$1 AND status='ready'
-	`, id).Scan(
-		&asset.ID,
-		&asset.OwnerID,
-		&asset.Purpose,
-		&asset.StorageKey,
-		&asset.MimeType,
-		&asset.Width,
-		&asset.Height,
-		&asset.ByteSize,
-		&asset.SHA256,
-		&asset.Status,
-		&asset.OriginalFilename,
-		&asset.CreatedAt,
-		&asset.ThumbnailStorageKey,
-		&asset.ThumbnailMimeType,
-		&asset.ThumbnailByteSize,
-	)
+	`, id))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Asset{}, ErrNotFound
 	}
-	return asset, err
+	if err != nil {
+		return Asset{}, err
+	}
+	assets := []Asset{asset}
+	if err = s.loadVariants(ctx, assets); err != nil {
+		return Asset{}, err
+	}
+	return assets[0], nil
 }
-
 
 func (s *PostgresStore) FindReadyByDigest(
 	ctx context.Context,
 	ownerID, purpose string,
 	digest []byte,
 ) (Asset, error) {
-	var asset Asset
-	err := s.pool.QueryRow(ctx, `
-		SELECT
-			id::text, owner_id::text, purpose, storage_key, mime_type, width,
-			height, byte_size, sha256, status, original_filename, created_at,
-			COALESCE(thumbnail_storage_key, ''),
-			COALESCE(thumbnail_mime_type, ''),
-			COALESCE(thumbnail_byte_size, 0)
+	asset, err := scanAsset(s.pool.QueryRow(ctx, `
+		SELECT `+assetSelectColumns+`
 		FROM media_assets
 		WHERE owner_id=$1 AND purpose=$2 AND sha256=$3 AND status='ready'
 		ORDER BY created_at DESC, id DESC
 		LIMIT 1
-	`, ownerID, purpose, digest).Scan(
-		&asset.ID,
-		&asset.OwnerID,
-		&asset.Purpose,
-		&asset.StorageKey,
-		&asset.MimeType,
-		&asset.Width,
-		&asset.Height,
-		&asset.ByteSize,
-		&asset.SHA256,
-		&asset.Status,
-		&asset.OriginalFilename,
-		&asset.CreatedAt,
-		&asset.ThumbnailStorageKey,
-		&asset.ThumbnailMimeType,
-		&asset.ThumbnailByteSize,
-	)
+	`, ownerID, purpose, digest))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Asset{}, ErrNotFound
 	}
-	return asset, err
+	if err != nil {
+		return Asset{}, err
+	}
+	assets := []Asset{asset}
+	if err = s.loadVariants(ctx, assets); err != nil {
+		return Asset{}, err
+	}
+	return assets[0], nil
 }
 
 func (s *PostgresStore) ListReady(
@@ -147,12 +226,7 @@ func (s *PostgresStore) ListReady(
 	limit int,
 ) ([]Asset, error) {
 	query := `
-		SELECT
-			id::text, owner_id::text, purpose, storage_key, mime_type, width,
-			height, byte_size, sha256, status, original_filename, created_at,
-			COALESCE(thumbnail_storage_key, ''),
-			COALESCE(thumbnail_mime_type, ''),
-			COALESCE(thumbnail_byte_size, 0)
+		SELECT `+assetSelectColumns+`
 		FROM media_assets
 		WHERE owner_id=$1 AND purpose=$2 AND status='ready'
 	`
@@ -161,7 +235,8 @@ func (s *PostgresStore) ListReady(
 		query += ` AND (created_at, id) < ($3, $4::uuid)`
 		args = append(args, before, beforeID)
 	}
-	query += ` ORDER BY created_at DESC, id DESC LIMIT $` + strconv.Itoa(len(args)+1)
+	query += ` ORDER BY created_at DESC, id DESC LIMIT $` +
+		strconv.Itoa(len(args)+1)
 	args = append(args, limit)
 
 	rows, err := s.pool.Query(ctx, query, args...)
@@ -172,27 +247,17 @@ func (s *PostgresStore) ListReady(
 
 	assets := make([]Asset, 0, limit)
 	for rows.Next() {
-		var asset Asset
-		if err = rows.Scan(
-			&asset.ID,
-			&asset.OwnerID,
-			&asset.Purpose,
-			&asset.StorageKey,
-			&asset.MimeType,
-			&asset.Width,
-			&asset.Height,
-			&asset.ByteSize,
-			&asset.SHA256,
-			&asset.Status,
-			&asset.OriginalFilename,
-			&asset.CreatedAt,
-			&asset.ThumbnailStorageKey,
-			&asset.ThumbnailMimeType,
-			&asset.ThumbnailByteSize,
-		); err != nil {
-			return nil, err
+		asset, scanErr := scanAsset(rows)
+		if scanErr != nil {
+			return nil, scanErr
 		}
 		assets = append(assets, asset)
 	}
-	return assets, rows.Err()
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	if err = s.loadVariants(ctx, assets); err != nil {
+		return nil, err
+	}
+	return assets, nil
 }

@@ -4,30 +4,22 @@ import type { components } from "../../../shared/api/generated/openapi.ts";
 export type MediaAsset = components["schemas"]["MediaAsset"];
 type MediaAssetPage = components["schemas"]["MediaAssetPage"];
 
-export const uploadBackgroundAsset = async (
+export const uploadImageAsset = async (
   file: Blob,
-  thumbnail: Blob,
-  filename = "background.jpg",
+  filename = "image",
   signal?: AbortSignal,
 ): Promise<MediaAsset> => {
   const form = new FormData();
   form.append("file", file, filename);
-  form.append(
-    "thumbnail",
-    thumbnail,
-    thumbnail.type === "image/png"
-      ? "thumbnail.png"
-      : "thumbnail.jpg",
-  );
 
-  return requestJson<MediaAsset>("/media/backgrounds", {
+  return requestJson<MediaAsset>("/media/images", {
     method: "POST",
     body: form,
     signal,
   });
 };
 
-export const listBackgroundAssets = async (
+export const listImageAssets = async (
   cursor = "",
   limit = 18,
   signal?: AbortSignal,
@@ -38,7 +30,12 @@ export const listBackgroundAssets = async (
   if (cursor) params.set("cursor", cursor);
 
   return requestJson<MediaAssetPage>(
-    `/media/backgrounds?${params.toString()}`,
+    `/media/images?${params.toString()}`,
     { signal },
   );
 };
+
+export const mediaThumbnailUrl = (
+  asset: MediaAsset,
+): string =>
+  asset.renditions.thumbnail?.url ?? asset.url;

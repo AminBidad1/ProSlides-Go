@@ -6,7 +6,7 @@ import {
 import { useState } from "react";
 
 import { Button } from "../../../../shared/ui/primitives/Button.tsx";
-import BackgroundImagePickerDialog from "./BackgroundImagePickerDialog.tsx";
+import ImagePickerDialog from "./ImagePickerDialog.tsx";
 import ImageUrlDialog from "./ImageUrlDialog.tsx";
 
 type BackgroundImageControlProps = {
@@ -104,12 +104,14 @@ export default function BackgroundImageControl({
         </div>
       </div>
 
-      <BackgroundImagePickerDialog
+      <ImagePickerDialog
         open={pickerOpen}
-        backgroundColor={backgroundColor}
+        matteColor={backgroundColor}
         currentAssetId={assetId}
+        title="انتخاب تصویر پس‌زمینه"
+        description="تصویر جدید آپلود کنید یا بدون آپلود مجدد از تصاویر قبلی خودتان استفاده کنید."
         onClose={() => setPickerOpen(false)}
-        onSelect={onChange}
+        onSelect={(asset) => onChange(asset.url, asset.id)}
         onUseExternalUrl={() => setUrlDialogOpen(true)}
       />
 

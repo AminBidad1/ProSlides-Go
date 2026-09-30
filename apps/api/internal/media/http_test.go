@@ -17,7 +17,10 @@ type fakeSessions struct {
 	err error
 }
 
-func (f fakeSessions) Current(context.Context, string) (identity.StoredSession, error) {
+func (f fakeSessions) Current(
+	context.Context,
+	string,
+) (identity.StoredSession, error) {
 	if f.err != nil {
 		return identity.StoredSession{}, f.err
 	}
@@ -26,18 +29,21 @@ func (f fakeSessions) Current(context.Context, string) (identity.StoredSession, 
 	}, nil
 }
 
-func (f fakeSessions) Authorize(context.Context, string, string) (identity.User, error) {
+func (f fakeSessions) Authorize(
+	context.Context,
+	string,
+	string,
+) (identity.User, error) {
 	if f.err != nil {
 		return identity.User{}, f.err
 	}
 	return identity.User{ID: "owner-id"}, nil
 }
 
-func multipartBackground(
+func multipartImage(
 	t *testing.T,
 	filename string,
 	payload []byte,
-	thumbnail []byte,
 ) (*bytes.Buffer, string) {
 	t.Helper()
 	var body bytes.Buffer
@@ -49,35 +55,29 @@ func multipartBackground(
 	if _, err = part.Write(payload); err != nil {
 		t.Fatal(err)
 	}
-	if len(thumbnail) > 0 {
-		thumb, createErr := writer.CreateFormFile("thumbnail", "thumbnail.jpg")
-		if createErr != nil {
-			t.Fatal(createErr)
-		}
-		if _, createErr = thumb.Write(thumbnail); createErr != nil {
-			t.Fatal(createErr)
-		}
-	}
 	if err = writer.Close(); err != nil {
 		t.Fatal(err)
 	}
 	return &body, writer.FormDataContentType()
 }
 
-func TestBackgroundUploadRequiresAuthorizedMutation(t *testing.T) {
+func TestImageUploadRequiresAuthorizedMutation(t *testing.T) {
 	mux := http.NewServeMux()
 	NewHTTP(
 		fakeSessions{},
 		NewService(newFakeStore(), NewMemoryObjectStore()),
 	).Register(mux)
 
-	body, contentType := multipartBackground(
+	body, contentType := multipartImage(
 		t,
-		"bg.jpg",
+		"image.jpg",
 		jpegFixture(t, 8, 8),
-		nil,
 	)
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/media/backgrounds", body)
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/api/v1/media/images",
+		body,
+	)
 	req.Header.Set("Content-Type", contentType)
 	result := httptest.NewRecorder()
 	mux.ServeHTTP(result, req)
@@ -87,22 +87,28 @@ func TestBackgroundUploadRequiresAuthorizedMutation(t *testing.T) {
 	}
 }
 
-func TestBackgroundUploadReturnsStableFirstPartyURLs(t *testing.T) {
+func TestImageUploadReturnsStableContentAndRenditionURLs(t *testing.T) {
 	store := newFakeStore()
 	objects := NewMemoryObjectStore()
 	mux := http.NewServeMux()
 	NewHTTP(fakeSessions{}, NewService(store, objects)).Register(mux)
 
-	body, contentType := multipartBackground(
+	body, contentType := multipartImage(
 		t,
-		"my-stage.jpg",
-		jpegFixture(t, 16, 9),
-		jpegFixture(t, 8, 5),
+		"stage-and-question.jpg",
+		jpegFixture(t, 1300, 800),
 	)
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/media/backgrounds", body)
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/api/v1/media/images",
+		body,
+	)
 	req.Header.Set("Content-Type", contentType)
 	req.Header.Set("X-CSRF-Token", "csrf")
-	req.AddCookie(&http.Cookie{Name: "proslides_session", Value: "session"})
+	req.AddCookie(&http.Cookie{
+		Name:  "proslides_session",
+		Value: "session",
+	})
 	result := httptest.NewRecorder()
 	mux.ServeHTTP(result, req)
 
@@ -114,35 +120,58 @@ func TestBackgroundUploadReturnsStableFirstPartyURLs(t *testing.T) {
 		t.Fatal(err)
 	}
 	if asset.Status != StatusReady ||
-		asset.OriginalFilename != "my-stage.jpg" ||
+		asset.Purpose != PurposeImage ||
+		asset.OriginalFilename != "stage-and-question.jpg" ||
 		!strings.HasSuffix(asset.URL, "/content") ||
-		!strings.HasSuffix(asset.ThumbnailURL, "/thumbnail") {
+		asset.Renditions.Thumbnail == nil ||
+		!strings.HasSuffix(
+			asset.Renditions.Thumbnail.URL,
+			"/renditions/thumbnail",
+		) ||
+		asset.Renditions.Medium == nil ||
+		!strings.HasSuffix(
+			asset.Renditions.Medium.URL,
+			"/renditions/medium",
+		) {
 		t.Fatalf("asset=%+v", asset)
 	}
 
-	for _, target := range []string{asset.URL, asset.ThumbnailURL} {
+	for _, target := range []string{
+		asset.URL,
+		asset.Renditions.Thumbnail.URL,
+		asset.Renditions.Medium.URL,
+	} {
 		get := httptest.NewRequest(http.MethodGet, target, nil)
 		getResult := httptest.NewRecorder()
 		mux.ServeHTTP(getResult, get)
 		if getResult.Code != http.StatusOK {
-			t.Fatalf("get %s status=%d body=%s", target, getResult.Code, getResult.Body.String())
+			t.Fatalf(
+				"get %s status=%d body=%s",
+				target,
+				getResult.Code,
+				getResult.Body.String(),
+			)
 		}
 		if getResult.Header().Get("Cache-Control") !=
 			"public, max-age=31536000, immutable" {
-			t.Fatalf("cache-control=%q", getResult.Header().Get("Cache-Control"))
+			t.Fatalf(
+				"cache-control=%q",
+				getResult.Header().Get("Cache-Control"),
+			)
 		}
-		if getResult.Header().Get("Content-Type") != "image/jpeg" {
+		if getResult.Header().Get("Content-Type") != "image/jpeg" ||
+			getResult.Header().Get("ETag") == "" {
 			t.Fatalf("headers=%v", getResult.Header())
 		}
 	}
 }
 
-func TestBackgroundLibraryRequiresSessionAndListsOwnerAssets(t *testing.T) {
+func TestImageLibraryRequiresSessionAndListsOnlyOwnerAssets(t *testing.T) {
 	store := newFakeStore()
 	store.assets["123e4567-e89b-42d3-a456-426614174000"] = Asset{
 		ID:               "123e4567-e89b-42d3-a456-426614174000",
 		OwnerID:          "owner-id",
-		Purpose:          PurposeBackground,
+		Purpose:          PurposeImage,
 		Status:           StatusReady,
 		StorageKey:       "one.jpg",
 		MimeType:         "image/jpeg",
@@ -151,12 +180,13 @@ func TestBackgroundLibraryRequiresSessionAndListsOwnerAssets(t *testing.T) {
 		ByteSize:         100,
 		OriginalFilename: "hero.jpg",
 	}
+	first := store.assets["123e4567-e89b-42d3-a456-426614174000"]
 	store.assets["123e4567-e89b-42d3-a456-426614174001"] = Asset{
 		ID:        "123e4567-e89b-42d3-a456-426614174001",
 		OwnerID:   "other-owner",
-		Purpose:   PurposeBackground,
+		Purpose:   PurposeImage,
 		Status:    StatusReady,
-		CreatedAt: store.assets["123e4567-e89b-42d3-a456-426614174000"].CreatedAt,
+		CreatedAt: first.CreatedAt,
 	}
 
 	mux := http.NewServeMux()
@@ -167,7 +197,7 @@ func TestBackgroundLibraryRequiresSessionAndListsOwnerAssets(t *testing.T) {
 
 	unauthorized := httptest.NewRequest(
 		http.MethodGet,
-		"/api/v1/media/backgrounds",
+		"/api/v1/media/images",
 		nil,
 	)
 	unauthorizedResult := httptest.NewRecorder()
@@ -178,10 +208,13 @@ func TestBackgroundLibraryRequiresSessionAndListsOwnerAssets(t *testing.T) {
 
 	req := httptest.NewRequest(
 		http.MethodGet,
-		"/api/v1/media/backgrounds?limit=12",
+		"/api/v1/media/images?limit=12",
 		nil,
 	)
-	req.AddCookie(&http.Cookie{Name: "proslides_session", Value: "session"})
+	req.AddCookie(&http.Cookie{
+		Name:  "proslides_session",
+		Value: "session",
+	})
 	result := httptest.NewRecorder()
 	mux.ServeHTTP(result, req)
 	if result.Code != http.StatusOK {
@@ -199,18 +232,91 @@ func TestBackgroundLibraryRequiresSessionAndListsOwnerAssets(t *testing.T) {
 	}
 }
 
-func TestBackgroundUploadRejectsNonImage(t *testing.T) {
+func TestImageLibraryRejectsInvalidLimit(t *testing.T) {
 	mux := http.NewServeMux()
 	NewHTTP(
 		fakeSessions{},
 		NewService(newFakeStore(), NewMemoryObjectStore()),
 	).Register(mux)
 
-	body, contentType := multipartBackground(t, "notes.txt", []byte("hello"), nil)
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/media/backgrounds", body)
+	req := httptest.NewRequest(
+		http.MethodGet,
+		"/api/v1/media/images?limit=49",
+		nil,
+	)
+	req.AddCookie(&http.Cookie{
+		Name:  "proslides_session",
+		Value: "session",
+	})
+	result := httptest.NewRecorder()
+	mux.ServeHTTP(result, req)
+
+	if result.Code != http.StatusBadRequest ||
+		!strings.Contains(result.Body.String(), "invalid_limit") {
+		t.Fatalf("status=%d body=%s", result.Code, result.Body.String())
+	}
+}
+
+func TestMissingOrInvalidRenditionReturnsNotFound(t *testing.T) {
+	store := newFakeStore()
+	objects := NewMemoryObjectStore()
+	service := NewService(store, objects)
+	asset, err := service.UploadImage(
+		context.Background(),
+		"owner-id",
+		"small.jpg",
+		jpegFixture(t, 320, 180),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mux := http.NewServeMux()
+	NewHTTP(fakeSessions{}, service).Register(mux)
+
+	for _, target := range []string{
+		assetRenditionURL(asset.ID, VariantMedium),
+		"/api/v1/media/assets/" + asset.ID + "/renditions/unknown",
+	} {
+		result := httptest.NewRecorder()
+		mux.ServeHTTP(
+			result,
+			httptest.NewRequest(http.MethodGet, target, nil),
+		)
+		if result.Code != http.StatusNotFound {
+			t.Fatalf(
+				"target=%s status=%d body=%s",
+				target,
+				result.Code,
+				result.Body.String(),
+			)
+		}
+	}
+}
+
+func TestImageUploadRejectsNonImage(t *testing.T) {
+	mux := http.NewServeMux()
+	NewHTTP(
+		fakeSessions{},
+		NewService(newFakeStore(), NewMemoryObjectStore()),
+	).Register(mux)
+
+	body, contentType := multipartImage(
+		t,
+		"notes.txt",
+		[]byte("hello"),
+	)
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/api/v1/media/images",
+		body,
+	)
 	req.Header.Set("Content-Type", contentType)
 	req.Header.Set("X-CSRF-Token", "csrf")
-	req.AddCookie(&http.Cookie{Name: "proslides_session", Value: "session"})
+	req.AddCookie(&http.Cookie{
+		Name:  "proslides_session",
+		Value: "session",
+	})
 	result := httptest.NewRecorder()
 	mux.ServeHTTP(result, req)
 

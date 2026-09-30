@@ -77,7 +77,7 @@ is in `docs/frontend-debt.md`. The completed v2 delivery plan is archived.
 | `presentations` | presentations and authored Content/Activity Item definitions | accepting live responses |
 | `live` | sessions, participants, responses/evaluations, cumulative scoring/ranking, snapshots, events | account lifecycle or mutable authoring truth |
 | `reports` | immutable/session-scoped result projections and exports | live command handling |
-| `media` | immutable media metadata, validation, object access and first-party delivery | binary storage in PostgreSQL or presentation/live state transitions |
+| `media` | immutable image masters/renditions, validation, object access and first-party delivery | placement semantics, binary storage in PostgreSQL, or presentation/live state transitions |
 | `platform` | process lifecycle, config, HTTP, PostgreSQL, Redis; future telemetry | product rules |
 
 Dependencies point inward:

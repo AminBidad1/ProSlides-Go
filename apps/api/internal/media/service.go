@@ -20,14 +20,11 @@ import (
 )
 
 const (
-	MaxBackgroundUploadBytes = 15 << 20
-	MaxBackgroundPixels      = 16_000_000
-	MaxBackgroundDimension   = 8192
-	MaxThumbnailUploadBytes  = 1 << 20
-	MaxThumbnailPixels       = 512 * 512
-	MaxThumbnailDimension    = 512
-	DefaultLibraryPageSize   = 18
-	MaxLibraryPageSize       = 48
+	MaxImageUploadBytes   = 15 << 20
+	MaxImagePixels        = 16_000_000
+	MaxImageDimension     = 8192
+	DefaultLibraryPageSize = 18
+	MaxLibraryPageSize     = 48
 )
 
 type Service struct {
@@ -43,16 +40,28 @@ func assetContentURL(id string) string {
 	return "/api/v1/media/assets/" + id + "/content"
 }
 
-func assetThumbnailURL(id string) string {
-	return "/api/v1/media/assets/" + id + "/thumbnail"
+func assetRenditionURL(id, variant string) string {
+	return "/api/v1/media/assets/" + id + "/renditions/" + variant
 }
 
 func withDeliveryURLs(asset Asset) Asset {
 	asset.URL = assetContentURL(asset.ID)
-	if asset.ThumbnailStorageKey != "" {
-		asset.ThumbnailURL = assetThumbnailURL(asset.ID)
-	} else {
-		asset.ThumbnailURL = asset.URL
+	asset.Renditions = AssetRenditions{}
+	for name, variant := range asset.Variants {
+		rendition := &Rendition{
+			URL:      assetRenditionURL(asset.ID, name),
+			Width:    variant.Width,
+			Height:   variant.Height,
+			ByteSize: variant.ByteSize,
+		}
+		switch name {
+		case VariantThumbnail:
+			asset.Renditions.Thumbnail = rendition
+		case VariantMedium:
+			asset.Renditions.Medium = rendition
+		case VariantLarge:
+			asset.Renditions.Large = rendition
+		}
 	}
 	return asset
 }
@@ -88,16 +97,11 @@ func normalizeFilename(value string) string {
 	return value
 }
 
-func decodeImage(
-	raw []byte,
-	maxBytes int,
-	maxPixels int64,
-	maxDimension int,
-) (image.Image, string, int, int, error) {
+func decodeImage(raw []byte) (image.Image, string, int, int, error) {
 	if len(raw) == 0 {
 		return nil, "", 0, 0, ErrInvalidImage
 	}
-	if len(raw) > maxBytes {
+	if len(raw) > MaxImageUploadBytes {
 		return nil, "", 0, 0, ErrMediaTooLarge
 	}
 
@@ -107,9 +111,9 @@ func decodeImage(
 	}
 	if config.Width <= 0 ||
 		config.Height <= 0 ||
-		config.Width > maxDimension ||
-		config.Height > maxDimension ||
-		int64(config.Width)*int64(config.Height) > maxPixels {
+		config.Width > MaxImageDimension ||
+		config.Height > MaxImageDimension ||
+		int64(config.Width)*int64(config.Height) > MaxImagePixels {
 		return nil, "", 0, 0, ErrImageDimensions
 	}
 
@@ -139,58 +143,69 @@ func encodeImage(img image.Image, format string) ([]byte, string, string, error)
 	}
 }
 
-func normalizeBackground(raw []byte) ([]byte, string, string, int, int, error) {
-	decoded, format, width, height, err := decodeImage(
-		raw,
-		MaxBackgroundUploadBytes,
-		MaxBackgroundPixels,
-		MaxBackgroundDimension,
-	)
+func normalizeImage(
+	raw []byte,
+) ([]byte, string, string, int, int, *image.NRGBA, error) {
+	decoded, format, width, height, err := decodeImage(raw)
 	if err != nil {
-		return nil, "", "", 0, 0, err
+		return nil, "", "", 0, 0, nil, err
 	}
 	normalized, mimeType, extension, err := encodeImage(decoded, format)
 	if err != nil {
-		return nil, "", "", 0, 0, err
+		return nil, "", "", 0, 0, nil, err
 	}
-	if len(normalized) > MaxBackgroundUploadBytes {
-		return nil, "", "", 0, 0, ErrMediaTooLarge
+	if len(normalized) > MaxImageUploadBytes {
+		return nil, "", "", 0, 0, nil, ErrMediaTooLarge
 	}
-	return normalized, mimeType, extension, width, height, nil
+	return normalized, mimeType, extension, width, height, imageToNRGBA(decoded), nil
 }
 
-func normalizeThumbnail(raw []byte) ([]byte, string, string, error) {
-	if len(raw) == 0 {
-		return nil, "", "", nil
+func buildVariants(
+	source *image.NRGBA,
+	format, mimeType, extension, storageBase string,
+) ([]Variant, map[string][]byte, error) {
+	variants := make([]Variant, 0, len(imageVariantSpecs))
+	payloads := make(map[string][]byte, len(imageVariantSpecs))
+	width := source.Bounds().Dx()
+	height := source.Bounds().Dy()
+
+	for _, spec := range imageVariantSpecs {
+		targetWidth, targetHeight, shouldResize := scaledDimensions(
+			width,
+			height,
+			spec.maxLongEdge,
+		)
+		if !shouldResize {
+			continue
+		}
+
+		resized := resizeBilinear(source, targetWidth, targetHeight)
+		encoded, _, _, err := encodeImage(resized, format)
+		if err != nil {
+			return nil, nil, err
+		}
+		variant := Variant{
+			Name:       spec.name,
+			StorageKey: storageBase + spec.suffix + extension,
+			MimeType:   mimeType,
+			Width:      targetWidth,
+			Height:     targetHeight,
+			ByteSize:   int64(len(encoded)),
+		}
+		variants = append(variants, variant)
+		payloads[spec.name] = encoded
 	}
-	decoded, format, _, _, err := decodeImage(
-		raw,
-		MaxThumbnailUploadBytes,
-		MaxThumbnailPixels,
-		MaxThumbnailDimension,
-	)
-	if err != nil {
-		return nil, "", "", err
-	}
-	normalized, mimeType, extension, err := encodeImage(decoded, format)
-	if err != nil {
-		return nil, "", "", err
-	}
-	if len(normalized) > MaxThumbnailUploadBytes {
-		return nil, "", "", ErrMediaTooLarge
-	}
-	return normalized, mimeType, extension, nil
+	return variants, payloads, nil
 }
 
-func (s *Service) UploadBackground(
+func (s *Service) UploadImage(
 	ctx context.Context,
 	ownerID string,
 	filename string,
 	raw []byte,
-	thumbnail []byte,
 ) (Asset, error) {
-	normalized, mimeType, extension, width, height, err :=
-		normalizeBackground(raw)
+	normalized, mimeType, extension, width, height, source, err :=
+		normalizeImage(raw)
 	if err != nil {
 		return Asset{}, err
 	}
@@ -199,7 +214,7 @@ func (s *Service) UploadBackground(
 	existing, findErr := s.store.FindReadyByDigest(
 		ctx,
 		ownerID,
-		PurposeBackground,
+		PurposeImage,
 		digest[:],
 	)
 	if findErr == nil {
@@ -209,21 +224,26 @@ func (s *Service) UploadBackground(
 		return Asset{}, findErr
 	}
 
-	normalizedThumb, thumbnailMimeType, thumbnailExtension, err :=
-		normalizeThumbnail(thumbnail)
-	if err != nil {
-		return Asset{}, err
-	}
-
 	id, err := randomUUID()
 	if err != nil {
 		return Asset{}, fmt.Errorf("generate media asset id: %w", err)
 	}
 	storageBase := strings.ReplaceAll(id, "-", "")
+	variants, payloads, err := buildVariants(
+		source,
+		strings.TrimPrefix(mimeType, "image/"),
+		mimeType,
+		extension,
+		storageBase,
+	)
+	if err != nil {
+		return Asset{}, err
+	}
+
 	asset := Asset{
 		ID:               id,
 		OwnerID:          ownerID,
-		Purpose:          PurposeBackground,
+		Purpose:          PurposeImage,
 		StorageKey:       storageBase + extension,
 		MimeType:         mimeType,
 		Width:            width,
@@ -233,20 +253,20 @@ func (s *Service) UploadBackground(
 		Status:           StatusProcessing,
 		OriginalFilename: normalizeFilename(filename),
 		CreatedAt:        time.Now().UTC(),
+		Variants:         make(map[string]Variant, len(variants)),
 	}
-	if len(normalizedThumb) > 0 {
-		asset.ThumbnailStorageKey = storageBase + ".thumb" + thumbnailExtension
-		asset.ThumbnailMimeType = thumbnailMimeType
-		asset.ThumbnailByteSize = int64(len(normalizedThumb))
+	for _, variant := range variants {
+		asset.Variants[variant.Name] = variant
 	}
 
-	if err = s.store.CreateProcessing(ctx, asset); err != nil {
+	if err = s.store.CreateProcessing(ctx, asset, variants); err != nil {
 		return Asset{}, err
 	}
+
 	cleanup := func() {
 		_ = s.objects.Delete(ctx, asset.StorageKey)
-		if asset.ThumbnailStorageKey != "" {
-			_ = s.objects.Delete(ctx, asset.ThumbnailStorageKey)
+		for _, variant := range variants {
+			_ = s.objects.Delete(ctx, variant.StorageKey)
 		}
 		_ = s.store.SetStatus(ctx, asset.ID, asset.OwnerID, StatusFailed)
 	}
@@ -263,12 +283,13 @@ func (s *Service) UploadBackground(
 		}
 		return Asset{}, fmt.Errorf("%w: %v", ErrStorageUnavailable, err)
 	}
-	if asset.ThumbnailStorageKey != "" {
+
+	for _, variant := range variants {
 		if err = s.objects.Put(
 			ctx,
-			asset.ThumbnailStorageKey,
-			asset.ThumbnailMimeType,
-			normalizedThumb,
+			variant.StorageKey,
+			variant.MimeType,
+			payloads[variant.Name],
 		); err != nil {
 			cleanup()
 			if errors.Is(err, ErrStorageUnavailable) {
@@ -277,6 +298,7 @@ func (s *Service) UploadBackground(
 			return Asset{}, fmt.Errorf("%w: %v", ErrStorageUnavailable, err)
 		}
 	}
+
 	if err = s.store.SetStatus(
 		ctx,
 		asset.ID,
@@ -305,25 +327,26 @@ func (s *Service) Open(ctx context.Context, id string) (Asset, io.ReadCloser, er
 	return withDeliveryURLs(asset), body, nil
 }
 
-func (s *Service) OpenThumbnail(
+func (s *Service) OpenVariant(
 	ctx context.Context,
-	id string,
-) (Asset, io.ReadCloser, error) {
+	id, variantName string,
+) (Asset, Variant, io.ReadCloser, error) {
 	asset, err := s.store.FindReady(ctx, id)
 	if err != nil {
-		return Asset{}, nil, err
+		return Asset{}, Variant{}, nil, err
 	}
-	if asset.ThumbnailStorageKey == "" {
-		return s.Open(ctx, id)
+	variant, ok := asset.Variants[variantName]
+	if !ok {
+		return Asset{}, Variant{}, nil, ErrVariantNotFound
 	}
-	body, err := s.objects.Open(ctx, asset.ThumbnailStorageKey)
+	body, err := s.objects.Open(ctx, variant.StorageKey)
 	if err != nil {
 		if errors.Is(err, ErrStorageUnavailable) {
-			return Asset{}, nil, err
+			return Asset{}, Variant{}, nil, err
 		}
-		return Asset{}, nil, fmt.Errorf("%w: %v", ErrStorageUnavailable, err)
+		return Asset{}, Variant{}, nil, fmt.Errorf("%w: %v", ErrStorageUnavailable, err)
 	}
-	return withDeliveryURLs(asset), body, nil
+	return withDeliveryURLs(asset), variant, body, nil
 }
 
 func encodeCursor(asset Asset) string {
@@ -351,7 +374,7 @@ func decodeCursor(value string) (time.Time, string, error) {
 	return time.Unix(0, nanos).UTC(), parts[1], nil
 }
 
-func (s *Service) ListBackgrounds(
+func (s *Service) ListImages(
 	ctx context.Context,
 	ownerID string,
 	cursor string,
@@ -370,7 +393,7 @@ func (s *Service) ListBackgrounds(
 	assets, err := s.store.ListReady(
 		ctx,
 		ownerID,
-		PurposeBackground,
+		PurposeImage,
 		before,
 		beforeID,
 		limit+1,
