@@ -13,6 +13,7 @@ var (
 	ErrMediaTooLarge      = errors.New("media upload too large")
 	ErrImageDimensions    = errors.New("image dimensions invalid")
 	ErrStorageUnavailable = errors.New("media storage unavailable")
+	ErrInvalidCursor       = errors.New("invalid media cursor")
 )
 
 const (
@@ -34,7 +35,11 @@ type Asset struct {
 	CreatedAt        time.Time `json:"created_at"`
 	OwnerID          string    `json:"-"`
 	StorageKey       string    `json:"-"`
-	OriginalFilename string    `json:"-"`
+	OriginalFilename string    `json:"filename"`
+	ThumbnailURL     string    `json:"thumbnail_url"`
+	ThumbnailStorageKey string  `json:"-"`
+	ThumbnailMimeType   string  `json:"-"`
+	ThumbnailByteSize   int64   `json:"-"`
 	SHA256           []byte    `json:"-"`
 }
 
@@ -42,6 +47,13 @@ type Store interface {
 	CreateProcessing(context.Context, Asset) error
 	SetStatus(context.Context, string, string, string) error
 	FindReady(context.Context, string) (Asset, error)
+	FindReadyByDigest(context.Context, string, string, []byte) (Asset, error)
+	ListReady(context.Context, string, string, time.Time, string, int) ([]Asset, error)
+}
+
+type AssetPage struct {
+	Items      []Asset `json:"items"`
+	NextCursor string  `json:"next_cursor,omitempty"`
 }
 
 type ObjectStore interface {

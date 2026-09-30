@@ -1,5 +1,6 @@
 const MAX_INPUT_BYTES = 15 * 1024 * 1024;
 const MAX_LONG_EDGE = 3840;
+const THUMBNAIL_LONG_EDGE = 480;
 
 type BackgroundImagePreparationErrorCode =
   | "unsupported"
@@ -16,6 +17,11 @@ export class BackgroundImagePreparationError extends Error {
     this.code = code;
   }
 }
+
+type PreparedBackgroundImage = {
+  master: Blob;
+  thumbnail: Blob;
+};
 
 type LoadedImage = {
   source: CanvasImageSource;
@@ -45,8 +51,7 @@ const loadImage = async (file: File): Promise<LoadedImage> => {
         dispose: () => bitmap.close(),
       };
     } catch {
-      // Fall through to the HTMLImageElement decoder for browsers with a
-      // partial createImageBitmap implementation.
+      // Fall through to HTMLImageElement for browsers with partial support.
     }
   }
 
@@ -88,10 +93,54 @@ const canvasBlob = (
     );
   });
 
+const scaledSize = (
+  width: number,
+  height: number,
+  maxLongEdge: number,
+) => {
+  const scale = Math.min(1, maxLongEdge / Math.max(width, height));
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale)),
+  };
+};
+
+const renderBlob = async (
+  loaded: LoadedImage,
+  size: { width: number; height: number },
+  mimeType: "image/jpeg" | "image/png",
+  matteColor: string,
+): Promise<Blob> => {
+  const canvas = document.createElement("canvas");
+  canvas.width = size.width;
+  canvas.height = size.height;
+
+  const context = canvas.getContext("2d", {
+    alpha: mimeType === "image/png",
+  });
+  if (!context) {
+    throw new BackgroundImagePreparationError("encode_failed");
+  }
+
+  if (mimeType === "image/jpeg") {
+    context.fillStyle = matteColor;
+    context.fillRect(0, 0, size.width, size.height);
+  }
+  context.drawImage(
+    loaded.source,
+    0,
+    0,
+    size.width,
+    size.height,
+  );
+
+  return canvasBlob(canvas, mimeType);
+};
+
 export async function prepareBackgroundImage(
   file: File,
   matteColor: string,
-): Promise<Blob> {
+): Promise<PreparedBackgroundImage> {
   if (file.size > MAX_INPUT_BYTES) {
     throw new BackgroundImagePreparationError("too_large");
   }
@@ -123,35 +172,28 @@ export async function prepareBackgroundImage(
       throw new BackgroundImagePreparationError("decode_failed");
     }
 
-    const scale = Math.min(
-      1,
-      MAX_LONG_EDGE / Math.max(loaded.width, loaded.height),
+    const master = await renderBlob(
+      loaded,
+      scaledSize(loaded.width, loaded.height, MAX_LONG_EDGE),
+      outputMime,
+      matteColor,
     );
-    const width = Math.max(1, Math.round(loaded.width * scale));
-    const height = Math.max(1, Math.round(loaded.height * scale));
-
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-
-    const context = canvas.getContext("2d", {
-      alpha: outputMime === "image/png",
-    });
-    if (!context) {
-      throw new BackgroundImagePreparationError("encode_failed");
-    }
-
-    if (outputMime === "image/jpeg") {
-      context.fillStyle = matteColor;
-      context.fillRect(0, 0, width, height);
-    }
-    context.drawImage(loaded.source, 0, 0, width, height);
-
-    const blob = await canvasBlob(canvas, outputMime);
-    if (blob.size > MAX_INPUT_BYTES) {
+    if (master.size > MAX_INPUT_BYTES) {
       throw new BackgroundImagePreparationError("too_large");
     }
-    return blob;
+
+    const thumbnail = await renderBlob(
+      loaded,
+      scaledSize(
+        loaded.width,
+        loaded.height,
+        THUMBNAIL_LONG_EDGE,
+      ),
+      outputMime,
+      matteColor,
+    );
+
+    return { master, thumbnail };
   } finally {
     loaded.dispose();
   }

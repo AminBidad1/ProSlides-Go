@@ -2112,6 +2112,20 @@ test("design editor projects a contrast-safe presentation draft and preserves co
   await expect(inspector).toBeVisible();
   await expectAccessible(page, "design editor");
 
+  await inspector.getByRole("button", { name: "انتخاب تصویر" }).click();
+  const mediaPicker = page.getByRole("dialog", {
+    name: "انتخاب تصویر پس‌زمینه",
+  });
+  await expect(mediaPicker).toBeVisible();
+  await expect(
+    mediaPicker.getByText("هنوز تصویری ذخیره نکرده‌اید"),
+  ).toBeVisible();
+  await expectAccessible(page, "background media picker");
+  await mediaPicker
+    .getByRole("button", { name: "بستن", exact: true })
+    .click();
+  await expect(mediaPicker).toBeHidden();
+
   const backgroundInput = inspector.locator("#design-background-custom");
   const textInput = inspector.locator("#design-text-custom");
 

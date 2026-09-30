@@ -67,8 +67,10 @@ release readiness.
 Presentation theming is surface-aware: Stage retains authored background
 imagery, manager views apply stronger readability protection, and participant
 mobile views preserve the theme without downloading the decorative background.
-The current media delivery slice adds upload-first immutable background assets;
-focal-point placement and responsive variants remain follow-up work.
+The media slice now includes upload-first immutable background assets plus an
+owner-scoped recent-media picker, thumbnail delivery and same-owner digest reuse,
+so a background can be used in multiple Presentations without another upload.
+Focal-point placement and broader responsive variants remain follow-up work.
 
 ## Release boundary
 

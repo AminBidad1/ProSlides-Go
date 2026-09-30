@@ -111,7 +111,8 @@ The Design inspector order is:
 1. curated theme gallery with immediate draft preview;
 2. custom background, text and accent colors;
 3. visualization palette;
-4. optional background image with concise explanation of live-surface behavior;
+4. optional background image selected through one media picker: upload new,
+   reuse the owner's recent immutable assets, or use a legacy external URL;
 5. explicit Stage/mobile preview switch and base-color contrast status;
 6. save/discard/conflict actions.
 
