@@ -81,6 +81,15 @@ with the live Session. The local Compose API image also seeds writable
 non-root media-volume ownership and filesystem startup fails fast if the media
 root cannot actually be written.
 
+Object-storage portability is now an accepted architecture decision in ADR 0006
+and is tracked for implementation by GitHub issue #196. This decision is **not
+implemented yet**: the current production adapter remains the Cloudflare R2
+REST adapter and production configuration remains R2-specific. The accepted
+target replaces that provider-specific client with one generic S3-compatible
+adapter so R2 and Arvan Object Storage can be selected by deployment
+configuration without changing product/media identities. This is not a current
+release blocker and must not be reported as implemented until #196 lands.
+
 Non-background authoring now uses one shared image-placement model for Choice
 prompts/options, Word Cloud prompts and Content. First-party references are
 owner-authorized and canonicalized by the Go API; editor drafts preserve asset

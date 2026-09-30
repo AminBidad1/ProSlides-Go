@@ -20,6 +20,7 @@ authoritative document rather than preserving two narratives.
 | What is implemented now and what still blocks release? | `status/current.md` |
 | What is the current product/domain model? | `v2-product-architecture.md`, ADR 0004; Word Cloud projection/disclosure: ADR 0005 |
 | What are the system/backend/live invariants? | `architecture.md`, ADR 0001/0002/0004, OpenAPI |
+| How is image-media storage/provider portability defined? | `media-assets.md`, ADR 0006 |
 | What are the frontend technical boundaries? | `frontend-architecture.md`, ADR 0003/0004; Word Cloud projection boundary: ADR 0005 |
 | What are the Persian UX/design/accessibility rules? | `frontend-professionalization.md` |
 | What frontend debt is intentionally deferred? | `frontend-debt.md` |

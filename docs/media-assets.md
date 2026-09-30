@@ -66,7 +66,12 @@ Go API / media bounded context
     |---- PostgreSQL: media_assets + media_variants metadata
     `---- private object storage
            |-- local filesystem in development
-           `-- Cloudflare R2 in production
+           `-- current production adapter: Cloudflare R2
+
+Target accepted in ADR 0006:
+           `-- generic private S3-compatible storage
+                 |-- Cloudflare R2
+                 `-- Arvan Object Storage
 
 Viewer browser
     |
@@ -79,10 +84,55 @@ Viewer browser
 
 No separate media application server or microservice is introduced.
 
-The current production adapter uses Cloudflare R2's REST object API with a
-server-side token. The media domain depends only on `ObjectStore`; switching
-to the S3-compatible adapter or another object store must not change
-presentation data.
+The current production adapter still uses Cloudflare R2's REST object API with
+a server-side token. ADR 0006 has accepted a provider-neutral replacement, but
+issue #196 has not implemented it yet. The target is one generic
+S3-compatible adapter behind the existing `ObjectStore` boundary, with
+Cloudflare R2 or Arvan Object Storage selected only by deployment
+configuration. Until #196 lands, production remains R2-only.
+
+The portability invariant is already valid: changing object-storage providers
+must not change Presentation/Session/report data, Media Asset IDs, stable
+first-party delivery URLs or immutable object keys.
+
+## Provider portability and migration boundary
+
+ADR 0006 owns the durable provider-portability decision. The implementation
+tracked by #196 will replace the provider-specific R2 REST client with an AWS
+SDK for Go v2 S3-compatible adapter.
+
+The target production storage contract is intentionally small:
+
+- private bucket;
+- server-only endpoint/region/bucket/access-key/secret configuration;
+- configurable S3 addressing mode for provider compatibility;
+- object Put/Get/Delete behind the existing `ObjectStore` interface;
+- bounded SDK retry/deadline behavior;
+- no provider URL or provider name in product data.
+
+CDN selection remains independent from storage. For example, Arvan CDN may
+front the stable ProSlides media delivery path while object bytes live in
+either R2 or Arvan Object Storage. Direct public bucket URLs are not introduced
+by this change.
+
+Provider switching is a controlled deployment migration rather than automatic
+failover. Object keys must be preserved exactly. The source remains available
+for a rollback window until destination reconciliation and functional smoke
+pass.
+
+For R2 -> Arvan, Arvan's current migration service provides One-Time Copy from
+S3-compatible sources; Continuous Sync is not currently an available cutover
+primitive. For Arvan -> R2, Cloudflare Super Slurper accepts S3-compatible
+sources, while Sippy is optional only after source compatibility is proven.
+
+Cross-provider ETag equality is not an integrity requirement. Master
+verification uses the SHA-256 and byte size already stored by ProSlides;
+rendition verification uses the durable key/byte-size/dimension/MIME metadata
+unless future evidence justifies storing additional checksums.
+
+Neither the application nor CI will claim a provider is supported solely from
+"S3-compatible" documentation. #196 requires an opt-in real-provider smoke for
+both R2 and Arvan before operational support is claimed.
 
 ## Input policy
 
