@@ -328,7 +328,8 @@ paths:
   /api/v1/media/assets/{assetId}/renditions/{variant}:
     get:
       operationId: getMediaAssetRendition
-      summary: Return one immutable server-generated rendition for a ready image asset.
+      summary: Return one bounded immutable image delivery for a ready image asset.
+      description: Uses the generated rendition when present; otherwise serves the immutable master without upscaling.
       parameters:
         - name: assetId
           in: path
@@ -352,7 +353,8 @@ paths:
         '503': { description: Media object storage is temporarily unavailable. }
     head:
       operationId: headMediaAssetRendition
-      summary: Return immutable rendition metadata headers for a ready image asset.
+      summary: Return immutable bounded-image metadata headers for a ready image asset.
+      description: Uses generated rendition metadata when present; otherwise describes the immutable master.
       parameters:
         - name: assetId
           in: path

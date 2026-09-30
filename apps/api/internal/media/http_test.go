@@ -257,7 +257,7 @@ func TestImageLibraryRejectsInvalidLimit(t *testing.T) {
 	}
 }
 
-func TestMissingOrInvalidRenditionReturnsNotFound(t *testing.T) {
+func TestRenditionFallsBackToMasterButInvalidVariantReturnsNotFound(t *testing.T) {
 	store := newFakeStore()
 	objects := NewMemoryObjectStore()
 	service := NewService(store, objects)
@@ -274,23 +274,42 @@ func TestMissingOrInvalidRenditionReturnsNotFound(t *testing.T) {
 	mux := http.NewServeMux()
 	NewHTTP(fakeSessions{}, service).Register(mux)
 
-	for _, target := range []string{
-		assetRenditionURL(asset.ID, VariantMedium),
-		"/api/v1/media/assets/" + asset.ID + "/renditions/unknown",
-	} {
-		result := httptest.NewRecorder()
-		mux.ServeHTTP(
-			result,
-			httptest.NewRequest(http.MethodGet, target, nil),
+	fallback := httptest.NewRecorder()
+	mux.ServeHTTP(
+		fallback,
+		httptest.NewRequest(
+			http.MethodGet,
+			assetRenditionURL(asset.ID, VariantMedium),
+			nil,
+		),
+	)
+	if fallback.Code != http.StatusOK ||
+		fallback.Header().Get("Content-Type") != asset.MimeType ||
+		int64(fallback.Body.Len()) != asset.ByteSize {
+		t.Fatalf(
+			"fallback status=%d content_type=%q bytes=%d asset=%+v",
+			fallback.Code,
+			fallback.Header().Get("Content-Type"),
+			fallback.Body.Len(),
+			asset,
 		)
-		if result.Code != http.StatusNotFound {
-			t.Fatalf(
-				"target=%s status=%d body=%s",
-				target,
-				result.Code,
-				result.Body.String(),
-			)
-		}
+	}
+
+	invalid := httptest.NewRecorder()
+	mux.ServeHTTP(
+		invalid,
+		httptest.NewRequest(
+			http.MethodGet,
+			"/api/v1/media/assets/"+asset.ID+"/renditions/unknown",
+			nil,
+		),
+	)
+	if invalid.Code != http.StatusNotFound {
+		t.Fatalf(
+			"invalid variant status=%d body=%s",
+			invalid.Code,
+			invalid.Body.String(),
+		)
 	}
 }
 

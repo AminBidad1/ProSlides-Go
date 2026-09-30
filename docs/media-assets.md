@@ -191,9 +191,11 @@ returns the normalized master.
 
 `GET /api/v1/media/assets/{assetId}/renditions/{variant}`
 
-returns an existing `thumbnail`, `medium` or `large` rendition. Missing
-renditions return 404; clients must choose a rendition based on known asset
-metadata or fall back to the master.
+returns the requested `thumbnail`, `medium` or `large` delivery. When the
+master is already small enough, or a historical asset has no generated copy for
+that variant, the endpoint serves the immutable master instead of upscaling or
+returning a broken image. Unknown assets or unsupported variant names still
+return 404.
 
 All successful delivery responses use:
 
@@ -257,6 +259,9 @@ rendering/controller boundaries, but it also preserves the shared
 `ImagePlacement` metadata for first-party authored media. Live renderers select
 `large` for Stage/manager prompt and Content imagery, `medium` for participant
 prompt/Content imagery, and `thumbnail` for compact answer-option imagery.
+First-party presentation backgrounds use the same bounded delivery contract:
+Stage/manager request `large`, editor previews request `medium`, and
+participant surfaces still do not download decorative backgrounds.
 When a historical asset does not have the requested rendition, the live media
 boundary retries the immutable master once and then degrades to a bounded
 failure placeholder. Alt text and focal metadata are preserved through the same
@@ -270,7 +275,8 @@ second image model.
 - excessive dimensions -> 400 `image_dimensions_invalid`;
 - object-store failure -> 503 `media_storage_unavailable`;
 - unknown/non-ready asset -> 404;
-- unknown/non-generated rendition -> 404;
+- unsupported rendition name -> 404;
+- absent generated rendition for a valid asset -> immutable master fallback;
 - failed upload never updates an authoring placement;
 - ready asset bytes never mutate.
 
@@ -278,6 +284,11 @@ second image model.
 
 Removing an image from a Presentation removes only that placement reference.
 The Editor deliberately does not expose destructive asset deletion yet.
+
+Reports use the frozen Activity definition from the Session, including prompt
+and answer-option image placement metadata. This keeps image-dependent questions
+understandable after the editable Presentation changes and uses the same
+responsive first-party delivery/failure behavior as authoring surfaces.
 
 Hard deletion and orphan garbage collection remain deferred until reference
 accounting covers both mutable Presentations and frozen Sessions. A historical

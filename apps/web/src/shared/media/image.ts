@@ -133,10 +133,14 @@ export const imagePlacementEquals = (
   left.focalX === right.focalX &&
   left.focalY === right.focalY;
 
+const FIRST_PARTY_IMAGE_URL =
+  /^\/api\/v1\/media\/assets\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/content$/i;
+
+const imageAssetIdFromContentURL = (value: string): string =>
+  value.trim().match(FIRST_PARTY_IMAGE_URL)?.[1] ?? "";
+
 const isFirstPartyImageURL = (value: string): boolean =>
-  /^\/api\/v1\/media\/assets\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/content$/i.test(
-    value.trim(),
-  );
+  Boolean(imageAssetIdFromContentURL(value));
 
 export const isOptionalImageURL = (value: string): boolean => {
   const normalized = value.trim();
@@ -156,6 +160,15 @@ const renditionURL = (
 ): string =>
   `/api/v1/media/assets/${assetId}/renditions/${variant}`;
 
+export const firstPartyImageDeliveryURL = (
+  url: string,
+  preferred: ImageDelivery,
+): string => {
+  if (!url || preferred === "master") return url;
+  const assetId = imageAssetIdFromContentURL(url);
+  return assetId ? renditionURL(assetId, preferred) : url;
+};
+
 export const imageDeliveryURL = (
   image: ImagePlacement,
   preferred: ImageDelivery,
@@ -163,23 +176,6 @@ export const imageDeliveryURL = (
   if (!image.url || !image.assetId || preferred === "master") {
     return image.url;
   }
-
-  const longEdge = Math.max(image.width, image.height);
-  switch (preferred) {
-    case "thumbnail":
-      return longEdge > 480
-        ? renditionURL(image.assetId, "thumbnail")
-        : image.url;
-    case "medium":
-      return longEdge > 1280
-        ? renditionURL(image.assetId, "medium")
-        : image.url;
-    case "large":
-      return longEdge > 2560
-        ? renditionURL(image.assetId, "large")
-        : image.url;
-    default:
-      return image.url;
-  }
+  return renditionURL(image.assetId, preferred);
 };
 

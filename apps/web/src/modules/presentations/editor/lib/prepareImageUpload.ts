@@ -25,7 +25,7 @@ type LoadedImage = {
 };
 
 const hasSupportedExtension = (name: string): boolean =>
-  /.(?:jpe?g|png)$/i.test(name.trim());
+  /\.(?:jpe?g|png)$/i.test(name.trim());
 
 const loadImage = async (file: File): Promise<LoadedImage> => {
   if (typeof createImageBitmap === "function") {

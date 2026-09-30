@@ -217,12 +217,31 @@ func TestUploadImageCreatesImmutableResponsiveAsset(t *testing.T) {
 		t.Fatalf("thumbnail width=%d", decoded.Bounds().Dx())
 	}
 
-	if _, _, _, err = service.OpenVariant(
+	_, large, largeBody, err := service.OpenVariant(
 		context.Background(),
 		asset.ID,
 		VariantLarge,
+	)
+	if err != nil {
+		t.Fatalf("missing generated large rendition should fall back to master: %v", err)
+	}
+	largePayload, err := io.ReadAll(largeBody)
+	largeBody.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if large.Width != asset.Width ||
+		large.Height != asset.Height ||
+		large.ByteSize != asset.ByteSize ||
+		int64(len(largePayload)) != asset.ByteSize {
+		t.Fatalf("large fallback=%+v payload=%d asset=%+v", large, len(largePayload), asset)
+	}
+	if _, _, _, err = service.OpenVariant(
+		context.Background(),
+		asset.ID,
+		"unknown",
 	); !errors.Is(err, ErrVariantNotFound) {
-		t.Fatalf("missing large variant error=%v", err)
+		t.Fatalf("unknown variant error=%v", err)
 	}
 }
 

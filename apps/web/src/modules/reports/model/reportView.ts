@@ -1,3 +1,7 @@
+import {
+  normalizeImagePlacement,
+  type ImagePlacement,
+} from "../../../shared/media/image.ts";
 import type {
   ReportActivityPage,
   ReportActivityResponse,
@@ -5,7 +9,17 @@ import type {
   ReportSessionSummary,
 } from "../api/reportApi.ts";
 
-type ChoiceOption = {
+type ImagePlacementView = {
+  image_url?: string;
+  image_asset_id?: string;
+  image_width?: number;
+  image_height?: number;
+  image_alt_text?: string;
+  image_focal_x?: number;
+  image_focal_y?: number;
+};
+
+type ChoiceOption = ImagePlacementView & {
   id: string;
   text?: string;
   order?: number;
@@ -13,7 +27,7 @@ type ChoiceOption = {
 
 type ActivityDefinitionView = {
   activity_kind?: string;
-  prompt?: {
+  prompt?: ImagePlacementView & {
     title?: string;
     text?: string;
   };
@@ -73,6 +87,25 @@ export const activityPrompt = (activity: ReportActivitySummary): string => {
   const definition = asActivityDefinition(activity);
   return definition.prompt?.text?.trim() || "";
 };
+
+const reportImage = (
+  value: ImagePlacementView | undefined,
+): ImagePlacement | null => {
+  if (!value) return null;
+  const image = normalizeImagePlacement(
+    value as Record<string, unknown>,
+  );
+  return image.url ? image : null;
+};
+
+export const activityImage = (
+  activity: ReportActivitySummary,
+): ImagePlacement | null =>
+  reportImage(asActivityDefinition(activity).prompt);
+
+export const choiceOptionImage = (
+  option: ChoiceOption,
+): ImagePlacement | null => reportImage(option);
 
 export const isPollActivity = (
   activity: ReportActivitySummary,

@@ -2054,6 +2054,233 @@ test("content editor projects unsaved draft and preserves it across edit conflic
 });
 
 
+test("image upload is reusable across presentations and uses bounded background delivery", async ({ page, context }) => {
+  test.setTimeout(90_000);
+  const failures = watchRuntime(page);
+  let uploadPosts = 0;
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    if (
+      request.method() === "POST" &&
+      url.pathname === "/api/v1/media/images"
+    ) {
+      uploadPosts += 1;
+    }
+  });
+
+  const unique = String(Date.now()) + "-" + Math.random().toString(16).slice(2);
+  await page.goto("/signup");
+  await page.locator('input[name="email"]').fill("media-e2e-" + unique + "@example.com");
+  await page.locator('input[name="password"]').fill("BrowserPass!42");
+  await page.locator('input[name="fullName"]').fill("مدیر تست رسانه");
+  await page.locator('button[type="submit"]').click();
+  await expect(page).toHaveURL(/\/manager\/panel$/);
+
+  const fixtures = await page.evaluate(async () => {
+    const cookieValue = (name) => {
+      const prefix = encodeURIComponent(name) + "=";
+      const item = document.cookie
+        .split("; ")
+        .find((part) => part.startsWith(prefix));
+      return item ? decodeURIComponent(item.slice(prefix.length)) : "";
+    };
+    const api = async (path, options = {}) => {
+      const headers = new Headers(options.headers || {});
+      headers.set("Content-Type", "application/json");
+      const csrf = cookieValue("proslides_csrf");
+      if (csrf) headers.set("X-CSRF-Token", csrf);
+      const response = await fetch("/api/v1" + path, {
+        method: options.method || "GET",
+        credentials: "include",
+        headers,
+        body:
+          options.body === undefined
+            ? undefined
+            : JSON.stringify(options.body),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(
+          (options.method || "GET") +
+            " " +
+            path +
+            ": " +
+            response.status +
+            " " +
+            JSON.stringify(body),
+        );
+      }
+      return body;
+    };
+
+    const createPresentation = async (title) => {
+      const presentation = await api("/presentations", {
+        method: "POST",
+        body: { title, settings: {} },
+      });
+      await api("/presentations/" + presentation.id + "/slides", {
+        method: "POST",
+        headers: { "If-Match": String(presentation.revision) },
+        body: {
+          position: 0,
+          kind: "content",
+          content: {
+            title: "محتوای نمونه",
+            text: "زمینه تست تصویر",
+            image_url: "",
+          },
+        },
+      });
+      return presentation.id;
+    };
+
+    return {
+      firstId: await createPresentation("ارائه اول تصویر"),
+      secondId: await createPresentation("ارائه دوم تصویر"),
+    };
+  });
+
+  await page.goto("/manager/panel/" + fixtures.firstId);
+  await page.getByRole("button", { name: "طراحی", exact: true }).click();
+  const firstInspector = page.getByRole("complementary", {
+    name: "تنظیمات طراحی ارائه",
+  });
+  await expect(firstInspector).toBeVisible();
+  await firstInspector.getByRole("button", { name: "انتخاب تصویر" }).click();
+
+  const picker = page.getByRole("dialog", {
+    name: "انتخاب تصویر پس‌زمینه",
+  });
+  await expect(picker).toBeVisible();
+
+  const uploadResponsePromise = page.waitForResponse(
+    (response) =>
+      response.request().method() === "POST" &&
+      new URL(response.url()).pathname === "/api/v1/media/images",
+  );
+  const mediumResponsePromise = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname.includes("/renditions/medium"),
+  );
+
+  const tinyPng = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z7i8AAAAASUVORK5CYII=",
+    "base64",
+  );
+  await picker.getByLabel("انتخاب فایل تصویر").setInputFiles({
+    name: "shared-image.png",
+    mimeType: "image/png",
+    buffer: tinyPng,
+  });
+
+  const uploadResponse = await uploadResponsePromise;
+  expect(uploadResponse.status()).toBe(201);
+  const asset = await uploadResponse.json();
+  expect(asset.id).toMatch(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+  );
+  expect(asset.url).toBe("/api/v1/media/assets/" + asset.id + "/content");
+  const mediumResponse = await mediumResponsePromise;
+  expect(mediumResponse.status()).toBe(200);
+  await expect(picker).toBeHidden();
+
+  const firstSavePromise = page.waitForResponse(
+    (response) =>
+      response.request().method() === "PATCH" &&
+      new URL(response.url()).pathname.endsWith(
+        "/api/v1/presentations/" + fixtures.firstId,
+      ),
+  );
+  await firstInspector.getByRole("button", { name: "ذخیره طراحی" }).click();
+  const firstSaved = await (await firstSavePromise).json();
+  expect(firstSaved.settings.background_image_asset_id).toBe(asset.id);
+  expect(firstSaved.settings.background_image_url).toBe(asset.url);
+
+  await page.goto("/manager/panel/" + fixtures.secondId);
+  await page.getByRole("button", { name: "طراحی", exact: true }).click();
+  const secondInspector = page.getByRole("complementary", {
+    name: "تنظیمات طراحی ارائه",
+  });
+  await expect(secondInspector).toBeVisible();
+  await secondInspector.getByRole("button", { name: "انتخاب تصویر" }).click();
+  const secondPicker = page.getByRole("dialog", {
+    name: "انتخاب تصویر پس‌زمینه",
+  });
+  await expect(secondPicker).toBeVisible();
+  await expect(
+    secondPicker.getByRole("button", {
+      name: "استفاده از تصویر shared-image.png",
+    }),
+  ).toBeVisible();
+  await secondPicker
+    .getByRole("button", { name: "استفاده از تصویر shared-image.png" })
+    .click();
+  await expect(secondPicker).toBeHidden();
+
+  const secondSavePromise = page.waitForResponse(
+    (response) =>
+      response.request().method() === "PATCH" &&
+      new URL(response.url()).pathname.endsWith(
+        "/api/v1/presentations/" + fixtures.secondId,
+      ),
+  );
+  await secondInspector.getByRole("button", { name: "ذخیره طراحی" }).click();
+  const secondSaved = await (await secondSavePromise).json();
+  expect(secondSaved.settings.background_image_asset_id).toBe(asset.id);
+  expect(secondSaved.settings.background_image_url).toBe(asset.url);
+  expect(uploadPosts).toBe(1);
+
+  const session = await page.evaluate(async (presentationId) => {
+    const cookieValue = (name) => {
+      const prefix = encodeURIComponent(name) + "=";
+      const item = document.cookie
+        .split("; ")
+        .find((part) => part.startsWith(prefix));
+      return item ? decodeURIComponent(item.slice(prefix.length)) : "";
+    };
+    const csrf = cookieValue("proslides_csrf");
+    const response = await fetch("/api/v1/live/sessions", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+      },
+      body: JSON.stringify({
+        request_id: crypto.randomUUID(),
+        presentation_id: presentationId,
+      }),
+    });
+    const body = await response.json();
+    if (!response.ok) {
+      throw new Error("create live session failed: " + response.status);
+    }
+    return body;
+  }, fixtures.secondId);
+
+  const stage = await context.newPage();
+  const stageFailures = watchRuntime(stage);
+  const largeResponsePromise = stage.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname ===
+      "/api/v1/media/assets/" + asset.id + "/renditions/large",
+  );
+  await stage.goto("/manager/stage/" + session.id);
+  const largeResponse = await largeResponsePromise;
+  expect(largeResponse.status()).toBe(200);
+  const stageSurface = stage.locator('[data-stage-surface="audience"]');
+  await expect(stageSurface).toBeVisible();
+  await expect
+    .poll(async () => stageSurface.evaluate((element) => element.style.backgroundImage))
+    .toContain("/renditions/large");
+  await expectNoDocumentScroll(stage);
+  await stage.close();
+
+  expect(failures).toEqual([]);
+  expect(stageFailures).toEqual([]);
+});
+
+
 test("design editor projects a contrast-safe presentation draft and preserves conflicts", async ({ page }) => {
   test.setTimeout(90000);
   const failures = watchRuntime(page);

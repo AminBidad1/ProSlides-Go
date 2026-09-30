@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
+import { firstPartyImageDeliveryURL } from "../../../../shared/media/image.ts";
 import { Button } from "../../../../shared/ui/primitives/Button.tsx";
 import LazyImagePickerDialog from "./LazyImagePickerDialog.tsx";
 import ImageUrlDialog from "./ImageUrlDialog.tsx";
@@ -35,6 +36,10 @@ export default function BackgroundImageControl({
 
   const externalInitialUrl =
     assetId || !/^https?:\/\//i.test(imageUrl) ? "" : imageUrl;
+  const previewImageUrl = firstPartyImageDeliveryURL(
+    imageUrl,
+    "thumbnail",
+  );
 
   return (
     <>
@@ -45,7 +50,7 @@ export default function BackgroundImageControl({
               className="h-20 w-28 shrink-0 rounded-control border border-border-subtle bg-cover bg-center"
               style={{
                 backgroundColor,
-                backgroundImage: `url(${JSON.stringify(imageUrl)})`,
+                backgroundImage: `url(${JSON.stringify(previewImageUrl)})`,
                 backgroundPosition:
                   `${Math.round(focalX * 100)}% ${Math.round(focalY * 100)}%`,
               }}

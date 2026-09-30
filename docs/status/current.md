@@ -70,9 +70,16 @@ mobile views preserve the theme without downloading the decorative background.
 The media slice now has one owner-scoped immutable image library rather than a
 background-specific storage path. The Go media service owns master validation,
 same-owner digest reuse and server-generated thumbnail/medium/large renditions;
-Presentation contexts own how those assets are placed and rendered.
-Background focal-point placement is non-destructive, shared across editor,
-Stage and manager rendering, and frozen with the live Session.
+valid rendition routes fall back to the immutable master when no smaller copy
+exists, so small assets are never upscaled and CSS backgrounds do not break.
+Presentation contexts own how those assets are placed and rendered. Editor
+canvases/focal previews use bounded medium delivery, compact editor/list/library
+surfaces use thumbnails where appropriate, while Stage/manager presentation
+backgrounds request large delivery. Background focal-point placement remains
+non-destructive, shared across editor, Stage and manager rendering, and frozen
+with the live Session. The local Compose API image also seeds writable
+non-root media-volume ownership and filesystem startup fails fast if the media
+root cannot actually be written.
 
 Non-background authoring now uses one shared image-placement model for Choice
 prompts/options, Word Cloud prompts and Content. First-party references are
@@ -86,7 +93,10 @@ accessibility text and focal metadata alongside its legacy URL fields. Stage and
 manager surfaces select projector-appropriate renditions, participant surfaces
 select bounded mobile renditions, compact option imagery uses thumbnails, and
 all live authored-image surfaces fall back from a missing rendition to the
-immutable master without breaking Session navigation.
+immutable master without breaking Session navigation. Session reports also
+render frozen prompt and Choice-option image placements from the Session
+definition, so later Presentation edits do not erase the visual context of a
+completed Activity.
 
 ## Release boundary
 

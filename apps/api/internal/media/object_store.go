@@ -85,6 +85,18 @@ func NewFilesystemObjectStore(root string) (*FilesystemObjectStore, error) {
 	if err != nil {
 		return nil, fmt.Errorf("resolve media storage directory: %w", err)
 	}
+	probe, err := os.CreateTemp(absolute, ".writable-*")
+	if err != nil {
+		return nil, fmt.Errorf("media storage directory is not writable: %w", err)
+	}
+	probeName := probe.Name()
+	if closeErr := probe.Close(); closeErr != nil {
+		_ = os.Remove(probeName)
+		return nil, fmt.Errorf("verify media storage directory: %w", closeErr)
+	}
+	if removeErr := os.Remove(probeName); removeErr != nil {
+		return nil, fmt.Errorf("verify media storage cleanup: %w", removeErr)
+	}
 	return &FilesystemObjectStore{root: absolute}, nil
 }
 

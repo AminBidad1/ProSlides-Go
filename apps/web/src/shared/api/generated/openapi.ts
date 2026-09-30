@@ -307,13 +307,19 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Return one immutable server-generated rendition for a ready image asset. */
+        /**
+         * Return one bounded immutable image delivery for a ready image asset.
+         * @description Uses the generated rendition when present; otherwise serves the immutable master without upscaling.
+         */
         get: operations["getMediaAssetRendition"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
-        /** Return immutable rendition metadata headers for a ready image asset. */
+        /**
+         * Return immutable bounded-image metadata headers for a ready image asset.
+         * @description Uses generated rendition metadata when present; otherwise describes the immutable master.
+         */
         head: operations["headMediaAssetRendition"];
         patch?: never;
         trace?: never;

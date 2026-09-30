@@ -352,9 +352,22 @@ func (s *Service) OpenVariant(
 	if err != nil {
 		return Asset{}, Variant{}, nil, err
 	}
+	switch variantName {
+	case VariantThumbnail, VariantMedium, VariantLarge:
+	default:
+		return Asset{}, Variant{}, nil, ErrVariantNotFound
+	}
+
 	variant, ok := asset.Variants[variantName]
 	if !ok {
-		return Asset{}, Variant{}, nil, ErrVariantNotFound
+		variant = Variant{
+			Name:       variantName,
+			StorageKey: asset.StorageKey,
+			MimeType:   asset.MimeType,
+			Width:      asset.Width,
+			Height:     asset.Height,
+			ByteSize:   asset.ByteSize,
+		}
 	}
 	body, err := s.objects.Open(ctx, variant.StorageKey)
 	if err != nil {

@@ -121,7 +121,7 @@ export default function QuestionCanvas({
         accent_color: designController?.draft.accentColor ?? accentColor,
         visualization_palette:
           designController?.draft.visualizationPalette ?? visualizationPalette,
-      }),
+      }, { surface: "editor" }),
     [
       designController?.draft.backgroundColor,
       designController?.draft.backgroundImageUrl,

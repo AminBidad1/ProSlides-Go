@@ -440,6 +440,10 @@ test("manager and player routes are explicit and reports use the session-first t
   assert.match(reportQueries, /reportSessionQuery/);
   assert.match(reportQueries, /reportActivityQuery/);
   assert.match(reportQueries, /reportRankingQuery/);
+  assert.match(activity, /ImagePlacementImage/);
+  assert.match(activity, /activityImage/);
+  assert.match(activity, /choiceOptionImage/);
+  assert.match(activity, /تصویر بارگذاری نشد/);
   assert.match(activity, /نتیجه همین فعالیت/);
   assert.match(activity, /برترین‌های همین فعالیت/);
   assert.match(activity, /پاسخ‌ها و ارزیابی شرکت‌کنندگان/);

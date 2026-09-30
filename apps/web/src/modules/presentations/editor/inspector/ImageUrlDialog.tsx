@@ -221,6 +221,7 @@ export default function ImageUrlDialog({
             <img
               src={previewUrl}
               alt="پیش‌نمایش تصویر انتخاب‌شده"
+              referrerPolicy="no-referrer"
               className="h-52 w-full rounded-control bg-surface object-contain"
             />
           </div>

@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  activityImage,
+  choiceOptionImage,
   choiceOptions,
   isPollActivity,
   isWordCloudActivity,
@@ -17,11 +19,30 @@ const pollActivity = {
   definition: {
     schema_version: 1,
     activity_kind: "choice",
-    prompt: { title: "اولویت بعدی", text: "کدام موضوع مهم‌تر است؟" },
+    prompt: {
+      title: "اولویت بعدی",
+      text: "کدام موضوع مهم‌تر است؟",
+      image_url: "/api/v1/media/assets/123e4567-e89b-42d3-a456-426614174050/content",
+      image_asset_id: "123e4567-e89b-42d3-a456-426614174050",
+      image_width: 1600,
+      image_height: 900,
+      image_alt_text: "نمودار اولویت‌ها",
+      image_focal_x: 0.25,
+      image_focal_y: 0.75,
+    },
     response: {
       selection: "single",
       options: [
-        { id: "b", text: "تست", order: 2 },
+        {
+          id: "b",
+          text: "تست",
+          order: 2,
+          image_url: "/api/v1/media/assets/123e4567-e89b-42d3-a456-426614174051/content",
+          image_asset_id: "123e4567-e89b-42d3-a456-426614174051",
+          image_width: 640,
+          image_height: 360,
+          image_alt_text: "تصویر گزینه تست",
+        },
         { id: "a", text: "معماری", order: 1 },
       ],
     },
@@ -44,6 +65,20 @@ test("reports derive Poll from frozen Choice policies instead of a new Activity 
     choiceOptions(pollActivity).map((option) => option.id),
     ["a", "b"],
   );
+});
+
+test("reports preserve frozen prompt and option image placement metadata", () => {
+  const promptImage = activityImage(pollActivity);
+  assert.equal(promptImage?.assetId, "123e4567-e89b-42d3-a456-426614174050");
+  assert.equal(promptImage?.altText, "نمودار اولویت‌ها");
+  assert.equal(promptImage?.focalX, 0.25);
+  assert.equal(promptImage?.focalY, 0.75);
+
+  const option = choiceOptions(pollActivity).find((item) => item.id === "b");
+  assert.ok(option);
+  const optionImage = choiceOptionImage(option);
+  assert.equal(optionImage?.assetId, "123e4567-e89b-42d3-a456-426614174051");
+  assert.equal(optionImage?.altText, "تصویر گزینه تست");
 });
 
 test("Poll response labels use frozen response positions before display ordering", () => {

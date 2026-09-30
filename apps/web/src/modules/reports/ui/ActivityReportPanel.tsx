@@ -1,6 +1,18 @@
-import { CheckCircle2, CircleX, Medal, UsersRound } from "lucide-react";
+import {
+  CheckCircle2,
+  CircleX,
+  ImageOff,
+  Medal,
+  UsersRound,
+} from "lucide-react";
+import { useState } from "react";
 
 import { formatPersianNumber } from "../../../shared/forms/numbers.ts";
+import { ImagePlacementImage } from "../../../shared/media/ImagePlacementImage.tsx";
+import type {
+  ImageDelivery,
+  ImagePlacement,
+} from "../../../shared/media/image.ts";
 import Notice from "../../../shared/ui/Notice.tsx";
 import { WordCloudView } from "../../../shared/ui/WordCloudView.tsx";
 import { Button } from "../../../shared/ui/primitives/Button.tsx";
@@ -9,8 +21,10 @@ import type {
   ReportActivitySummary,
 } from "../api/reportApi.ts";
 import {
+  activityImage,
   activityPrompt,
   activityTitle,
+  choiceOptionImage,
   choiceOptions,
   choiceResultCounts,
   formatReportDateTime,
@@ -19,6 +33,44 @@ import {
   responseLabels,
   wordCloudTerms,
 } from "../model/reportView.ts";
+
+function ReportImage({
+  image,
+  preferred,
+  alt,
+  className,
+}: {
+  image: ImagePlacement;
+  preferred: ImageDelivery;
+  alt: string;
+  className: string;
+}) {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) {
+    return (
+      <div
+        role="img"
+        aria-label={alt ? `${alt} بارگذاری نشد` : "تصویر بارگذاری نشد"}
+        className={`${className} grid place-items-center border border-border-subtle bg-canvas text-content-muted`}
+      >
+        <ImageOff className="size-6" aria-hidden="true" />
+      </div>
+    );
+  }
+
+  return (
+    <ImagePlacementImage
+      image={image}
+      preferred={preferred}
+      alt={alt}
+      className={className}
+      loading="lazy"
+      decoding="async"
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 interface ActivityReportPanelProps {
   activity: ReportActivitySummary;
@@ -44,6 +96,7 @@ export function ActivityReportPanel({
   const options = choiceOptions(activity);
   const isPoll = isPollActivity(activity);
   const isWordCloud = isWordCloudActivity(activity);
+  const promptImage = activityImage(activity);
   const counts = first ? choiceResultCounts(first) : {};
   const terms = first ? wordCloudTerms(first) : [];
   const maxCount = Math.max(
@@ -91,6 +144,14 @@ export function ActivityReportPanel({
             {activityPrompt(activity)}
           </p>
         )}
+        {promptImage ? (
+          <ReportImage
+            image={promptImage}
+            preferred="medium"
+            alt={promptImage.altText || "تصویر فعالیت"}
+            className="mt-4 max-h-64 w-full rounded-panel object-contain"
+          />
+        ) : null}
         <p className="mt-3 text-sm font-semibold text-content-muted">
           {formatPersianNumber(first.result.response_count)} پاسخ ثبت‌شده
         </p>
@@ -128,11 +189,22 @@ export function ActivityReportPanel({
               {options.map((option) => {
                 const count = counts[option.id] ?? 0;
                 const width = Math.round((count / maxCount) * 100);
+                const optionImage = choiceOptionImage(option);
                 return (
                   <div key={option.id}>
                     <div className="mb-1 flex items-center justify-between gap-3 text-sm">
-                      <span className="min-w-0 truncate font-semibold" dir="auto">
-                        {option.text?.trim() || option.id}
+                      <span className="flex min-w-0 items-center gap-2">
+                        {optionImage ? (
+                          <ReportImage
+                            image={optionImage}
+                            preferred="thumbnail"
+                            alt={optionImage.altText}
+                            className="size-11 shrink-0 rounded-control object-cover"
+                          />
+                        ) : null}
+                        <span className="min-w-0 truncate font-semibold" dir="auto">
+                          {option.text?.trim() || option.id}
+                        </span>
                       </span>
                       <span className="shrink-0 text-content-muted">
                         {formatPersianNumber(count)}

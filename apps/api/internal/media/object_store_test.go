@@ -3,11 +3,31 @@ package media
 import (
 	"context"
 	"io"
+	"os"
+	"path/filepath"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 )
+
+func TestFilesystemObjectStoreVerifiesWritableRootWithoutLeavingProbe(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "media")
+	store, err := NewFilesystemObjectStore(root)
+	if err != nil {
+		t.Fatalf("NewFilesystemObjectStore() error = %v", err)
+	}
+	if store.root == "" {
+		t.Fatal("filesystem store root is empty")
+	}
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 0 {
+		t.Fatalf("startup probe leaked files: %+v", entries)
+	}
+}
 
 func TestR2ObjectStoreUsesCloudflareObjectContract(t *testing.T) {
 	var (

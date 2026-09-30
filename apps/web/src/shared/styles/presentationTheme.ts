@@ -1,5 +1,7 @@
 import type { CSSProperties } from "react";
 
+import { firstPartyImageDeliveryURL } from "../media/image.ts";
+
 export interface PresentationThemeInput {
   title?: string;
   background?: {
@@ -243,6 +245,10 @@ export const presentationTheme = (
     input?.visualization_palette,
   );
   const image = input?.background?.image?.trim() ?? "";
+  const deliveredImage =
+    surface === "editor"
+      ? firstPartyImageDeliveryURL(image, "medium")
+      : firstPartyImageDeliveryURL(image, "large");
   const focalX = normalizeFocalPoint(input?.background?.focal_x);
   const focalY = normalizeFocalPoint(input?.background?.focal_y);
   const showsBackgroundImage =
@@ -290,7 +296,7 @@ export const presentationTheme = (
       "--live-palette-8": palette[7 % palette.length],
       backgroundColor: background,
       backgroundImage: showsBackgroundImage
-        ? `linear-gradient(${imageOverlay}, ${imageOverlay}), url(${JSON.stringify(image)})`
+        ? `linear-gradient(${imageOverlay}, ${imageOverlay}), url(${JSON.stringify(deliveredImage)})`
         : decorativeBackground,
       ...(showsBackgroundImage
         ? {

@@ -89,6 +89,28 @@ test("invalid or undersized palettes fall back to the product palette", () => {
 });
 
 
+test("first-party backgrounds use bounded delivery by surface", () => {
+  const assetId = "123e4567-e89b-42d3-a456-426614174050";
+  const master = `/api/v1/media/assets/${assetId}/content`;
+  const stage = presentationTheme(
+    { background: { color: "#111827", image: master } },
+    { surface: "stage" },
+  );
+  const editor = presentationTheme(
+    { background: { color: "#111827", image: master } },
+    { surface: "editor" },
+  );
+
+  assert.match(
+    String(stage.style.backgroundImage),
+    new RegExp(`/api/v1/media/assets/${assetId}/renditions/large`),
+  );
+  assert.match(
+    String(editor.style.backgroundImage),
+    new RegExp(`/api/v1/media/assets/${assetId}/renditions/medium`),
+  );
+});
+
 test("participant theme keeps brand styling without loading the background image", () => {
   const theme = presentationTheme(
     {

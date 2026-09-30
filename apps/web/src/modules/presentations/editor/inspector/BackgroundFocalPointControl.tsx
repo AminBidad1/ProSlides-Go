@@ -6,6 +6,7 @@ import {
   type PointerEvent,
 } from "react";
 
+import { firstPartyImageDeliveryURL } from "../../../../shared/media/image.ts";
 import { Button } from "../../../../shared/ui/primitives/Button.tsx";
 
 type BackgroundFocalPointControlProps = {
@@ -85,6 +86,7 @@ export default function BackgroundFocalPointControl({
     onChange(clamp(nextX), clamp(nextY));
   };
 
+  const previewImageUrl = firstPartyImageDeliveryURL(imageUrl, "medium");
   const centered =
     Math.abs(focalX - 0.5) < 0.001 &&
     Math.abs(focalY - 0.5) < 0.001;
@@ -160,7 +162,7 @@ export default function BackgroundFocalPointControl({
           </span>
         ) : (
           <img
-            src={imageUrl}
+            src={previewImageUrl}
             alt=""
             draggable={false}
             referrerPolicy="no-referrer"

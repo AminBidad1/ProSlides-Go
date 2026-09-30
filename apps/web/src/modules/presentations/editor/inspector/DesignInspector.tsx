@@ -115,7 +115,7 @@ export default function DesignInspector({
   );
 
   const stageTheme = useMemo(
-    () => presentationTheme(themeInput, { surface: "stage" }),
+    () => presentationTheme(themeInput, { surface: "editor" }),
     [themeInput],
   );
   const participantPreviewTheme = useMemo(

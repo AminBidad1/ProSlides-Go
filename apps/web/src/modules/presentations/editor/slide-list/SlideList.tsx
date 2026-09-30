@@ -13,6 +13,7 @@ import {
 import { useMemo, useState, type CSSProperties } from "react";
 
 import { formatPersianNumber } from "../../../../shared/forms/numbers.ts";
+import { firstPartyImageDeliveryURL } from "../../../../shared/media/image.ts";
 import { ConfirmDialog } from "../../../../shared/ui/primitives/ConfirmDialog.tsx";
 import type { EditorSlide } from "../../model/editor.ts";
 import { getEditorItemBehaviors } from "../../model/itemRegistry.ts";
@@ -79,10 +80,14 @@ export default function SlidesPanel({
       quizBackgroundFocalY;
 
     if (backgroundImage) {
+      const previewImage = firstPartyImageDeliveryURL(
+        backgroundImage,
+        "thumbnail",
+      );
       return {
         backgroundColor: backgroundColor || "#f3f4f6",
         backgroundImage:
-          `linear-gradient(rgba(0,0,0,.12), rgba(0,0,0,.18)), url(${JSON.stringify(backgroundImage)})`,
+          `linear-gradient(rgba(0,0,0,.12), rgba(0,0,0,.18)), url(${JSON.stringify(previewImage)})`,
         backgroundSize: "cover",
         backgroundPosition:
           `${Math.round(focalX * 100)}% ${Math.round(focalY * 100)}%`,

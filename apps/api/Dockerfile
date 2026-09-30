@@ -12,7 +12,9 @@ RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/proslid
 FROM ${BASE_REGISTRY}/alpine:3.21
 RUN apk add --no-cache ca-certificates \
     && addgroup -S proslides \
-    && adduser -S -G proslides proslides
+    && adduser -S -G proslides proslides \
+    && mkdir -p /var/lib/proslides-media \
+    && chown proslides:proslides /var/lib/proslides-media
 WORKDIR /app
 COPY --from=build --chown=proslides:proslides /out/proslides-api /app/proslides-api
 

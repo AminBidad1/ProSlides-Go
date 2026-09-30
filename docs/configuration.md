@@ -61,8 +61,11 @@ never returned to the browser or health endpoints.
 Media storage follows the same boundary. PostgreSQL stores media metadata and
 stable first-party references; image bytes live in the configured object adapter.
 The supported local Compose topology mounts a dedicated `media_data` volume for
-the filesystem adapter. Production startup rejects filesystem or memory media
-storage and requires the private R2 adapter. The R2 token remains API-only; the
+the filesystem adapter. The API image seeds that mount point with ownership for
+the non-root `proslides` runtime user, and filesystem startup verifies the
+configured directory is writable before the server begins serving requests.
+Production startup rejects filesystem or memory media storage and requires the
+private R2 adapter. The R2 token remains API-only; the
 browser uploads through the authenticated ProSlides media endpoint and never
 receives bucket credentials or storage keys.
 
