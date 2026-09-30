@@ -24,9 +24,12 @@ Browser (manager/player)
   |-- HTTPS command/query --> Load balancer --> Go API instances
   |-- HTTPS SSE stream -----> Load balancer --> Go API instances
                                            |-- PostgreSQL (truth + event ledger)
-                                           `-- Redis (identity/live rate limits now;
-                                                       presence/fan-out optional later)
-Object storage/CDN <---------------- media module (future)
+                                           |-- Redis (identity/live rate limits now;
+                                           |           presence/fan-out optional later)
+                                           `-- media module --> private object storage
+                                                              (filesystem locally,
+                                                               R2 in production)
+CDN/cache <-------------------------- immutable first-party media delivery path
 Telemetry backend <---------------- bounded Prometheus metrics now; traces later
 ```
 
@@ -74,14 +77,14 @@ is in `docs/frontend-debt.md`. The completed v2 delivery plan is archived.
 | `presentations` | presentations and authored Content/Activity Item definitions | accepting live responses |
 | `live` | sessions, participants, responses/evaluations, cumulative scoring/ranking, snapshots, events | account lifecycle or mutable authoring truth |
 | `reports` | immutable/session-scoped result projections and exports | live command handling |
-| `media` (future) | object metadata and access policy | binary storage in PostgreSQL |
+| `media` | immutable media metadata, validation, object access and first-party delivery | binary storage in PostgreSQL or presentation/live state transitions |
 | `platform` | process lifecycle, config, HTTP, PostgreSQL, Redis; future telemetry | product rules |
 
 Dependencies point inward:
 
 ```text
 HTTP adapter -> application service -> domain policy -> repository interface
-                                                    -> PostgreSQL/Redis adapter
+                                                    -> PostgreSQL/Redis/object adapter
 ```
 
 Only `live` may transition a session, accept an answer, change a live score, or

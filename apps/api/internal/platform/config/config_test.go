@@ -2,6 +2,14 @@ package config
 
 import "testing"
 
+func setProductionMedia(t *testing.T) {
+	t.Helper()
+	t.Setenv("MEDIA_STORAGE_BACKEND", "r2")
+	t.Setenv("MEDIA_R2_ACCOUNT_ID", "account-id")
+	t.Setenv("MEDIA_R2_BUCKET", "proslides-media")
+	t.Setenv("MEDIA_R2_API_TOKEN", "test-token")
+}
+
 func TestLoadRequiresBothRuntimeDependencies(t *testing.T) {
 	t.Setenv("APP_ENV", "test")
 	t.Setenv("DATABASE_URL", "")
@@ -78,6 +86,7 @@ func TestLoadRejectsInvalidTrustedProxyCIDR(t *testing.T) {
 
 func TestLoadProductionRequiresHTTPSPublicOrigin(t *testing.T) {
 	t.Setenv("APP_ENV", "production")
+	setProductionMedia(t)
 	t.Setenv("DATABASE_URL", "postgres://localhost/proslides?sslmode=require")
 	t.Setenv("REDIS_URL", "rediss://localhost:6379/0")
 	t.Setenv("PUBLIC_WEB_URL", "http://proslides.example.test")
@@ -90,6 +99,7 @@ func TestLoadProductionRequiresHTTPSPublicOrigin(t *testing.T) {
 
 func TestLoadProductionRequiresTrustedProxyCIDRs(t *testing.T) {
 	t.Setenv("APP_ENV", "production")
+	setProductionMedia(t)
 	t.Setenv("DATABASE_URL", "postgres://localhost/proslides?sslmode=require")
 	t.Setenv("REDIS_URL", "rediss://localhost:6379/0")
 	t.Setenv("PUBLIC_WEB_URL", "https://proslides.example.test")
@@ -102,6 +112,7 @@ func TestLoadProductionRequiresTrustedProxyCIDRs(t *testing.T) {
 
 func TestLoadProductionRequiresPostgresTLS(t *testing.T) {
 	t.Setenv("APP_ENV", "production")
+	setProductionMedia(t)
 	t.Setenv("DATABASE_URL", "postgres://db.example.test/proslides?sslmode=disable")
 	t.Setenv("REDIS_URL", "rediss://redis.example.test:6379/0")
 	t.Setenv("PUBLIC_WEB_URL", "https://proslides.example.test")
@@ -114,6 +125,7 @@ func TestLoadProductionRequiresPostgresTLS(t *testing.T) {
 
 func TestLoadProductionRequiresRedisTLS(t *testing.T) {
 	t.Setenv("APP_ENV", "production")
+	setProductionMedia(t)
 	t.Setenv("DATABASE_URL", "postgres://db.example.test/proslides?sslmode=require")
 	t.Setenv("REDIS_URL", "redis://redis.example.test:6379/0")
 	t.Setenv("PUBLIC_WEB_URL", "https://proslides.example.test")
@@ -126,6 +138,7 @@ func TestLoadProductionRequiresRedisTLS(t *testing.T) {
 
 func TestLoadProductionRejectsNonHTTPSGoogleJWKS(t *testing.T) {
 	t.Setenv("APP_ENV", "production")
+	setProductionMedia(t)
 	t.Setenv("DATABASE_URL", "postgres://localhost/proslides?sslmode=require")
 	t.Setenv("REDIS_URL", "rediss://localhost:6379/0")
 	t.Setenv("PUBLIC_WEB_URL", "https://proslides.example.test")
@@ -140,6 +153,7 @@ func TestLoadProductionRejectsNonHTTPSGoogleJWKS(t *testing.T) {
 
 func TestLoadProductionAcceptsReferenceSecurityBoundary(t *testing.T) {
 	t.Setenv("APP_ENV", "production")
+	setProductionMedia(t)
 	t.Setenv("DATABASE_URL", "postgres://localhost/proslides?sslmode=require")
 	t.Setenv("REDIS_URL", "rediss://localhost:6379/0")
 	t.Setenv("PUBLIC_WEB_URL", "https://proslides.example.test")
@@ -149,5 +163,32 @@ func TestLoadProductionAcceptsReferenceSecurityBoundary(t *testing.T) {
 
 	if _, err := Load(); err != nil {
 		t.Fatalf("Load() error = %v, want valid production boundary", err)
+	}
+}
+
+func TestLoadProductionRequiresR2MediaStorage(t *testing.T) {
+	t.Setenv("APP_ENV", "production")
+	t.Setenv("DATABASE_URL", "postgres://localhost/proslides?sslmode=require")
+	t.Setenv("REDIS_URL", "rediss://localhost:6379/0")
+	t.Setenv("PUBLIC_WEB_URL", "https://proslides.example.test")
+	t.Setenv("TRUSTED_PROXY_CIDRS", "172.30.0.0/24")
+	t.Setenv("MEDIA_STORAGE_BACKEND", "filesystem")
+
+	if _, err := Load(); err == nil {
+		t.Fatal("production accepted filesystem media storage")
+	}
+}
+
+func TestLoadR2RequiresCredentials(t *testing.T) {
+	t.Setenv("APP_ENV", "test")
+	t.Setenv("DATABASE_URL", "postgres://localhost/proslides?sslmode=require")
+	t.Setenv("REDIS_URL", "rediss://localhost:6379/0")
+	t.Setenv("MEDIA_STORAGE_BACKEND", "r2")
+	t.Setenv("MEDIA_R2_ACCOUNT_ID", "")
+	t.Setenv("MEDIA_R2_BUCKET", "")
+	t.Setenv("MEDIA_R2_API_TOKEN", "")
+
+	if _, err := Load(); err == nil {
+		t.Fatal("R2 media storage accepted missing credentials")
 	}
 }

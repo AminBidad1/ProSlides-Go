@@ -150,19 +150,20 @@ stable enough to provide signal.
 
 ## Background evolution
 
-The current persisted contract remains backward-compatible URL + base color. This
-delivery slice deliberately fixes rendering boundaries before changing storage.
+The persisted contract now supports immutable first-party Media Assets while retaining
+legacy remote URLs for compatibility. Background uploads are normalized and delivered
+through a stable first-party URL; the immutable asset id is persisted alongside it.
 
 The next background/media evolution should:
 
-1. replace externally hosted background URLs with immutable first-party Media Assets;
-2. store normalized image dimensions and a non-destructive focal point;
-3. keep background rendering as cover/fill only, with focal positioning instead of a
+1. store a non-destructive focal point with the background asset reference;
+2. keep background rendering as cover/fill only, with focal positioning instead of a
    generic fit/stretch/tile control set;
-4. add persisted Solid / Gradient / Image background kinds through the existing theme
+3. add persisted Solid / Gradient / Image background kinds through the existing theme
    contract rather than component-local styling;
-5. retain a mandatory base color for image fallback and participant rendering;
-6. keep image/background versions frozen with live Session definitions.
+4. retain a mandatory base color for image fallback and participant rendering;
+5. add responsive delivery variants where measurements justify them;
+6. preserve immutable image/background references in frozen live Session definitions.
 
 Do not add per-slide background overrides, animated backgrounds or freeform image
 editing until a measured product need justifies that complexity.

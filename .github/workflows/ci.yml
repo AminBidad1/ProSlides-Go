@@ -110,6 +110,9 @@ jobs:
           PUBLIC_WEB_URL: https://proslides.example.com
           SMTP_HOST: smtp.example.com
           SMTP_FROM_ADDRESS: no-reply@example.com
+          MEDIA_R2_ACCOUNT_ID: ci-account
+          MEDIA_R2_BUCKET: ci-media
+          MEDIA_R2_API_TOKEN: ci-token
         run: docker compose --env-file deploy/.env.production.example -f deploy/compose.production.yaml config --quiet
 
       - name: Validate operational shell commands

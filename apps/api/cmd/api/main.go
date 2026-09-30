@@ -12,6 +12,7 @@ import (
 
 	"github.com/proslides/proslides/internal/identity"
 	"github.com/proslides/proslides/internal/live"
+	"github.com/proslides/proslides/internal/media"
 	"github.com/proslides/proslides/internal/platform/config"
 	"github.com/proslides/proslides/internal/platform/dependency"
 	platformhttp "github.com/proslides/proslides/internal/platform/http"
@@ -75,6 +76,30 @@ func main() {
 		verificationMailer = configuredMailer
 	}
 
+	var mediaObjects media.ObjectStore
+	switch cfg.MediaStorageBackend {
+	case "filesystem":
+		mediaObjects, err = media.NewFilesystemObjectStore(cfg.MediaStoragePath)
+	case "r2":
+		mediaObjects, err = media.NewR2ObjectStore(
+			cfg.MediaR2AccountID,
+			cfg.MediaR2Bucket,
+			cfg.MediaR2APIToken,
+		)
+	case "memory":
+		mediaObjects = media.NewMemoryObjectStore()
+	default:
+		err = errors.New("unsupported media storage backend")
+	}
+	if err != nil {
+		logger.Error("media storage initialization failed", "error", err)
+		os.Exit(1)
+	}
+	mediaService := media.NewService(
+		media.NewPostgresStore(postgresClient.Pool()),
+		mediaObjects,
+	)
+
 	var liveBroker *live.EventBroker
 	server := &http.Server{
 		Addr: cfg.HTTPAddr,
@@ -100,6 +125,7 @@ func main() {
 			liveBroker = live.NewEventBroker(liveStore, 250*time.Millisecond, 256)
 			identity.NewHTTP(identityService, cfg.Environment == "production", redisClient).WithTrustedProxyCIDRs(cfg.TrustedProxyCIDRs).Register(m)
 			presentations.NewHTTP(identityService, presentations.NewPostgresStore(postgresClient.Pool())).Register(m)
+			media.NewHTTP(identityService, mediaService).Register(m)
 			reports.NewHTTP(identityService, reports.NewPostgresStore(postgresClient.Pool())).Register(m)
 			live.NewHTTP(liveService, liveBroker, identityService, cfg.Environment == "production", redisClient).
 				WithTrustedProxyCIDRs(cfg.TrustedProxyCIDRs).

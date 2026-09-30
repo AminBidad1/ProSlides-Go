@@ -1,6 +1,6 @@
 # Current project status
 
-Last reviewed: 2026-09-29
+Last reviewed: 2026-09-30
 
 This is the only mutable project-status document. Durable architecture belongs
 in architecture/ADR documents; operational procedures belong in runbooks;
@@ -17,7 +17,9 @@ The current implementation uses:
 - a Go modular monolith;
 - PostgreSQL as durable product truth;
 - Redis only for operational/ephemeral coordination;
-- HTTP for commands/queries and SSE for server-to-client live delivery.
+- HTTP for commands/queries and SSE for server-to-client live delivery;
+- an in-monolith media bounded context with PostgreSQL metadata and external
+  object storage for authored image binaries.
 
 The current product/domain model is the ProSlides v2 model documented in
 `../v2-product-architecture.md` and ADR 0004: authored Content and Activity
@@ -61,6 +63,12 @@ commit/run identifiers; this document intentionally does not copy them.
 
 Repository-level migration/hardening boundaries are not currently blocking
 release readiness.
+
+Presentation theming is surface-aware: Stage retains authored background
+imagery, manager views apply stronger readability protection, and participant
+mobile views preserve the theme without downloading the decorative background.
+The current media delivery slice adds upload-first immutable background assets;
+focal-point placement and responsive variants remain follow-up work.
 
 ## Release boundary
 

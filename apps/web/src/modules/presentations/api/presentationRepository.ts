@@ -41,6 +41,10 @@ export const presentationToEditor = (presentation: PresentationDTO): EditorPrese
     typeof settings.background_image_url === "string"
       ? settings.background_image_url
       : "";
+  const backgroundImageAssetID =
+    typeof settings.background_image_asset_id === "string"
+      ? settings.background_image_asset_id
+      : "";
   const textColor =
     typeof settings.text_color === "string"
       ? settings.text_color
@@ -69,6 +73,7 @@ export const presentationToEditor = (presentation: PresentationDTO): EditorPrese
     quiz_name: presentation.title,
     background_color: backgroundColor,
     background_image_url: backgroundImage,
+    background_image_asset_id: backgroundImageAssetID,
     text_color: textColor,
     accent_color: accentColor,
     visualization_palette: visualizationPalette,
@@ -99,7 +104,7 @@ const queueSlideMutation = <T>(presentationID: string, slideID: string, mutation
   return next;
 };
 
-type PresentationUpdate = Partial<Pick<EditorPresentation, "title" | "quiz_name" | "background_color" | "background_image_url" | "text_color" | "accent_color" | "visualization_palette" | "music_url">> & {
+type PresentationUpdate = Partial<Pick<EditorPresentation, "title" | "quiz_name" | "background_color" | "background_image_url" | "background_image_asset_id" | "text_color" | "accent_color" | "visualization_palette" | "music_url">> & {
   revision?: number;
   background?: Partial<EditorPresentation["background"]>;
 };
@@ -108,6 +113,7 @@ const updatePresentation = async (quizID: string, data: PresentationUpdate): Pro
   const settings: Record<string, unknown> = {};
   if (data.background_color !== undefined || data.background?.color !== undefined) settings.background_color = data.background_color ?? data.background?.color;
   if (data.background_image_url !== undefined || data.background?.image !== undefined) settings.background_image_url = data.background_image_url ?? data.background?.image;
+  if (data.background_image_asset_id !== undefined) settings.background_image_asset_id = data.background_image_asset_id;
   if (data.text_color !== undefined || data.background?.text_color !== undefined) settings.text_color = data.text_color ?? data.background?.text_color;
   if (data.accent_color !== undefined) settings.accent_color = data.accent_color;
   if (data.visualization_palette !== undefined) settings.visualization_palette = data.visualization_palette;

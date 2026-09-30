@@ -10,6 +10,11 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       DATABASE_URL: ${DATABASE_URL:-postgres://proslides:proslides@postgres:5432/proslides?sslmode=disable}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      MEDIA_STORAGE_BACKEND: ${MEDIA_STORAGE_BACKEND:-filesystem}
+      MEDIA_STORAGE_PATH: ${MEDIA_STORAGE_PATH:-/var/lib/proslides-media}
+      MEDIA_R2_ACCOUNT_ID: ${MEDIA_R2_ACCOUNT_ID:-}
+      MEDIA_R2_BUCKET: ${MEDIA_R2_BUCKET:-}
+      MEDIA_R2_API_TOKEN: ${MEDIA_R2_API_TOKEN:-}
       DEPENDENCY_CHECK_TIMEOUT: ${DEPENDENCY_CHECK_TIMEOUT:-2s}
       MIGRATION_TIMEOUT: ${MIGRATION_TIMEOUT:-2m}
       LIVE_REQUEST_TIMEOUT: ${LIVE_REQUEST_TIMEOUT:-10s}
@@ -50,6 +55,8 @@ services:
       retries: 10
       start_period: 5s
     restart: unless-stopped
+    volumes:
+      - media_data:/var/lib/proslides-media
     ulimits:
       nofile:
         soft: 65535
@@ -108,3 +115,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  media_data:

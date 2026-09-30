@@ -14,6 +14,11 @@ cookies, participant credentials, or provider tokens.
 | `LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARN`/`WARNING`, or `ERROR`. |
 | `DATABASE_URL` | required | PostgreSQL connection URL; required in every environment. Production requires `sslmode=require`, `verify-ca`, or `verify-full`. |
 | `REDIS_URL` | required | Redis connection URL; required for readiness and distributed identity limits. Production requires `rediss://`. |
+| `MEDIA_STORAGE_BACKEND` | `filesystem` locally | Media binary adapter: `filesystem`, `r2`, or test-only `memory`. Production requires `r2`. |
+| `MEDIA_STORAGE_PATH` | `/var/lib/proslides-media` | Local/development filesystem root for media objects. It is not used by the production R2 adapter. |
+| `MEDIA_R2_ACCOUNT_ID` | empty | Cloudflare account ID used by the private R2 object adapter; required in production. |
+| `MEDIA_R2_BUCKET` | empty | Private R2 bucket used for immutable media objects; required in production. |
+| `MEDIA_R2_API_TOKEN` | empty | Server-only Cloudflare API token for the REST object adapter. It requires the `Workers R2 Storage Write` permission (which includes object read/write). Never expose it to Vite/browser configuration. |
 | `DEPENDENCY_CHECK_TIMEOUT` | `2s` | Positive Go duration bounding each readiness ping. |
 | `MIGRATION_TIMEOUT` | `2m` | Positive duration bounding advisory-lock wait and startup migrations. |
 | `LIVE_REQUEST_TIMEOUT` | `10s` | Positive deadline for non-streaming live requests; SSE is exempt. |
@@ -53,6 +58,14 @@ the API can construct the link. When `GOOGLE_CLIENT_ID` is absent, Google login
 is disabled with a safe service-unavailable response. Provider secrets are
 never returned to the browser or health endpoints.
 
+Media storage follows the same boundary. PostgreSQL stores media metadata and
+stable first-party references; image bytes live in the configured object adapter.
+The supported local Compose topology mounts a dedicated `media_data` volume for
+the filesystem adapter. Production startup rejects filesystem or memory media
+storage and requires the private R2 adapter. The R2 token remains API-only; the
+browser uploads through the authenticated ProSlides media endpoint and never
+receives bucket credentials or storage keys.
+
 Keep `TRUSTED_PROXY_CIDRS` empty when clients reach Go directly in local/test
 topologies. The supported production topology always places the web proxy in
 front of Go, so production startup rejects an empty trusted-proxy set. Use the
@@ -91,6 +104,7 @@ client secret.
 | `POSTGRES_PASSWORD` | `proslides` | Local-only password; if changed, update `DATABASE_URL` too. |
 | `POSTGRES_PORT` | `5432` | Loopback PostgreSQL port for host-mode API development. |
 | `REDIS_PORT` | `6379` | Loopback Redis port for host-mode API development. |
+| `media_data` | local Docker volume | Persists development media files outside the API container filesystem. Production does not use this volume. |
 | `API_IMAGE` | required in production | Immutable API registry tag/digest. |
 | `WEB_IMAGE` | required in production | Immutable web tag/digest built with the matching public Google client ID. |
 | `APP_HTTP_PORT` | `8080` | Production-reference loopback port consumed by TLS ingress. |
@@ -135,7 +149,11 @@ credentials.
 4. Set `PUBLIC_WEB_URL`, use the documented same-origin ingress, and keep
    `APP_ENV=production`; confirm cookie, CSRF, and reset-link behavior through
    the public HTTPS hostname.
-5. Confirm `/healthz` and `/readyz`, migration startup, backups, restore, and
+5. Create a private R2 bucket and a dedicated Cloudflare API token limited to
+   the required R2 permission/account, configure
+   `MEDIA_R2_ACCOUNT_ID`, `MEDIA_R2_BUCKET`, and `MEDIA_R2_API_TOKEN`, then
+   verify upload, immutable first-party read, cache headers, and token rotation.
+6. Confirm `/healthz` and `/readyz`, migration startup, backups, restore, and
    secret rotation in a non-production environment before cutover.
 
 Canonical local examples live in

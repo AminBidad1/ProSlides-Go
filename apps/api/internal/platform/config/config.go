@@ -23,6 +23,11 @@ type Config struct {
 	DatabaseConnMaxLifetime time.Duration
 	DatabaseConnMaxIdleTime time.Duration
 	RedisURL                string
+	MediaStorageBackend     string
+	MediaStoragePath        string
+	MediaR2AccountID        string
+	MediaR2Bucket           string
+	MediaR2APIToken         string
 	DependencyCheckTimeout  time.Duration
 	MigrationTimeout        time.Duration
 	LiveRequestTimeout      time.Duration
@@ -53,6 +58,32 @@ func Load() (Config, error) {
 		HTTPAddr:    valueOrDefault("HTTP_ADDR", ":8080"),
 		DatabaseURL: os.Getenv("DATABASE_URL"),
 		RedisURL:    os.Getenv("REDIS_URL"),
+	}
+	cfg.MediaStorageBackend = strings.ToLower(
+		valueOrDefault("MEDIA_STORAGE_BACKEND", "filesystem"),
+	)
+	cfg.MediaStoragePath = valueOrDefault(
+		"MEDIA_STORAGE_PATH",
+		"/var/lib/proslides-media",
+	)
+	cfg.MediaR2AccountID = strings.TrimSpace(os.Getenv("MEDIA_R2_ACCOUNT_ID"))
+	cfg.MediaR2Bucket = strings.TrimSpace(os.Getenv("MEDIA_R2_BUCKET"))
+	cfg.MediaR2APIToken = strings.TrimSpace(os.Getenv("MEDIA_R2_API_TOKEN"))
+	switch cfg.MediaStorageBackend {
+	case "filesystem":
+		if strings.TrimSpace(cfg.MediaStoragePath) == "" {
+			return Config{}, fmt.Errorf("MEDIA_STORAGE_PATH is required for filesystem media storage")
+		}
+	case "r2":
+		if cfg.MediaR2AccountID == "" || cfg.MediaR2Bucket == "" || cfg.MediaR2APIToken == "" {
+			return Config{}, fmt.Errorf("MEDIA_R2_ACCOUNT_ID, MEDIA_R2_BUCKET, and MEDIA_R2_API_TOKEN are required for R2 media storage")
+		}
+	case "memory":
+		if cfg.Environment != "test" {
+			return Config{}, fmt.Errorf("MEDIA_STORAGE_BACKEND=memory is allowed only in test")
+		}
+	default:
+		return Config{}, fmt.Errorf("MEDIA_STORAGE_BACKEND must be filesystem, r2, or memory")
 	}
 
 	sessionTTL, err := time.ParseDuration(valueOrDefault("SESSION_TTL", "168h"))
@@ -113,6 +144,9 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("SMTP_HOST and SMTP_FROM_ADDRESS must be configured together")
 	}
 	if cfg.Environment == "production" {
+		if cfg.MediaStorageBackend != "r2" {
+			return Config{}, fmt.Errorf("MEDIA_STORAGE_BACKEND must be r2 in production")
+		}
 		databaseURL, parseErr := url.Parse(cfg.DatabaseURL)
 		if parseErr != nil ||
 			(databaseURL.Scheme != "postgres" && databaseURL.Scheme != "postgresql") ||

@@ -65,6 +65,7 @@ export interface EditorPresentation {
   quiz_name: string;
   background_color: string;
   background_image_url: string;
+  background_image_asset_id?: string;
   text_color: string;
   accent_color: string;
   visualization_palette: string[];

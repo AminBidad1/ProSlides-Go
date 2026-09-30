@@ -52,9 +52,16 @@ export function useDesignDraft(
     dispatch({ type: "background-color", value });
   }, []);
 
-  const setBackgroundImageUrl = useCallback((value: string) => {
-    dispatch({ type: "background-image", value });
-  }, []);
+  const setBackgroundImage = useCallback(
+    (url: string, assetId = "") => {
+      dispatch({
+        type: "background-image",
+        url,
+        assetId,
+      });
+    },
+    [],
+  );
 
   const setTextColor = useCallback((value: string) => {
     dispatch({ type: "text-color", value });
@@ -78,7 +85,7 @@ export function useDesignDraft(
     reset,
     markSaved,
     setBackgroundColor,
-    setBackgroundImageUrl,
+    setBackgroundImage,
     setTextColor,
     setAccentColor,
     setVisualizationPalette,

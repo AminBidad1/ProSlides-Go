@@ -247,6 +247,64 @@ paths:
         '403': { $ref: '#/components/responses/CSRFError' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { description: The access code is already assigned to another presentation. }
+  /api/v1/media/backgrounds:
+    post:
+      operationId: uploadBackgroundMedia
+      summary: Upload and normalize an immutable presentation background image.
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              additionalProperties: false
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '201':
+          description: Background asset is ready for immutable first-party delivery.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MediaAsset' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/CSRFError' }
+        '413': { description: Uploaded media exceeds the supported size limit. }
+        '503': { description: Media object storage is temporarily unavailable. }
+  /api/v1/media/assets/{assetId}/content:
+    get:
+      operationId: getMediaAssetContent
+      summary: Return immutable public bytes for a ready media asset.
+      parameters:
+        - name: assetId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Immutable image bytes.
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+            image/png:
+              schema: { type: string, format: binary }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '503': { description: Media object storage is temporarily unavailable. }
+    head:
+      operationId: headMediaAssetContent
+      summary: Return immutable metadata headers for a ready media asset.
+      parameters:
+        - name: assetId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Immutable asset headers. }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '503': { description: Media object storage is temporarily unavailable. }
   /api/v1/presentations:
     get:
       operationId: listPresentations
@@ -822,6 +880,22 @@ components:
         email: { type: string, format: email }
         display_name: { type: string }
         is_active: { type: boolean }
+    MediaAsset:
+      type: object
+      required: [id, purpose, mime_type, width, height, byte_size, status, url, created_at]
+      additionalProperties: false
+      properties:
+        id: { type: string, format: uuid }
+        purpose: { type: string, enum: [background] }
+        mime_type: { type: string, enum: [image/jpeg, image/png] }
+        width: { type: integer, minimum: 1 }
+        height: { type: integer, minimum: 1 }
+        byte_size: { type: integer, format: int64, minimum: 1 }
+        status: { type: string, enum: [ready] }
+        url:
+          type: string
+          pattern: '^/api/v1/media/assets/[0-9A-Fa-f-]{36}/content$'
+        created_at: { type: string, format: date-time }
     Presentation:
       type: object
       required: [id, revision, title, access_code, settings, created_at, updated_at, slides]
@@ -857,7 +931,11 @@ components:
         background_image_url:
           type: string
           maxLength: 4096
-          pattern: '^\s*(?:https?://[^/\s?#]+(?:[/?#]\S*)?)?\s*$'
+          description: Legacy remote URL or stable first-party immutable media content path.
+        background_image_asset_id:
+          type: string
+          maxLength: 36
+          description: Optional immutable Media Asset UUID. Empty string clears the asset reference.
         music_url:
           type: string
           maxLength: 4096

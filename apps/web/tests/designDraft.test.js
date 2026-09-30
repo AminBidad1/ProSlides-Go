@@ -17,6 +17,7 @@ const presentation = {
   quiz_name: "ارائه طراحی",
   background_color: "#ffffff",
   background_image_url: "",
+  background_image_asset_id: "",
   text_color: "#ffffff",
   accent_color: "#8b5cf6",
   visualization_palette: ["#8b5cf6", "#06b6d4", "#10b981"],
@@ -83,6 +84,29 @@ test("design image validation accepts HTTP(S) and rejects unsafe or oversized va
       backgroundImageUrl: `https://example.com/${"a".repeat(4_100)}`,
     }).some((issue) => issue.code === "background_image_too_long"),
   );
+});
+
+
+test("design draft accepts and serializes immutable first-party media assets", () => {
+  const draft = createDesignDraft(presentation);
+  const assetID = "123e4567-e89b-42d3-a456-426614174000";
+  const imageURL = `/api/v1/media/assets/${assetID}/content`;
+
+  const state = designDraftReducer(
+    { baseline: draft, draft },
+    {
+      type: "background-image",
+      url: imageURL,
+      assetId: assetID,
+    },
+  );
+
+  assert.equal(validateDesignDraft(state.draft).length, 0);
+  assert.equal(state.draft.backgroundImageAssetId, assetID);
+
+  const update = designDraftToUpdate(state.draft);
+  assert.equal(update.background_image_url, imageURL);
+  assert.equal(update.background_image_asset_id, assetID);
 });
 
 test("design dirty comparison and serialization preserve presentation revision", () => {

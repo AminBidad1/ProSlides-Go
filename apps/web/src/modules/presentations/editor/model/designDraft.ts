@@ -14,12 +14,16 @@ export const DESIGN_LIMITS = {
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 const HTTP_URL = /^https?:\/\//i;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const FIRST_PARTY_MEDIA_URL =
+  /^\/api\/v1\/media\/assets\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/content$/i;
 
 export type DesignDraft = {
   presentationId: string;
   revision: number;
   backgroundColor: string;
   backgroundImageUrl: string;
+  backgroundImageAssetId: string;
   textColor: string;
   accentColor: string;
   visualizationPalette: string[];
@@ -34,7 +38,7 @@ type DesignDraftAction =
   | { type: "reset"; draft: DesignDraft }
   | { type: "saved"; draft: DesignDraft }
   | { type: "background-color"; value: string }
-  | { type: "background-image"; value: string }
+  | { type: "background-image"; url: string; assetId: string }
   | { type: "text-color"; value: string }
   | { type: "accent-color"; value: string }
   | { type: "visualization-palette"; value: string[] }
@@ -82,6 +86,9 @@ export const createDesignDraft = (
     backgroundImageUrl: String(
       presentation.background_image_url || "",
     ).trim(),
+    backgroundImageAssetId: String(
+      presentation.background_image_asset_id || "",
+    ).trim(),
     textColor: readableForeground(backgroundColor, requestedText),
     accentColor: normalizeHex(
       presentation.accent_color,
@@ -125,7 +132,8 @@ export function designDraftReducer(
     }
     case "background-image":
       return patchDraft(state, {
-        backgroundImageUrl: action.value.trim(),
+        backgroundImageUrl: action.url.trim(),
+        backgroundImageAssetId: action.assetId.trim(),
       });
     case "accent-color":
       return patchDraft(state, {
@@ -173,6 +181,7 @@ export const designDraftEquals = (
   left.revision === right.revision &&
   left.backgroundColor === right.backgroundColor &&
   left.backgroundImageUrl === right.backgroundImageUrl &&
+  left.backgroundImageAssetId === right.backgroundImageAssetId &&
   left.textColor === right.textColor &&
   left.accentColor === right.accentColor &&
   left.visualizationPalette.length === right.visualizationPalette.length &&
@@ -220,17 +229,33 @@ export const validateDesignDraft = (
   }
 
   const image = draft.backgroundImageUrl.trim();
+  const assetID = draft.backgroundImageAssetId.trim();
+  if (
+    assetID &&
+    !UUID.test(assetID)
+  ) {
+    issues.push({
+      code: "background_image_asset_invalid",
+      field: "background_image",
+      message: "شناسه تصویر پس‌زمینه معتبر نیست.",
+    });
+  }
+
   if (Array.from(image).length > DESIGN_LIMITS.imageUrl) {
     issues.push({
       code: "background_image_too_long",
       field: "background_image",
       message: "آدرس تصویر پس‌زمینه بیش از حد طولانی است.",
     });
-  } else if (image && !HTTP_URL.test(image)) {
+  } else if (
+    image &&
+    !HTTP_URL.test(image) &&
+    !FIRST_PARTY_MEDIA_URL.test(image)
+  ) {
     issues.push({
       code: "background_image_invalid",
       field: "background_image",
-      message: "آدرس تصویر باید با http:// یا https:// شروع شود.",
+      message: "آدرس تصویر پس‌زمینه معتبر نیست.",
     });
   }
 
@@ -248,6 +273,7 @@ export const designDraftToUpdate = (
   return {
     background_color: draft.backgroundColor,
     background_image_url: draft.backgroundImageUrl,
+    background_image_asset_id: draft.backgroundImageAssetId,
     text_color: draft.textColor,
     accent_color: draft.accentColor,
     visualization_palette: draft.visualizationPalette,

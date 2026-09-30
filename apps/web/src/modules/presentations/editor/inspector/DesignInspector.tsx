@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   CheckCircle2,
-  Image as ImageIcon,
   LoaderCircle,
   Monitor,
   Smartphone,
-  Trash2,
   X,
 } from "lucide-react";
 
@@ -28,7 +26,7 @@ import {
   validateDesignDraft,
 } from "../model/designDraft.ts";
 import { useRequiredDesignDraft } from "../model/useDesignDraftContext.ts";
-import ImageUrlDialog from "./ImageUrlDialog.tsx";
+import BackgroundImageControl from "./BackgroundImageControl.tsx";
 
 type DesignInspectorProps = {
   quizId: string;
@@ -60,7 +58,7 @@ export default function DesignInspector({
     reset,
     markSaved,
     setBackgroundColor,
-    setBackgroundImageUrl,
+    setBackgroundImage,
     setTextColor,
     setAccentColor,
     setVisualizationPalette,
@@ -70,7 +68,6 @@ export default function DesignInspector({
   const [saving, setSaving] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [conflictPending, setConflictPending] = useState(false);
-  const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [previewSurface, setPreviewSurface] =
     useState<PreviewSurface>("stage");
   const [confirmState, setConfirmState] = useState<ConfirmState>({
@@ -432,68 +429,36 @@ export default function DesignInspector({
             </section>
 
             <section aria-labelledby="design-image-heading">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h3
-                    id="design-image-heading"
-                    className="text-sm font-semibold"
-                  >
-                    تصویر پس‌زمینه
-                  </h3>
-                  <p className="mt-1 text-xs leading-5 text-content-muted">
-                    تصویر روی Stage و نمای مدیریت نمایش داده می‌شود. موبایل مخاطب برای سرعت و خوانایی از رنگ‌های همین تم استفاده می‌کند.
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="shrink-0"
-                  disabled={saving || conflictPending}
-                  onClick={() => setImageDialogOpen(true)}
+              <div>
+                <h3
+                  id="design-image-heading"
+                  className="text-sm font-semibold"
                 >
-                  <ImageIcon aria-hidden="true" />
-                  {draft.backgroundImageUrl
-                    ? "تغییر تصویر"
-                    : "افزودن تصویر"}
-                </Button>
+                  تصویر پس‌زمینه
+                </h3>
+                <p className="mt-1 text-xs leading-5 text-content-muted">
+                  مسیر اصلی، آپلود فایل در ProSlides است. تصویر روی Stage و نمای
+                  مدیریت نمایش داده می‌شود؛ موبایل مخاطب برای سرعت و خوانایی از
+                  رنگ‌های همین تم استفاده می‌کند.
+                </p>
               </div>
 
-              {draft.backgroundImageUrl && (
-                <div className="mt-3 rounded-panel border border-border-subtle bg-canvas p-2.5">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="h-16 w-24 shrink-0 rounded-control border border-border-subtle bg-cover bg-center"
-                      style={{
-                        backgroundImage: `url(${JSON.stringify(draft.backgroundImageUrl)})`,
-                        backgroundColor: draft.backgroundColor,
-                      }}
-                      aria-label="پیش‌نمایش تصویر پس‌زمینه"
-                      role="img"
-                    />
-                    <span
-                      dir="ltr"
-                      className="min-w-0 flex-1 truncate text-xs text-content-muted"
-                    >
-                      {draft.backgroundImageUrl}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="shrink-0 text-danger"
-                      disabled={saving || conflictPending}
-                      aria-label="حذف تصویر پس‌زمینه"
-                      onClick={() => setBackgroundImageUrl("")}
-                    >
-                      <Trash2 aria-hidden="true" />
-                    </Button>
-                  </div>
-                  <p className="mt-2 text-xs leading-5 text-content-muted">
-                    تصویر با پوشش کامل نمایش داده می‌شود و ممکن است در نسبت‌های
-                    مختلف صفحه از لبه‌ها برش بخورد. تنظیم نقطه تمرکز همراه با
-                    Media Asset در مرحله بعد اضافه می‌شود.
-                  </p>
-                </div>
-              )}
+              <BackgroundImageControl
+                backgroundColor={draft.backgroundColor}
+                imageUrl={draft.backgroundImageUrl}
+                assetId={draft.backgroundImageAssetId}
+                maxUrlLength={DESIGN_LIMITS.imageUrl}
+                disabled={saving || conflictPending}
+                onChange={setBackgroundImage}
+              />
+
+              {draft.backgroundImageUrl ? (
+                <p className="mt-2 text-xs leading-5 text-content-muted">
+                  تصویر با پوشش کامل نمایش داده می‌شود و بسته به نسبت نمایشگر
+                  ممکن است از لبه‌ها برش بخورد. نقطه تمرکز در مرحله بعد روی همین
+                  Media Asset اضافه می‌شود.
+                </p>
+              ) : null}
             </section>
 
             <section aria-labelledby="design-preview-heading">
@@ -666,15 +631,6 @@ export default function DesignInspector({
           </div>
         </footer>
       </aside>
-
-      <ImageUrlDialog
-        open={imageDialogOpen}
-        initialUrl={draft.backgroundImageUrl}
-        title="تصویر پس‌زمینه ارائه"
-        maxLength={DESIGN_LIMITS.imageUrl}
-        onClose={() => setImageDialogOpen(false)}
-        onConfirm={setBackgroundImageUrl}
-      />
 
       <ConfirmDialog
         isOpen={confirmState.kind !== "closed"}

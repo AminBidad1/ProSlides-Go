@@ -264,6 +264,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/media/backgrounds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload and normalize an immutable presentation background image. */
+        post: operations["uploadBackgroundMedia"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/media/assets/{assetId}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Return immutable public bytes for a ready media asset. */
+        get: operations["getMediaAssetContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        /** Return immutable metadata headers for a ready media asset. */
+        head: operations["headMediaAssetContent"];
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/presentations": {
         parameters: {
             query?: never;
@@ -706,6 +741,23 @@ export interface components {
             display_name: string;
             is_active: boolean;
         };
+        MediaAsset: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            purpose: "background";
+            /** @enum {string} */
+            mime_type: "image/jpeg" | "image/png";
+            width: number;
+            height: number;
+            /** Format: int64 */
+            byte_size: number;
+            /** @enum {string} */
+            status: "ready";
+            url: string;
+            /** Format: date-time */
+            created_at: string;
+        };
         Presentation: {
             /** Format: uuid */
             id: string;
@@ -741,7 +793,10 @@ export interface components {
         };
         PresentationSettingsInput: {
             background_color?: string;
+            /** @description Legacy remote URL or stable first-party immutable media content path. */
             background_image_url?: string;
+            /** @description Optional immutable Media Asset UUID. Empty string clears the asset reference. */
+            background_image_asset_id?: string;
             music_url?: string;
             text_color?: string;
             accent_color?: string;
@@ -1890,6 +1945,111 @@ export interface operations {
             404: components["responses"]["NotFound"];
             /** @description The access code is already assigned to another presentation. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    uploadBackgroundMedia: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": components["parameters"]["CSRFToken"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Background asset is ready for immutable first-party delivery. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaAsset"];
+                };
+            };
+            400: components["responses"]["ValidationError"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["CSRFError"];
+            /** @description Uploaded media exceeds the supported size limit. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Media object storage is temporarily unavailable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getMediaAssetContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Immutable image bytes. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                    "image/png": string;
+                };
+            };
+            404: components["responses"]["NotFound"];
+            /** @description Media object storage is temporarily unavailable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    headMediaAssetContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Immutable asset headers. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+            /** @description Media object storage is temporarily unavailable. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

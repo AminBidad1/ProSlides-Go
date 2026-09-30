@@ -43,11 +43,26 @@ func validatePresentationSettings(raw json.RawMessage) error {
 		}
 	}
 
-	for _, key := range []string{"background_image_url", "music_url"} {
-		value, ok := values[key]
-		if !ok {
-			continue
+	if value, ok := values["background_image_url"]; ok {
+		var resourceURL string
+		if json.Unmarshal(value, &resourceURL) != nil ||
+			!validOptionalBackgroundImageURL(resourceURL, 4096) {
+			return errInvalidPresentationSettings
 		}
+	}
+
+	if value, ok := values["background_image_asset_id"]; ok {
+		var assetID string
+		if json.Unmarshal(value, &assetID) != nil {
+			return errInvalidPresentationSettings
+		}
+		assetID = strings.TrimSpace(assetID)
+		if assetID != "" && !validUUID(assetID) {
+			return errInvalidPresentationSettings
+		}
+	}
+
+	if value, ok := values["music_url"]; ok {
 		var resourceURL string
 		if json.Unmarshal(value, &resourceURL) != nil ||
 			!validOptionalRemoteURL(resourceURL, 4096) {
@@ -56,6 +71,24 @@ func validatePresentationSettings(raw json.RawMessage) error {
 	}
 
 	return nil
+}
+
+
+func validOptionalBackgroundImageURL(value string, maxRunes int) bool {
+	if utf8.RuneCountInString(value) > maxRunes {
+		return false
+	}
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return true
+	}
+	const prefix = "/api/v1/media/assets/"
+	const suffix = "/content"
+	if strings.HasPrefix(value, prefix) && strings.HasSuffix(value, suffix) {
+		id := strings.TrimSuffix(strings.TrimPrefix(value, prefix), suffix)
+		return validUUID(id)
+	}
+	return validOptionalRemoteURL(value, maxRunes)
 }
 
 func validOptionalRemoteURL(value string, maxRunes int) bool {
