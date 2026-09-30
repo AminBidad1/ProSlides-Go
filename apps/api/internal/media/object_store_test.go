@@ -3,10 +3,10 @@ package media
 import (
 	"context"
 	"io"
-	"os"
-	"path/filepath"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
