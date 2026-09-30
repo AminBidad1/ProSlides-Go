@@ -1,3 +1,5 @@
+import type { ImagePlacement } from "../../../shared/media/image.ts";
+
 export interface LegacyLiveUser {
   user_id: string;
   name: string;
@@ -12,6 +14,7 @@ export interface LegacyQuestionOption {
   option_index?: string | number;
   option_text: string;
   image_url?: string;
+  image?: ImagePlacement;
   order?: number;
   answer?: boolean;
   picked?: boolean;
@@ -39,6 +42,7 @@ export interface LegacyQuestionSlide {
   is_scored?: boolean;
   has_correct_answer?: boolean;
   image_url?: string;
+  image?: ImagePlacement;
   show_leaderboard_after?: boolean;
   response_max_length?: number;
   response_max_words?: number;
@@ -57,6 +61,7 @@ export interface LegacyContentSlide {
   title?: string;
   content_text?: string;
   content_image_url?: string;
+  content_image?: ImagePlacement;
 }
 
 export type LegacyLiveSlide =

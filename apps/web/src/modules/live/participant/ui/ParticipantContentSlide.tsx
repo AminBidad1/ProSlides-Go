@@ -16,7 +16,8 @@ export function ParticipantContentSlide({
   const { isConnected, isStreamConnected, connectionError } = useLiveSession();
   const title = content.title || "مطلب بعدی";
   const text = content.content_text || "";
-  const image = content.content_image_url || "";
+  const image = content.content_image;
+  const imageUrl = content.content_image_url || "";
 
   return (
     <ParticipantShell quiz={quiz}>
@@ -32,9 +33,11 @@ export function ParticipantContentSlide({
             {title}
           </h1>
 
-          {image ? (
+          {imageUrl ? (
             <LiveMediaImage
-              src={image}
+              src={imageUrl}
+              image={image}
+              preferred="medium"
               alt={title ? "تصویر " + title : "تصویر اسلاید توضیحی"}
               className="mx-auto mt-6 max-h-[42dvh] w-auto max-w-full rounded-2xl border border-[color:var(--live-border)] object-contain shadow-xl"
             />

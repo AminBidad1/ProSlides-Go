@@ -1,6 +1,7 @@
 import type { LivePresentationModel } from "../../model/presentation.ts";
 import type { LegacyQuestionSlide } from "../../model/serverData.ts";
 import { useLiveSession } from "../../react/useLiveSession.ts";
+import { LiveMediaImage } from "../../ui/LiveMediaImage.tsx";
 import { ParticipantShell } from "../ParticipantShell.tsx";
 
 type ParticipantActivityClosedProps = {
@@ -37,8 +38,10 @@ export function ParticipantActivityClosed({
           </h1>
 
           {question?.image_url ? (
-            <img
-              src={question.image_url}
+            <LiveMediaImage
+              src={question?.image_url}
+              image={question?.image}
+              preferred="medium"
               alt={"تصویر " + activityLabel}
               className="mx-auto mt-5 max-h-[28dvh] max-w-full rounded-2xl border border-[color:var(--live-border)] object-contain shadow-lg"
             />

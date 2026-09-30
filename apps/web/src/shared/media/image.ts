@@ -10,6 +10,8 @@ export type ImagePlacement = {
 
 export type ImageDelivery = "thumbnail" | "medium" | "large" | "master";
 
+export const IMAGE_ALT_TEXT_MAX_LENGTH = 300;
+
 type ImagePlacementTransport = {
   image_url: string;
   image_asset_id?: string;

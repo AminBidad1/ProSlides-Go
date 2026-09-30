@@ -728,10 +728,28 @@ test("live authored media uses a shared failure-tolerant boundary", () => {
   const managerQuestion = source("src/modules/live/manager/ui/ManagerPickAnswerQuestion.tsx");
   const participantQuestion = source("src/modules/live/participant/ui/ParticipantQuestion.tsx");
 
-  assert.match(media, /onError=\{\(\) => setFailedSrc\(src\)\}/);
+  const participantClosed = source(
+    "src/modules/live/participant/ui/ParticipantActivityClosed.tsx",
+  );
+  const participantResult = source(
+    "src/modules/live/participant/ui/ParticipantActivityResult.tsx",
+  );
+
+  assert.match(media, /imageDeliveryURL/);
+  assert.match(media, /preferredSrc/);
+  assert.match(media, /resolvedAlt = image\?\.altText \|\| alt/);
+  assert.match(media, /masterSrc/);
+  assert.match(media, /failedSources/);
   assert.match(media, /referrerPolicy="no-referrer"/);
+  assert.match(media, /objectPosition/);
   assert.match(media, /تصویر بارگذاری نشد/);
-  for (const surface of [stage, managerQuestion, participantQuestion]) {
+  for (const surface of [
+    stage,
+    managerQuestion,
+    participantQuestion,
+    participantClosed,
+    participantResult,
+  ]) {
     assert.match(surface, /LiveMediaImage/);
   }
 });
@@ -916,6 +934,23 @@ test("Choice editor keeps one typed draft while route rendering stays registry-d
   assert.match(editorModel, /validateEditorQuestion/);
 });
 
+
+test("image authoring exposes bounded accessibility text and complete Word Cloud removal", () => {
+  const sharedImage = source("src/shared/media/image.ts");
+  const question = source("src/modules/presentations/editor/inspector/QuestionInspector.tsx");
+  const options = source("src/modules/presentations/editor/inspector/QuestionOptionsEditor.tsx");
+  const content = source("src/modules/presentations/editor/inspector/ContentInspector.tsx");
+  const wordCloud = source("src/modules/presentations/editor/inspector/WordCloudInspector.tsx");
+
+  assert.match(sharedImage, /IMAGE_ALT_TEXT_MAX_LENGTH = 300/);
+  for (const inspector of [question, options, content, wordCloud]) {
+    assert.match(inspector, /متن جایگزین تصویر/);
+    assert.match(inspector, /IMAGE_ALT_TEXT_MAX_LENGTH/);
+  }
+  assert.match(wordCloud, /emptyImagePlacement/);
+  assert.match(wordCloud, /حذف تصویر پرسش ابر واژه/);
+  assert.match(wordCloud, /ImagePlacementImage/);
+});
 
 test("content editor shares one typed draft through the bounded render registry", () => {
   const route = source("src/modules/presentations/editor/routes/EditorRoute.tsx");

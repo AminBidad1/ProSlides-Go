@@ -252,6 +252,17 @@ keep the derived image-free theme. Non-background content images follow their
 own slot contract and may be delivered to participants when they are part of
 the activity/content itself.
 
+The live compatibility projection keeps its historical URL fields for existing
+rendering/controller boundaries, but it also preserves the shared
+`ImagePlacement` metadata for first-party authored media. Live renderers select
+`large` for Stage/manager prompt and Content imagery, `medium` for participant
+prompt/Content imagery, and `thumbnail` for compact answer-option imagery.
+When a historical asset does not have the requested rendition, the live media
+boundary retries the immutable master once and then degrades to a bounded
+failure placeholder. Alt text and focal metadata are preserved through the same
+projection; authoring exposes optional accessibility text without creating a
+second image model.
+
 ## Failure semantics
 
 - corrupt or unsupported image -> 400 `invalid_image`;

@@ -7,6 +7,7 @@ import type {
   LegacyQuestionSlide,
 } from "../../model/serverData.ts";
 import { useLiveSession } from "../../react/useLiveSession.ts";
+import { LiveMediaImage } from "../../ui/LiveMediaImage.tsx";
 import { ParticipantShell } from "../ParticipantShell.tsx";
 
 type ParticipantActivityResultProps = {
@@ -97,8 +98,10 @@ export function ParticipantActivityResult({
               {question.question_text || "نتیجه"}
             </h1>
             {question.image_url ? (
-              <img
+              <LiveMediaImage
                 src={question.image_url}
+                image={question.image}
+                preferred="medium"
                 alt=""
                 className="mx-auto mt-4 max-h-40 max-w-full rounded-2xl object-contain"
               />
@@ -190,8 +193,10 @@ export function ParticipantActivityResult({
                   >
                     <div className="flex items-center gap-3">
                       {option.image_url ? (
-                        <img
+                        <LiveMediaImage
                           src={option.image_url}
+                          image={option.image}
+                          preferred="thumbnail"
                           alt=""
                           className="h-12 w-12 shrink-0 rounded-xl object-cover"
                         />

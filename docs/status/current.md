@@ -80,10 +80,13 @@ owner-authorized and canonicalized by the Go API; editor drafts preserve asset
 identity/dimensions through load-edit-save cycles; all authoring slots reuse the
 same media picker; and editor previews choose responsive renditions without
 duplicating media binaries. Legacy stored definitions remain readable while new
-writes enforce the current media-reference rules. Live transport still flattens
-these non-background placements to its compatibility URL-shaped projection, so
-responsive rendition delivery and richer placement metadata on live surfaces
-remain a separate bounded follow-up rather than a second authoring model.
+writes enforce the current media-reference rules. The live compatibility
+projection now preserves the same asset identity, intrinsic dimensions,
+accessibility text and focal metadata alongside its legacy URL fields. Stage and
+manager surfaces select projector-appropriate renditions, participant surfaces
+select bounded mobile renditions, compact option imagery uses thumbnails, and
+all live authored-image surfaces fall back from a missing rendition to the
+immutable master without breaking Session navigation.
 
 ## Release boundary
 

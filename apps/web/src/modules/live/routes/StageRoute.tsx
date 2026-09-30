@@ -296,6 +296,8 @@ function StageActivity({
             {question.image_url ? (
               <LiveMediaImage
                 src={question.image_url}
+                image={question.image}
+                preferred="large"
                 alt="تصویر سؤال"
                 className="mx-auto mb-3 max-h-[18dvh] max-w-full rounded-2xl object-contain"
               />
@@ -325,6 +327,8 @@ function StageActivity({
               <div className="flex w-[20%] min-w-40 shrink-0 items-center justify-center">
                 <LiveMediaImage
                   src={question.image_url}
+                  image={question.image}
+                  preferred="large"
                   alt="تصویر سؤال"
                   className="max-h-[42dvh] max-w-full rounded-2xl object-contain shadow-xl"
                 />
@@ -351,6 +355,8 @@ function StageActivity({
                   {option.image_url ? (
                     <LiveMediaImage
                       src={option.image_url}
+                      image={option.image}
+                      preferred="thumbnail"
                       alt=""
                       className="mx-auto mb-2 max-h-[8dvh] max-w-full rounded-xl object-contain"
                     />

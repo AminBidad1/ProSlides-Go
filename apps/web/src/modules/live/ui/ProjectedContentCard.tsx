@@ -13,9 +13,10 @@ export function ProjectedContentCard({
 }: ProjectedContentCardProps) {
   const title = String(content.title ?? "");
   const text = String(content.content_text ?? "");
-  const image = String(content.content_image_url ?? "");
+  const image = content.content_image;
+  const imageUrl = String(content.content_image_url ?? "");
   const hasText = Boolean(text.trim());
-  const hasImage = Boolean(image.trim());
+  const hasImage = Boolean(imageUrl.trim());
   const split = hasText && hasImage;
   const textClass = contentProjectionTextClass(text);
 
@@ -50,7 +51,9 @@ export function ProjectedContentCard({
 
         {hasImage ? (
           <LiveMediaImage
-            src={image}
+            src={imageUrl}
+            image={image}
+            preferred="large"
             alt={title ? `تصویر ${title}` : "تصویر محتوای ارائه"}
             className={
               "mx-auto min-h-0 max-w-full rounded-3xl object-contain shadow-2xl " +

@@ -1,3 +1,7 @@
+import {
+  normalizeImagePlacement,
+  type ImagePlacement,
+} from "../../../shared/media/image.ts";
 import type {
   ActivityPhase,
   LiveEvent,
@@ -75,6 +79,13 @@ const optionalFiniteNumber = (value: unknown): number | undefined => {
   if (value == null) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const liveImagePlacement = (
+  value: UnknownRecord,
+): ImagePlacement | undefined => {
+  const image = normalizeImagePlacement(value);
+  return image.url ? image : undefined;
 };
 
 export const shouldApplyLiveEvent = (
@@ -211,11 +222,13 @@ const choiceActivityToLegacy = (
     (rawOption, index) => {
       const option = recordValue(rawOption);
       const optionId = String(option.id ?? "");
+      const image = liveImagePlacement(option);
       return {
         option_id: index,
         option_index: index,
         option_text: stringValue(option.text),
         image_url: stringValue(option.image_url),
+        ...(image ? { image } : {}),
         order: index,
         ...(correctOptionIds.size > 0
           ? { answer: correctOptionIds.has(optionId) }
@@ -223,6 +236,8 @@ const choiceActivityToLegacy = (
       };
     },
   );
+
+  const image = liveImagePlacement(prompt);
 
   return {
     item_kind: "activity",
@@ -241,6 +256,7 @@ const choiceActivityToLegacy = (
     is_scored: scoring.mode === "points",
     has_correct_answer: evaluation.mode === "correctness",
     image_url: stringValue(prompt.image_url),
+    ...(image ? { image } : {}),
     show_leaderboard_after:
       results.show_overall_leaderboard_after === true,
     options,
@@ -275,6 +291,7 @@ const textActivityToLegacy = (
   const derivedSeconds = Number.isFinite(endsAt)
     ? Math.max(0, (endsAt - Date.now()) / 1000)
     : undefined;
+  const image = liveImagePlacement(prompt);
 
   return {
     item_kind: "activity",
@@ -291,6 +308,7 @@ const textActivityToLegacy = (
     is_scored: false,
     has_correct_answer: false,
     image_url: stringValue(prompt.image_url),
+    ...(image ? { image } : {}),
     show_leaderboard_after: false,
     response_max_length: finiteNumber(response.max_length),
     response_max_words: finiteNumber(response.max_words),
@@ -325,6 +343,7 @@ export const normalizeLiveSlide = (
 
   if (activeItem.kind !== "content") return null;
 
+  const image = liveImagePlacement(content);
   const contentSlide: LegacyContentSlide = {
     item_kind: "content",
     slide_id: id,
@@ -338,6 +357,7 @@ export const normalizeLiveSlide = (
       stringValue(content.text) ||
       stringValue(content.content_text),
     content_image_url: stringValue(content.image_url),
+    ...(image ? { content_image: image } : {}),
   };
 
   return contentSlide;

@@ -330,6 +330,8 @@ export function ManagerPickAnswerQuestion({
                   {currentQuestion.image_url ? (
                     <LiveMediaImage
                       src={currentQuestion.image_url}
+                      image={currentQuestion.image}
+                      preferred="large"
                       alt="تصویر سؤال"
                       className="mx-auto mb-3 max-h-40 max-w-full rounded-2xl object-contain"
                     />
@@ -361,6 +363,8 @@ export function ManagerPickAnswerQuestion({
                   <div className="hidden w-1/4 shrink-0 items-center justify-center lg:flex">
                     <LiveMediaImage
                       src={currentQuestion.image_url}
+                      image={currentQuestion.image}
+                      preferred="large"
                       alt="تصویر سؤال"
                       className="max-h-[48dvh] max-w-full rounded-2xl object-contain shadow-xl"
                     />
@@ -390,6 +394,8 @@ export function ManagerPickAnswerQuestion({
                         {option.image_url ? (
                           <LiveMediaImage
                             src={option.image_url}
+                            image={option.image}
+                            preferred="thumbnail"
                             alt={option.option_text}
                             className="mb-2 max-h-[10dvh] max-w-full rounded-xl object-contain"
                           />

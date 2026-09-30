@@ -9,9 +9,12 @@ import {
 import { ApiError } from "../../../../shared/api/http.ts";
 import { formatPersianNumber } from "../../../../shared/forms/numbers.ts";
 import {
+  emptyImagePlacement,
+  IMAGE_ALT_TEXT_MAX_LENGTH,
   imagePlacementFromAsset,
   imagePlacementFromExternalUrl,
 } from "../../../../shared/media/image.ts";
+import { ImagePlacementImage } from "../../../../shared/media/ImagePlacementImage.tsx";
 import Notice, {
   type NoticeTone,
 } from "../../../../shared/ui/Notice.tsx";
@@ -370,6 +373,54 @@ export default function WordCloudInspector({
                   {draft.image.url ? "تغییر تصویر" : "افزودن تصویر"}
                 </Button>
               </div>
+              {draft.image.url && (
+                <>
+                  <div className="mt-3 flex items-center gap-3 rounded-panel border border-border-subtle bg-canvas p-2">
+                    <ImagePlacementImage
+                      image={draft.image}
+                      preferred="thumbnail"
+                      alt=""
+                      className="size-16 shrink-0 rounded-control bg-surface object-cover"
+                    />
+                    <span
+                      dir="ltr"
+                      className="min-w-0 flex-1 truncate text-xs text-content-muted"
+                    >
+                      {draft.image.assetId
+                        ? "تصویر ذخیره‌شده در کتابخانه شما"
+                        : draft.image.url}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      disabled={saving || conflictPending}
+                      aria-label="حذف تصویر پرسش ابر واژه"
+                      className="shrink-0 text-danger"
+                      onClick={() => controller.setImage(emptyImagePlacement())}
+                    >
+                      <X aria-hidden="true" />
+                    </Button>
+                  </div>
+                  <label className="mt-3 block text-xs font-semibold">
+                    متن جایگزین تصویر <span className="font-normal text-content-muted">(اختیاری)</span>
+                    <input
+                      type="text"
+                      dir="auto"
+                      value={draft.image.altText}
+                      maxLength={IMAGE_ALT_TEXT_MAX_LENGTH}
+                      disabled={saving || conflictPending}
+                      onChange={(event) =>
+                        controller.setImage({
+                          ...draft.image,
+                          altText: event.target.value,
+                        })
+                      }
+                      placeholder="توضیح کوتاه تصویر"
+                      className="mt-1.5 h-10 w-full rounded-control border border-border-subtle bg-surface px-3 text-sm text-content outline-none transition placeholder:text-content-muted focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
+                    />
+                  </label>
+                </>
+              )}
               {imageError && (
                 <p role="alert" className="mt-1.5 text-xs text-danger-ink">
                   {imageError}

@@ -20,6 +20,7 @@ import {
 
 import { formatPersianNumber } from "../../../../shared/forms/numbers.ts";
 import { ImagePlacementImage } from "../../../../shared/media/ImagePlacementImage.tsx";
+import { IMAGE_ALT_TEXT_MAX_LENGTH } from "../../../../shared/media/image.ts";
 import { Button } from "../../../../shared/ui/primitives/Button.tsx";
 import {
   QUESTION_LIMITS,
@@ -42,6 +43,7 @@ type QuestionOptionsEditorProps = {
   onMove: (from: number, to: number) => void;
   onImage: (optionId: string) => void;
   onRemoveImage: (optionId: string) => void;
+  onImageAltText: (optionId: string, value: string) => void;
 };
 
 const optionIssue = (
@@ -67,6 +69,7 @@ export default function QuestionOptionsEditor({
   onMove,
   onImage,
   onRemoveImage,
+  onImageAltText,
 }: QuestionOptionsEditorProps) {
   const globalIssue =
     issues.find(
@@ -237,27 +240,43 @@ export default function QuestionOptionsEditor({
                             )}
 
                             {option.image.url && (
-                              <div className="mt-2 flex items-center gap-2 rounded-control border border-border-subtle bg-canvas p-2">
-                                <ImagePlacementImage
-                                  image={option.image}
-                                  preferred="thumbnail"
-                                  alt=""
-                                  className="size-14 shrink-0 rounded-control bg-surface object-cover"
-                                />
-                                <span dir="ltr" className="min-w-0 flex-1 truncate text-xs text-content-muted">
-                                  {option.image.url}
-                                </span>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  disabled={disabled}
-                                  aria-label={`حذف تصویر گزینه ${formatPersianNumber(index + 1)}`}
-                                  className="size-8 shrink-0 text-danger"
-                                  onClick={() => onRemoveImage(option.id)}
-                                >
-                                  <X aria-hidden="true" />
-                                </Button>
-                              </div>
+                              <>
+                                <div className="mt-2 flex items-center gap-2 rounded-control border border-border-subtle bg-canvas p-2">
+                                  <ImagePlacementImage
+                                    image={option.image}
+                                    preferred="thumbnail"
+                                    alt=""
+                                    className="size-14 shrink-0 rounded-control bg-surface object-cover"
+                                  />
+                                  <span dir="ltr" className="min-w-0 flex-1 truncate text-xs text-content-muted">
+                                    {option.image.url}
+                                  </span>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    disabled={disabled}
+                                    aria-label={`حذف تصویر گزینه ${formatPersianNumber(index + 1)}`}
+                                    className="size-8 shrink-0 text-danger"
+                                    onClick={() => onRemoveImage(option.id)}
+                                  >
+                                    <X aria-hidden="true" />
+                                  </Button>
+                                </div>
+                                <label className="mt-2 block text-[11px] font-semibold text-content-muted">
+                                  متن جایگزین تصویر
+                                  <input
+                                    type="text"
+                                    dir="auto"
+                                    value={option.image.altText}
+                                    maxLength={IMAGE_ALT_TEXT_MAX_LENGTH}
+                                    disabled={disabled}
+                                    onChange={(event) =>
+                                      onImageAltText(option.id, event.target.value)
+                                    }
+                                    className="mt-1 h-9 w-full rounded-control border border-border-subtle bg-surface px-2.5 text-xs text-content outline-none transition focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
+                                  />
+                                </label>
+                              </>
                             )}
                           </div>
 

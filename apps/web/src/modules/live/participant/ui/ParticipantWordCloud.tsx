@@ -454,7 +454,9 @@ export function ParticipantWordCloud({
           {question.image_url ? (
             <LiveMediaImage
               src={question.image_url}
-              alt="تصویر سؤال"
+              image={question.image}
+              preferred="medium"
+              alt="تصویر پرسش ابر واژه"
               className="mx-auto mt-4 max-h-48 w-auto max-w-full rounded-2xl object-contain"
             />
           ) : null}

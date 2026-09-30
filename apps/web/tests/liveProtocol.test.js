@@ -368,6 +368,47 @@ test("Poll projects through the existing Choice live protocol without correctnes
 });
 
 
+test("live projection preserves reusable image placement metadata", () => {
+  const assetId = "123e4567-e89b-42d3-a456-426614174050";
+  const item = choiceItem();
+  item.content.prompt = {
+    ...item.content.prompt,
+    image_url: `/api/v1/media/assets/${assetId}/content`,
+    image_asset_id: assetId,
+    image_width: 1920,
+    image_height: 1080,
+    image_alt_text: "نمودار سؤال",
+    image_focal_x: 0.25,
+    image_focal_y: 0.75,
+  };
+  item.content.response.options[0] = {
+    ...item.content.response.options[0],
+    image_url: `/api/v1/media/assets/${assetId}/content`,
+    image_asset_id: assetId,
+    image_width: 1920,
+    image_height: 1080,
+    image_alt_text: "تصویر گزینه",
+    image_focal_x: 0.4,
+    image_focal_y: 0.6,
+  };
+
+  const question = normalizeLiveSlide(item, {
+    state_version: 4,
+    activity_phase: "accepting",
+    stage_view: "item",
+  });
+
+  assert.equal(question.image.assetId, assetId);
+  assert.equal(question.image.width, 1920);
+  assert.equal(question.image.altText, "نمودار سؤال");
+  assert.equal(question.image.focalX, 0.25);
+  assert.equal(question.image.focalY, 0.75);
+  assert.equal(question.options[0].image.assetId, assetId);
+  assert.equal(question.options[0].image.altText, "تصویر گزینه");
+  assert.equal(question.options[0].image.focalX, 0.4);
+  assert.equal(question.options[0].image.focalY, 0.6);
+});
+
 test("entry Word Cloud projects phrase limits and presentation metadata", () => {
   const question = normalizeLiveSlide(entryWordCloudItem(), {
     state_version: 10,

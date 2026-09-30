@@ -10,6 +10,7 @@ import { ApiError } from "../../../../shared/api/http.ts";
 import { formatPersianNumber } from "../../../../shared/forms/numbers.ts";
 import {
   emptyImagePlacement,
+  IMAGE_ALT_TEXT_MAX_LENGTH,
   imagePlacementFromAsset,
   imagePlacementFromExternalUrl,
   type ImagePlacement,
@@ -412,6 +413,26 @@ function QuestionInspectorInner({
                   </Button>
                 </div>
               )}
+              {draft.image.url && (
+                <label className="mt-3 block text-xs font-semibold">
+                  متن جایگزین تصویر <span className="font-normal text-content-muted">(اختیاری)</span>
+                  <input
+                    type="text"
+                    dir="auto"
+                    value={draft.image.altText}
+                    maxLength={IMAGE_ALT_TEXT_MAX_LENGTH}
+                    disabled={isSaving || conflictPending}
+                    onChange={(event) =>
+                      setQuestionImage({
+                        ...draft.image,
+                        altText: event.target.value,
+                      })
+                    }
+                    placeholder="توضیح کوتاه تصویر"
+                    className="mt-1.5 h-10 w-full rounded-control border border-border-subtle bg-surface px-3 text-sm text-content outline-none transition placeholder:text-content-muted focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
+                  />
+                </label>
+              )}
               {questionImageError && (
                 <p role="alert" className="mt-1.5 text-xs text-danger-ink">
                   {questionImageError}
@@ -436,6 +457,16 @@ function QuestionInspectorInner({
               onRemoveImage={(optionId) =>
                 setOptionImage(optionId, emptyImagePlacement())
               }
+              onImageAltText={(optionId, value) => {
+                const option = draft.options.find(
+                  (candidate) => candidate.id === optionId,
+                );
+                if (!option) return;
+                setOptionImage(optionId, {
+                  ...option.image,
+                  altText: value,
+                });
+              }}
             />
 
             <section

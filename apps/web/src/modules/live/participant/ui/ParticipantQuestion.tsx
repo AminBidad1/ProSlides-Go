@@ -92,6 +92,8 @@ export function ParticipantQuestion({
           {question.image_url ? (
             <LiveMediaImage
               src={question.image_url}
+              image={question.image}
+              preferred="medium"
               alt="تصویر سؤال"
               className="mx-auto my-4 max-h-44 max-w-full rounded-2xl border border-[color:var(--live-border)] object-contain shadow-lg"
             />
@@ -120,6 +122,8 @@ export function ParticipantQuestion({
                   {option.image_url ? (
                     <LiveMediaImage
                       src={option.image_url}
+                      image={option.image}
+                      preferred="thumbnail"
                       alt=""
                       className="h-12 w-12 shrink-0 rounded-xl object-cover"
                     />
