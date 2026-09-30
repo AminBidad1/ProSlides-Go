@@ -30,16 +30,16 @@ const (
 )
 
 type ActivityPrompt struct {
-	Title    string `json:"title"`
-	Text     string `json:"text"`
-	ImageURL string `json:"image_url"`
+	Title string `json:"title"`
+	Text  string `json:"text"`
+	ImagePlacement
 }
 
 type ChoiceOptionDefinition struct {
-	ID       string `json:"id"`
-	Text     string `json:"text"`
-	ImageURL string `json:"image_url"`
-	Order    int    `json:"order"`
+	ID   string `json:"id"`
+	Text string `json:"text"`
+	ImagePlacement
+	Order int `json:"order"`
 }
 
 // ActivityResponsePolicy is intentionally concrete rather than a free-form bag.
@@ -219,7 +219,7 @@ func validateActivityDefinition(value ActivityDefinition) error {
 	if strings.TrimSpace(value.Prompt.Text) == "" ||
 		utf8.RuneCountInString(value.Prompt.Text) > maxStoredActivityPromptRunes ||
 		utf8.RuneCountInString(value.Prompt.Title) > maxStoredActivityTitleRunes ||
-		utf8.RuneCountInString(value.Prompt.ImageURL) > 4096 {
+		value.Prompt.ImagePlacement.validateStored() != nil {
 		return errInvalidSlideDefinition
 	}
 	if value.Timing.DurationSeconds < minStoredDurationSeconds ||
@@ -262,7 +262,7 @@ func validateChoiceActivityDefinition(value ActivityDefinition) error {
 			utf8.RuneCountInString(id) > 128 ||
 			strings.TrimSpace(option.Text) == "" ||
 			utf8.RuneCountInString(option.Text) > maxStoredChoiceOptionTextRunes ||
-			utf8.RuneCountInString(option.ImageURL) > 4096 ||
+			option.ImagePlacement.validateStored() != nil ||
 			option.Order < 1 ||
 			option.Order > len(value.Response.Options) {
 			return errInvalidSlideDefinition
@@ -336,7 +336,7 @@ func validateActivityAuthoringPolicy(value ActivityDefinition) error {
 		utf8.RuneCountInString(value.Prompt.Title) > maxActivityTitleRunes ||
 		authoredLineCount(value.Prompt.Title) > maxActivityTitleLines ||
 		authoredLineCount(value.Prompt.Text) > maxActivityPromptLines ||
-		!validOptionalRemoteURL(value.Prompt.ImageURL, 4096) ||
+		value.Prompt.ImagePlacement.validateAuthoring() != nil ||
 		value.Timing.DurationSeconds < minLiveDurationSeconds ||
 		value.Timing.DurationSeconds > maxLiveDurationSeconds {
 		return errInvalidSlideDefinition
@@ -371,7 +371,7 @@ func validateActivityAuthoringPolicy(value ActivityDefinition) error {
 	for _, option := range value.Response.Options {
 		if utf8.RuneCountInString(option.Text) > maxChoiceOptionTextRunes ||
 			authoredLineCount(option.Text) > maxChoiceOptionTextLines ||
-			!validOptionalRemoteURL(option.ImageURL, 4096) {
+			option.ImagePlacement.validateAuthoring() != nil {
 			return errInvalidSlideDefinition
 		}
 	}

@@ -8,6 +8,10 @@ import {
 
 import { ApiError } from "../../../../shared/api/http.ts";
 import { formatPersianNumber } from "../../../../shared/forms/numbers.ts";
+import {
+  imagePlacementFromAsset,
+  imagePlacementFromExternalUrl,
+} from "../../../../shared/media/image.ts";
 import Notice, {
   type NoticeTone,
 } from "../../../../shared/ui/Notice.tsx";
@@ -24,6 +28,7 @@ import {
   wordCloudDraftToEditorSlide,
 } from "../model/wordCloudDraft.ts";
 import { useRequiredWordCloudDraft } from "../model/useWordCloudDraftContext.ts";
+import LazyImagePickerDialog from "./LazyImagePickerDialog.tsx";
 import ImageUrlDialog from "./ImageUrlDialog.tsx";
 
 type WordCloudInspectorProps = {
@@ -60,7 +65,8 @@ export default function WordCloudInspector({
   const [saving, setSaving] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
   const [conflictPending, setConflictPending] = useState(false);
-  const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [imagePickerOpen, setImagePickerOpen] = useState(false);
+  const [urlDialogOpen, setUrlDialogOpen] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmState>({
     kind: "closed",
@@ -358,10 +364,10 @@ export default function WordCloudInspector({
                   size="sm"
                   className="shrink-0"
                   disabled={saving || conflictPending}
-                  onClick={() => setImageDialogOpen(true)}
+                  onClick={() => setImagePickerOpen(true)}
                 >
                   <ImageIcon aria-hidden="true" />
-                  {draft.imageUrl ? "تغییر تصویر" : "افزودن تصویر"}
+                  {draft.image.url ? "تغییر تصویر" : "افزودن تصویر"}
                 </Button>
               </div>
               {imageError && (
@@ -423,13 +429,25 @@ export default function WordCloudInspector({
         </footer>
       </aside>
 
+      <LazyImagePickerDialog
+        open={imagePickerOpen}
+        currentAssetId={draft.image.assetId}
+        title="انتخاب تصویر پرسش ابر واژه"
+        description="تصویر جدید آپلود کنید یا از تصاویر قبلی خودتان استفاده کنید."
+        onClose={() => setImagePickerOpen(false)}
+        onSelect={(asset) => controller.setImage(imagePlacementFromAsset(asset))}
+        onUseExternalUrl={() => setUrlDialogOpen(true)}
+      />
+
       <ImageUrlDialog
-        open={imageDialogOpen}
-        initialUrl={draft.imageUrl}
-        title="تصویر پرسش ابر واژه"
+        open={urlDialogOpen}
+        initialUrl={draft.image.assetId ? "" : draft.image.url}
+        title="استفاده از لینک تصویر پرسش ابر واژه"
         maxLength={TEXT_ACTIVITY_LIMITS.imageUrl}
-        onClose={() => setImageDialogOpen(false)}
-        onConfirm={controller.setImage}
+        onClose={() => setUrlDialogOpen(false)}
+        onConfirm={(url) =>
+          controller.setImage(imagePlacementFromExternalUrl(url))
+        }
       />
 
       <ConfirmDialog

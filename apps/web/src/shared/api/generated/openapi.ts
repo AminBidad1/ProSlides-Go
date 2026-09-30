@@ -932,6 +932,15 @@ export interface components {
             title: string;
             text: string;
             image_url: string;
+            /** Format: uuid */
+            image_asset_id?: string;
+            image_width?: number;
+            image_height?: number;
+            image_alt_text?: string;
+            /** Format: double */
+            image_focal_x?: number;
+            /** Format: double */
+            image_focal_y?: number;
         };
         ChoiceResponsePolicy: {
             /** @enum {string} */
@@ -943,6 +952,15 @@ export interface components {
             id: string;
             text: string;
             image_url: string;
+            /** Format: uuid */
+            image_asset_id?: string;
+            image_width?: number;
+            image_height?: number;
+            image_alt_text?: string;
+            /** Format: double */
+            image_focal_x?: number;
+            /** Format: double */
+            image_focal_y?: number;
             order: number;
         };
         ChoiceEvaluationPolicy: {
@@ -969,6 +987,15 @@ export interface components {
             title?: string;
             text?: string;
             image_url?: string;
+            /** Format: uuid */
+            image_asset_id?: string;
+            image_width?: number;
+            image_height?: number;
+            image_alt_text?: string;
+            /** Format: double */
+            image_focal_x?: number;
+            /** Format: double */
+            image_focal_y?: number;
         };
         /** @description Submit one canonical versioned Activity response representation. */
         AnswerRequest: {

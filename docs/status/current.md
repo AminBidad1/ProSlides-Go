@@ -71,9 +71,19 @@ The media slice now has one owner-scoped immutable image library rather than a
 background-specific storage path. The Go media service owns master validation,
 same-owner digest reuse and server-generated thumbnail/medium/large renditions;
 Presentation contexts own how those assets are placed and rendered.
-Background focal-point placement is now non-destructive, shared across editor,
-Stage and manager rendering, and frozen with the live Session. Broader responsive
-variants for non-background image slots remain follow-up work.
+Background focal-point placement is non-destructive, shared across editor,
+Stage and manager rendering, and frozen with the live Session.
+
+Non-background authoring now uses one shared image-placement model for Choice
+prompts/options, Word Cloud prompts and Content. First-party references are
+owner-authorized and canonicalized by the Go API; editor drafts preserve asset
+identity/dimensions through load-edit-save cycles; all authoring slots reuse the
+same media picker; and editor previews choose responsive renditions without
+duplicating media binaries. Legacy stored definitions remain readable while new
+writes enforce the current media-reference rules. Live transport still flattens
+these non-background placements to its compatibility URL-shaped projection, so
+responsive rendition delivery and richer placement metadata on live surfaces
+remain a separate bounded follow-up rather than a second authoring model.
 
 ## Release boundary
 

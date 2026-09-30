@@ -1,3 +1,4 @@
+import { emptyImagePlacement } from "../../../../shared/media/image.ts";
 import type {
   EditorPresentation,
   EditorQuestion,
@@ -58,8 +59,7 @@ const createDefaultQuestion = (
     max_point: isScored ? 100 : 0,
     time_limit: 10,
     question_time: 10,
-    image_url: "",
-    question_image: "",
+    image: emptyImagePlacement(),
     faster_answers_more_points: false,
     partial_scoring: false,
     options: [
@@ -67,14 +67,14 @@ const createDefaultQuestion = (
         option_id: createId(),
         text: "گزینه ۱",
         is_correct: policy.evaluationMode === "correctness",
-        image_url: "",
+        image: emptyImagePlacement(),
         order: 1,
       },
       {
         option_id: createId(),
         text: "گزینه ۲",
         is_correct: false,
-        image_url: "",
+        image: emptyImagePlacement(),
         order: 2,
       },
     ],
@@ -84,7 +84,7 @@ const createDefaultQuestion = (
 const createDefaultTextActivity = (): EditorTextActivity => ({
   title: "",
   text: "این موضوع را با چه واژه‌ها یا عبارت‌های کوتاهی توصیف می‌کنید؟",
-  image_url: "",
+  image: emptyImagePlacement(),
   max_entry_length: 30,
   max_entries: 3,
   time_limit: 30,
@@ -129,7 +129,7 @@ export const createSlideForChoice = (
     show_leaderboard_after: false,
     title: mode === "content" ? "اسلاید محتوایی جدید" : "",
     content_text: "",
-    content_image_url: "",
+    content_image: emptyImagePlacement(),
     question,
     text_activity: null,
   };
@@ -146,7 +146,7 @@ export const convertSlideToContent = (
   text_activity: null,
   title: slide.title || "اسلاید محتوایی جدید",
   content_text: slide.content_text || "",
-  content_image_url: slide.content_image_url || "",
+  content_image: slide.content_image ?? emptyImagePlacement(),
   show_leaderboard_after: false,
 });
 
@@ -196,7 +196,7 @@ export const convertSlideToQuestion = (
       option_id: createId(),
       text: `گزینه ${options.length + 1}`,
       is_correct: options.length === 0,
-      image_url: "",
+      image: emptyImagePlacement(),
       order: options.length + 1,
     });
   }

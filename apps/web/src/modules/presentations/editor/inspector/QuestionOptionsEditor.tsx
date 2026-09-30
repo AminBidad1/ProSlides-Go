@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 import { formatPersianNumber } from "../../../../shared/forms/numbers.ts";
+import { ImagePlacementImage } from "../../../../shared/media/ImagePlacementImage.tsx";
 import { Button } from "../../../../shared/ui/primitives/Button.tsx";
 import {
   QUESTION_LIMITS,
@@ -235,15 +236,16 @@ export default function QuestionOptionsEditor({
                               </p>
                             )}
 
-                            {option.imageUrl && (
+                            {option.image.url && (
                               <div className="mt-2 flex items-center gap-2 rounded-control border border-border-subtle bg-canvas p-2">
-                                <img
-                                  src={option.imageUrl}
+                                <ImagePlacementImage
+                                  image={option.image}
+                                  preferred="thumbnail"
                                   alt=""
                                   className="size-14 shrink-0 rounded-control bg-surface object-cover"
                                 />
                                 <span dir="ltr" className="min-w-0 flex-1 truncate text-xs text-content-muted">
-                                  {option.imageUrl}
+                                  {option.image.url}
                                 </span>
                                 <Button
                                   variant="ghost"

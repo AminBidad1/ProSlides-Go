@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { FileText, ImageOff } from "lucide-react";
 
+import {
+  ImagePlacementImage,
+} from "../../../../shared/media/ImagePlacementImage.tsx";
+import type { ImagePlacement } from "../../../../shared/media/image.ts";
 import { presentationTheme } from "../../../../shared/styles/presentationTheme.ts";
 import { useOptionalDesignDraft } from "../model/useDesignDraftContext.ts";
 import type { EditorSlide } from "../../model/editor.ts";
@@ -20,17 +24,17 @@ type ContentCanvasProps = {
 };
 
 function ContentPreviewImage({
-  src,
+  image,
   alt,
 }: {
-  src: string;
+  image: ImagePlacement;
   alt: string;
 }) {
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     setFailed(false);
-  }, [src]);
+  }, [image.url, image.assetId]);
 
   if (failed) {
     return (
@@ -48,8 +52,9 @@ function ContentPreviewImage({
   }
 
   return (
-    <img
-      src={src}
+    <ImagePlacementImage
+      image={image}
+      preferred="medium"
       alt={alt}
       onError={() => setFailed(true)}
       className="mx-auto max-h-[48vh] w-auto max-w-full rounded-2xl border border-[color:var(--live-border)] bg-black/10 object-contain shadow-xl"
@@ -173,8 +178,13 @@ export default function ContentCanvas({
           {preview.hasImage && (
             <div className="mt-6">
               <ContentPreviewImage
-                src={preview.imageUrl}
-                alt={preview.hasTitle ? `تصویر ${preview.title}` : "تصویر اسلاید محتوا"}
+                image={preview.image}
+                alt={
+                  preview.image.altText ||
+                  (preview.hasTitle
+                    ? `تصویر ${preview.title}`
+                    : "تصویر اسلاید محتوا")
+                }
               />
             </div>
           )}

@@ -21,11 +21,19 @@ type SessionReader interface {
 }
 
 type HTTP struct {
-	sessions SessionReader
-	store    Store
+	sessions    SessionReader
+	store       Store
+	imageAssets ImageAssetResolver
 }
 
-func NewHTTP(s SessionReader, store Store) *HTTP { return &HTTP{sessions: s, store: store} }
+func NewHTTP(s SessionReader, store Store) *HTTP {
+	return &HTTP{sessions: s, store: store}
+}
+
+func (h *HTTP) WithImageAssets(resolver ImageAssetResolver) *HTTP {
+	h.imageAssets = resolver
+	return h
+}
 
 func (h *HTTP) Register(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/presentations", h.list)
@@ -137,6 +145,18 @@ func (h *HTTP) create(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	if len(body.Settings) > 0 {
+		resolved, err := resolvePresentationMedia(
+			r.Context(),
+			h.imageAssets,
+			user.ID,
+			body.Settings,
+		)
+		if handleMediaReferenceError(w, err) {
+			return
+		}
+		body.Settings = resolved
+	}
 	p, err := h.store.Create(r.Context(), user.ID, *body.Title, body.Settings)
 	if handleStoreError(w, err) {
 		return
@@ -152,6 +172,18 @@ func (h *HTTP) update(w http.ResponseWriter, r *http.Request) {
 	body, ok := decodePresentationInput(w, r, false)
 	if !ok {
 		return
+	}
+	if len(body.Settings) > 0 {
+		resolved, err := resolvePresentationMedia(
+			r.Context(),
+			h.imageAssets,
+			user.ID,
+			body.Settings,
+		)
+		if handleMediaReferenceError(w, err) {
+			return
+		}
+		body.Settings = resolved
 	}
 	expected, ok := decodeExpectedRevision(w, r)
 	if !ok {
@@ -236,17 +268,12 @@ type slideInput struct {
 func decodeSlideInput(w http.ResponseWriter, r *http.Request) (slideInput, bool) {
 	var body slideInput
 	r.Body = http.MaxBytesReader(w, r.Body, maxContentBytes)
-	if json.NewDecoder(r.Body).Decode(&body) != nil || body.Position < 0 {
+	if json.NewDecoder(r.Body).Decode(&body) != nil ||
+		body.Position < 0 ||
+		!validJSONObject(body.Content) {
 		errJSON(w, 400, "invalid_request")
 		return body, false
 	}
-	kind, content, err := normalizeSlideDefinition(body.Kind, body.Content)
-	if err != nil {
-		errJSON(w, 400, "invalid_request")
-		return body, false
-	}
-	body.Kind = kind
-	body.Content = content
 	return body, true
 }
 
@@ -259,6 +286,17 @@ func (h *HTTP) createSlide(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	resolvedContent, err := resolveSlideMedia(
+		r.Context(),
+		h.imageAssets,
+		user.ID,
+		body.Kind,
+		body.Content,
+	)
+	if handleSlideResolutionError(w, err) {
+		return
+	}
+	body.Content = resolvedContent
 	expected, ok := decodeExpectedRevision(w, r)
 	if !ok {
 		return
@@ -279,6 +317,17 @@ func (h *HTTP) replaceSlide(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	resolvedContent, err := resolveSlideMedia(
+		r.Context(),
+		h.imageAssets,
+		user.ID,
+		body.Kind,
+		body.Content,
+	)
+	if handleSlideResolutionError(w, err) {
+		return
+	}
+	body.Content = resolvedContent
 	expected, ok := decodeExpectedRevision(w, r)
 	if !ok {
 		return
@@ -362,6 +411,35 @@ func isASCIIAlphanumeric(value string) bool {
 	}
 	return true
 }
+func handleSlideResolutionError(w http.ResponseWriter, err error) bool {
+	if err == nil {
+		return false
+	}
+	switch {
+	case errors.Is(err, errInvalidMediaReference):
+		errJSON(w, http.StatusBadRequest, "invalid_media_reference")
+	case errors.Is(err, errInvalidSlideDefinition):
+		errJSON(w, http.StatusBadRequest, "invalid_request")
+	default:
+		errJSON(w, http.StatusInternalServerError, "internal_error")
+	}
+	return true
+}
+
+func handleMediaReferenceError(w http.ResponseWriter, err error) bool {
+	if err == nil {
+		return false
+	}
+	switch {
+	case errors.Is(err, errInvalidMediaReference),
+		errors.Is(err, errInvalidPresentationSettings):
+		errJSON(w, http.StatusBadRequest, "invalid_media_reference")
+	default:
+		errJSON(w, http.StatusInternalServerError, "internal_error")
+	}
+	return true
+}
+
 func handleStoreError(w http.ResponseWriter, err error) bool {
 	if err == nil {
 		return false

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer } from "react";
 
+import type { ImagePlacement } from "../../../../shared/media/image.ts";
 import type { EditorSlide } from "../../model/editor.ts";
 import {
   contentDraftEquals,
@@ -48,7 +49,7 @@ export function useContentDraft(slide: EditorSlide) {
     dispatch({ type: "text", value });
   }, []);
 
-  const setImage = useCallback((value: string) => {
+  const setImage = useCallback((value: ImagePlacement) => {
     dispatch({ type: "image", value });
   }, []);
 

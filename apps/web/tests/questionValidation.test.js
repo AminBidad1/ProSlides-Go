@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import { emptyImagePlacement } from "../src/shared/media/image.ts";
 import {
   getContentValidationError,
   getQuestionValidationError,
@@ -70,7 +71,7 @@ test("rejects non-http media URLs before save or live start", () => {
   assert.match(
     getQuestionValidationError({
       ...validQuestion,
-      image_url: "javascript:alert(1)",
+      image: { ...emptyImagePlacement(), url: "javascript:alert(1)" },
     }),
     /http/i,
   );
@@ -79,7 +80,10 @@ test("rejects non-http media URLs before save or live start", () => {
       ...validQuestion,
       options: validQuestion.options.map((option, index) => ({
         ...option,
-        image_url: index === 0 ? "data:image/png;base64,AAAA" : "",
+        image: {
+          ...emptyImagePlacement(),
+          url: index === 0 ? "data:image/png;base64,AAAA" : "",
+        },
       })),
     }),
     /http/i,
@@ -87,7 +91,10 @@ test("rejects non-http media URLs before save or live start", () => {
   assert.match(
     getContentValidationError({
       title: "Intro",
-      content_image_url: "ftp://example.com/image.png",
+      content_image: {
+        ...emptyImagePlacement(),
+        url: "ftp://example.com/image.png",
+      },
     }),
     /http/i,
   );
@@ -153,7 +160,7 @@ test("presentation validation is shared by editor and dashboard present actions"
       item_kind: "content",
       title: "",
       content_text: "",
-      content_image_url: "",
+      content_image: emptyImagePlacement(),
     }],
   }), /عنوان، متن یا تصویر/i);
   assert.equal(getPresentationValidationError({
@@ -161,7 +168,7 @@ test("presentation validation is shared by editor and dashboard present actions"
       item_kind: "content",
       title: "Introduction",
       content_text: "",
-      content_image_url: "",
+      content_image: emptyImagePlacement(),
     }],
   }), null);
 });

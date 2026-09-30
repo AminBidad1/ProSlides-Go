@@ -312,6 +312,23 @@ func (s *Service) UploadImage(
 	return withDeliveryURLs(asset), nil
 }
 
+func (s *Service) ResolveOwnedImage(
+	ctx context.Context,
+	ownerID, assetID string,
+) (string, int, int, bool, error) {
+	asset, err := s.store.FindReady(ctx, assetID)
+	if errors.Is(err, ErrNotFound) {
+		return "", 0, 0, false, nil
+	}
+	if err != nil {
+		return "", 0, 0, false, err
+	}
+	if asset.OwnerID != ownerID || asset.Purpose != PurposeImage {
+		return "", 0, 0, false, nil
+	}
+	return assetContentURL(asset.ID), asset.Width, asset.Height, true, nil
+}
+
 func (s *Service) Open(ctx context.Context, id string) (Asset, io.ReadCloser, error) {
 	asset, err := s.store.FindReady(ctx, id)
 	if err != nil {

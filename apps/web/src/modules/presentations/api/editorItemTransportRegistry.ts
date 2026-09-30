@@ -1,4 +1,8 @@
 import type { components } from "../../../shared/api/generated/openapi.ts";
+import {
+  imagePlacementToTransport,
+  normalizeImagePlacement,
+} from "../../../shared/media/image.ts";
 import type {
   EditorOption,
   EditorSlide,
@@ -51,7 +55,7 @@ const normalizeOption = (
   ),
   text: stringValue(option.text ?? option.option_text),
   is_correct: option.is_correct === true,
-  image_url: stringValue(option.image_url),
+  image: normalizeImagePlacement(option),
   order: numberValue(option.order, index + 1),
 });
 
@@ -126,8 +130,7 @@ const choiceTransport: EditorTransportRegistration = {
         question_time: numberValue(timing.duration_seconds, 10),
         min_point: numberValue(scoring.min_points, 0),
         max_point: numberValue(scoring.max_points, 100),
-        image_url: stringValue(prompt.image_url),
-        question_image: stringValue(prompt.image_url),
+        image: normalizeImagePlacement(prompt),
         faster_answers_more_points: scoring.speed_bonus === true,
         partial_scoring:
           selection === "multiple" &&
@@ -174,7 +177,7 @@ const textTransport: EditorTransportRegistration = {
       text_activity: {
         title: stringValue(prompt.title),
         text: stringValue(prompt.text),
-        image_url: stringValue(prompt.image_url),
+        image: normalizeImagePlacement(prompt),
         max_length: entryBased
           ? undefined
           : numberValue(response.max_length, 80),
@@ -204,9 +207,11 @@ const contentTransport: EditorTransportRegistration = {
     text_activity: null,
     title: stringValue(content.title),
     content_text: stringValue(content.text ?? content.content_text),
-    content_image_url: stringValue(
-      content.image_url ?? content.content_image_url,
-    ),
+    content_image: normalizeImagePlacement({
+      ...content,
+      image_url:
+        content.image_url ?? content.content_image_url,
+    }),
   }),
 };
 
@@ -264,17 +269,14 @@ export const editorSlideToTransportDefinition = (
             question.question_text ??
             question.text ??
             "",
-          image_url:
-            question.question_image ||
-            question.image_url ||
-            "",
+          ...imagePlacementToTransport(question.image),
         },
         response: {
           selection: question.question_type,
           options: question.options.map((option, index) => ({
             id: option.option_id,
             text: option.text,
-            image_url: option.image_url || "",
+            ...imagePlacementToTransport(option.image),
             order: index + 1,
           })),
         },
@@ -341,7 +343,7 @@ export const editorSlideToTransportDefinition = (
         prompt: {
           title: activity.title || "",
           text: activity.text || "",
-          image_url: activity.image_url || "",
+          ...imagePlacementToTransport(activity.image),
         },
         response:
           activity.aggregation === "entry_frequency"
@@ -377,7 +379,9 @@ export const editorSlideToTransportDefinition = (
       content: {
         title: slide.title || "",
         text: slide.content_text || "",
-        image_url: slide.content_image_url || "",
+        ...imagePlacementToTransport(
+          slide.content_image ?? normalizeImagePlacement({}),
+        ),
       },
     };
   }

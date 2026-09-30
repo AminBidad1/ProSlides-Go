@@ -1,5 +1,11 @@
 import { normalizeDigits } from "../../../../shared/forms/numbers.ts";
 import {
+  emptyImagePlacement,
+  imagePlacementEquals,
+  trimImagePlacement,
+  type ImagePlacement,
+} from "../../../../shared/media/image.ts";
+import {
   QUESTION_LIMITS,
   validateEditorQuestion,
   type EditorQuestion,
@@ -14,7 +20,7 @@ export type QuestionDraftOption = {
   id: string;
   text: string;
   isCorrect: boolean;
-  imageUrl: string;
+  image: ImagePlacement;
 };
 
 export type QuestionDraft = {
@@ -31,7 +37,7 @@ export type QuestionDraft = {
   timeInput: string;
   minPointsInput: string;
   maxPointsInput: string;
-  imageUrl: string;
+  image: ImagePlacement;
   fasterAnswersMorePoints: boolean;
   partialScoring: boolean;
   options: QuestionDraftOption[];
@@ -46,7 +52,7 @@ type QuestionDraftAction =
   | { type: "reset"; draft: QuestionDraft }
   | { type: "saved"; draft: QuestionDraft }
   | { type: "question-text"; value: string }
-  | { type: "question-image"; value: string }
+  | { type: "question-image"; value: ImagePlacement }
   | { type: "time"; value: string }
   | { type: "min-points"; value: string }
   | { type: "max-points"; value: string }
@@ -56,7 +62,7 @@ type QuestionDraftAction =
   | { type: "add-option"; optionId: string }
   | { type: "delete-option"; optionId: string }
   | { type: "option-text"; optionId: string; value: string }
-  | { type: "option-image"; optionId: string; value: string }
+  | { type: "option-image"; optionId: string; value: ImagePlacement }
   | { type: "toggle-correct"; optionId: string }
   | { type: "move-option"; from: number; to: number };
 
@@ -77,8 +83,6 @@ const normalizeQuestion = (question: EditorQuestion): EditorQuestion => ({
   ...question,
   text: question.question_text ?? question.text ?? "",
   question_text: question.question_text ?? question.text ?? "",
-  image_url: question.question_image || question.image_url || "",
-  question_image: question.question_image || question.image_url || "",
   time_limit: Number(question.question_time ?? question.time_limit ?? 10),
   question_time: Number(question.question_time ?? question.time_limit ?? 10),
 });
@@ -97,7 +101,7 @@ export const createQuestionDraft = (slide: EditorSlide): QuestionDraft | null =>
     isCorrect:
       (question.evaluation_mode ?? "correctness") === "correctness" &&
       option.is_correct === true,
-    imageUrl: option.image_url || "",
+    image: option.image,
   }));
   const correctOptionCount = options.filter((option) => option.isCorrect).length;
 
@@ -119,7 +123,7 @@ export const createQuestionDraft = (slide: EditorSlide): QuestionDraft | null =>
     timeInput: formatInteger(question.question_time),
     minPointsInput: formatInteger(question.min_point),
     maxPointsInput: formatInteger(question.max_point),
-    imageUrl: question.question_image || "",
+    image: question.image,
     fasterAnswersMorePoints: question.faster_answers_more_points === true,
     partialScoring:
       question.question_type === "multiple" &&
@@ -177,7 +181,7 @@ export function questionDraftReducer(
     case "question-text":
       return patchDraft(state, { text: action.value });
     case "question-image":
-      return patchDraft(state, { imageUrl: action.value });
+      return patchDraft(state, { image: action.value });
     case "time":
       return patchDraft(state, { timeInput: action.value });
     case "min-points":
@@ -211,7 +215,7 @@ export function questionDraftReducer(
         isCorrect:
           state.draft.evaluationMode === "correctness" &&
           state.draft.options.length === 0,
-        imageUrl: "",
+        image: emptyImagePlacement(),
       };
       return patchDraft(state, {
         options: [...state.draft.options, nextOption],
@@ -248,7 +252,7 @@ export function questionDraftReducer(
       return patchDraft(state, {
         options: state.draft.options.map((option) =>
           option.id === action.optionId
-            ? { ...option, imageUrl: action.value }
+            ? { ...option, image: action.value }
             : option,
         ),
       });
@@ -326,7 +330,7 @@ export const questionDraftEquals = (
   left.timeInput === right.timeInput &&
   left.minPointsInput === right.minPointsInput &&
   left.maxPointsInput === right.maxPointsInput &&
-  left.imageUrl === right.imageUrl &&
+  imagePlacementEquals(left.image, right.image) &&
   left.fasterAnswersMorePoints === right.fasterAnswersMorePoints &&
   left.partialScoring === right.partialScoring &&
   left.options.length === right.options.length &&
@@ -336,7 +340,7 @@ export const questionDraftEquals = (
       option.id === other?.id &&
       option.text === other.text &&
       option.isCorrect === other.isCorrect &&
-      option.imageUrl === other.imageUrl
+      imagePlacementEquals(option.image, other.image)
     );
   });
 
@@ -358,8 +362,7 @@ const draftQuestionLike = (draft: QuestionDraft) => ({
     draft.scoringMode === "none"
       ? 0
       : parseDraftInteger(draft.maxPointsInput),
-  image_url: draft.imageUrl,
-  question_image: draft.imageUrl,
+  image: draft.image,
   faster_answers_more_points:
     draft.scoringMode === "points" &&
     draft.fasterAnswersMorePoints,
@@ -374,7 +377,7 @@ const draftQuestionLike = (draft: QuestionDraft) => ({
     is_correct:
       draft.evaluationMode === "correctness" &&
       option.isCorrect,
-    image_url: option.imageUrl,
+    image: option.image,
     order: index + 1,
   })),
 });
@@ -411,8 +414,7 @@ export const questionDraftToEditorSlide = (
         : 0,
     max_point:
       draft.scoringMode === "none" ? 0 : maxPoint,
-    image_url: draft.imageUrl.trim(),
-    question_image: draft.imageUrl.trim(),
+    image: trimImagePlacement(draft.image),
     faster_answers_more_points:
       draft.scoringMode === "points" &&
       draft.fasterAnswersMorePoints,
@@ -427,7 +429,7 @@ export const questionDraftToEditorSlide = (
       is_correct:
         draft.evaluationMode === "correctness" &&
         option.isCorrect,
-      image_url: option.imageUrl.trim(),
+      image: trimImagePlacement(option.image),
       order: index + 1,
     })),
   };

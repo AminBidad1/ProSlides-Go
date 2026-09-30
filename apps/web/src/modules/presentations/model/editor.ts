@@ -1,3 +1,7 @@
+import {
+  isOptionalImageURL,
+  type ImagePlacement,
+} from "../../../shared/media/image.ts";
 export type QuestionType = "single" | "multiple";
 export type EvaluationMode = "none" | "correctness";
 export type ScoringMode = "none" | "points";
@@ -7,14 +11,14 @@ export interface EditorOption {
   option_id: string;
   text: string;
   is_correct: boolean;
-  image_url: string;
+  image: ImagePlacement;
   order: number;
 }
 
 export interface EditorTextActivity {
   title: string;
   text: string;
-  image_url: string;
+  image: ImagePlacement;
   max_length?: number;
   max_words?: number;
   max_entry_length?: number;
@@ -35,8 +39,7 @@ export interface EditorQuestion {
   question_time: number;
   min_point: number;
   max_point: number;
-  image_url: string;
-  question_image: string;
+  image: ImagePlacement;
   faster_answers_more_points: boolean;
   partial_scoring: boolean;
   options: EditorOption[];
@@ -54,7 +57,7 @@ export interface EditorSlide {
   text_activity?: EditorTextActivity | null;
   title?: string;
   content_text?: string;
-  content_image_url?: string;
+  content_image?: ImagePlacement;
 }
 
 export interface EditorPresentation {
@@ -88,7 +91,6 @@ import {
   LIVE_CONTENT_LIMITS,
   LIVE_QUESTION_LIMITS,
   LIVE_TEXT_ACTIVITY_LIMITS,
-  isOptionalLiveHttpUrl,
   liveTextLength,
   liveTextLineCount,
 } from "../../../shared/presentation/liveAuthoringPolicy.ts";
@@ -128,7 +130,7 @@ export const validateEditorTextActivity = (
   const issues: TextActivityValidationIssue[] = [];
   const prompt = String(activity.text ?? "").trim();
   const title = String(activity.title ?? "");
-  const imageUrl = String(activity.image_url ?? "");
+  const imageUrl = String(activity.image?.url ?? "");
   const entryBased = activity.aggregation === "entry_frequency";
   const maxLength = Number(
     entryBased ? activity.max_entry_length : activity.max_length,
@@ -176,7 +178,7 @@ export const validateEditorTextActivity = (
       field: "prompt_image",
       message: "آدرس تصویر ابر واژه بیش از حد طولانی است.",
     });
-  } else if (!validOptionalHttpUrl(imageUrl)) {
+  } else if (!isOptionalImageURL(imageUrl)) {
     issues.push({
       code: "image_url_invalid",
       field: "prompt_image",
@@ -239,7 +241,7 @@ export const CONTENT_LIMITS = LIVE_CONTENT_LIMITS;
 type ContentLike = {
   title?: string | null;
   content_text?: string | null;
-  content_image_url?: string | null;
+  content_image?: Partial<ImagePlacement> | null;
 };
 
 type ContentValidationField =
@@ -275,7 +277,6 @@ export type QuestionValidationIssue = {
 
 const textLength = liveTextLength;
 const textLineCount = liveTextLineCount;
-const validOptionalHttpUrl = isOptionalLiveHttpUrl;
 
 export const validateEditorQuestion = (
   question: QuestionLike | null | undefined,
@@ -291,7 +292,7 @@ export const validateEditorQuestion = (
   const issues: QuestionValidationIssue[] = [];
   const text = String(question.text ?? question.question_text ?? "").trim();
   const title = String(question.title ?? "");
-  const imageUrl = String(question.image_url ?? question.question_image ?? "");
+  const imageUrl = String(question.image?.url ?? "");
 
   if (!text) {
     issues.push({
@@ -333,7 +334,7 @@ export const validateEditorQuestion = (
       field: "question_image",
       message: "آدرس تصویر سؤال بیش از حد طولانی است.",
     });
-  } else if (!validOptionalHttpUrl(imageUrl)) {
+  } else if (!isOptionalImageURL(imageUrl)) {
     issues.push({
       code: "question_image_invalid",
       field: "question_image",
@@ -370,7 +371,7 @@ export const validateEditorQuestion = (
   for (const option of options) {
     const id = String(option.option_id ?? "").trim();
     const optionText = String(option.text ?? option.option_text ?? "").trim();
-    const optionImage = String(option.image_url ?? "");
+    const optionImage = String(option.image?.url ?? "");
 
     ids.push(id);
 
@@ -413,7 +414,7 @@ export const validateEditorQuestion = (
         optionId: id || undefined,
         message: "آدرس تصویر گزینه بیش از حد طولانی است.",
       });
-    } else if (!validOptionalHttpUrl(optionImage)) {
+    } else if (!isOptionalImageURL(optionImage)) {
       issues.push({
         code: "option_image_invalid",
         field: "option_image",
@@ -569,7 +570,7 @@ export const validateEditorContent = (
   const value = content ?? {};
   const title = String(value.title ?? "");
   const text = String(value.content_text ?? "");
-  const imageUrl = String(value.content_image_url ?? "");
+  const imageUrl = String(value.content_image?.url ?? "");
   const issues: ContentValidationIssue[] = [];
 
   if (
@@ -618,7 +619,7 @@ export const validateEditorContent = (
       field: "content_image",
       message: "آدرس تصویر بیش از حد طولانی است.",
     });
-  } else if (!validOptionalHttpUrl(imageUrl)) {
+  } else if (!isOptionalImageURL(imageUrl)) {
     issues.push({
       code: "content_image_invalid",
       field: "content_image",

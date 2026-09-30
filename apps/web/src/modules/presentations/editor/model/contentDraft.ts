@@ -1,4 +1,10 @@
 import {
+  emptyImagePlacement,
+  imagePlacementEquals,
+  trimImagePlacement,
+  type ImagePlacement,
+} from "../../../../shared/media/image.ts";
+import {
   validateEditorContent,
   type ContentValidationIssue,
   type EditorSlide,
@@ -10,7 +16,7 @@ export type ContentDraft = {
   order: number;
   title: string;
   text: string;
-  imageUrl: string;
+  image: ImagePlacement;
 };
 
 type ContentDraftState = {
@@ -23,7 +29,7 @@ type ContentDraftAction =
   | { type: "saved"; draft: ContentDraft }
   | { type: "title"; value: string }
   | { type: "text"; value: string }
-  | { type: "image"; value: string };
+  | { type: "image"; value: ImagePlacement };
 
 export const createContentDraft = (
   slide: EditorSlide,
@@ -35,7 +41,7 @@ export const createContentDraft = (
     order: slide.order,
     title: slide.title || "",
     text: slide.content_text || "",
-    imageUrl: slide.content_image_url || "",
+    image: slide.content_image ?? emptyImagePlacement(),
   };
 };
 
@@ -60,7 +66,7 @@ export function contentDraftReducer(
     case "text":
       return patchDraft(state, { text: action.value });
     case "image":
-      return patchDraft(state, { imageUrl: action.value });
+      return patchDraft(state, { image: action.value });
     default:
       return state;
   }
@@ -75,7 +81,7 @@ export const contentDraftEquals = (
   left.order === right.order &&
   left.title === right.title &&
   left.text === right.text &&
-  left.imageUrl === right.imageUrl;
+  imagePlacementEquals(left.image, right.image);
 
 export const validateContentDraft = (
   draft: ContentDraft,
@@ -83,7 +89,7 @@ export const validateContentDraft = (
   validateEditorContent({
     title: draft.title,
     content_text: draft.text,
-    content_image_url: draft.imageUrl,
+    content_image: draft.image,
   });
 
 export const contentDraftToEditorSlide = (
@@ -105,6 +111,6 @@ export const contentDraftToEditorSlide = (
     question: null,
     title: draft.title,
     content_text: draft.text,
-    content_image_url: draft.imageUrl.trim(),
+    content_image: trimImagePlacement(draft.image),
   };
 };

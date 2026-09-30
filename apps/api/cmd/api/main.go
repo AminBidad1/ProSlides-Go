@@ -124,7 +124,10 @@ func main() {
 			liveService := live.NewService(liveStore, live.DeductionPolicy{})
 			liveBroker = live.NewEventBroker(liveStore, 250*time.Millisecond, 256)
 			identity.NewHTTP(identityService, cfg.Environment == "production", redisClient).WithTrustedProxyCIDRs(cfg.TrustedProxyCIDRs).Register(m)
-			presentations.NewHTTP(identityService, presentations.NewPostgresStore(postgresClient.Pool())).Register(m)
+			presentations.NewHTTP(
+				identityService,
+				presentations.NewPostgresStore(postgresClient.Pool()),
+			).WithImageAssets(mediaService).Register(m)
 			media.NewHTTP(identityService, mediaService).Register(m)
 			reports.NewHTTP(identityService, reports.NewPostgresStore(postgresClient.Pool())).Register(m)
 			live.NewHTTP(liveService, liveBroker, identityService, cfg.Environment == "production", redisClient).

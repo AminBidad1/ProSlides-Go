@@ -10,6 +10,10 @@ import {
 } from "lucide-react";
 
 import { formatPersianNumber } from "../../../../shared/forms/numbers.ts";
+import {
+  ImagePlacementImage,
+} from "../../../../shared/media/ImagePlacementImage.tsx";
+import type { ImagePlacement } from "../../../../shared/media/image.ts";
 import { presentationTheme } from "../../../../shared/styles/presentationTheme.ts";
 import { useOptionalDesignDraft } from "../model/useDesignDraftContext.ts";
 import { createQuestionDraft } from "../model/questionDraft.ts";
@@ -30,11 +34,13 @@ type QuestionCanvasProps = {
 };
 
 function PreviewImage({
-  src,
+  image,
+  preferred,
   alt,
   className,
 }: {
-  src: string;
+  image: ImagePlacement;
+  preferred: "thumbnail" | "medium" | "large" | "master";
   alt: string;
   className: string;
 }) {
@@ -42,7 +48,7 @@ function PreviewImage({
 
   useEffect(() => {
     setFailed(false);
-  }, [src]);
+  }, [image.url, image.assetId]);
 
   if (failed) {
     return (
@@ -60,8 +66,9 @@ function PreviewImage({
   }
 
   return (
-    <img
-      src={src}
+    <ImagePlacementImage
+      image={image}
+      preferred={preferred}
       alt={alt}
       className={className}
       onError={() => setFailed(true)}
@@ -197,10 +204,11 @@ export default function QuestionCanvas({
             </h2>
           </div>
 
-          {preview.questionImageUrl && (
+          {preview.questionImage.url && (
             <PreviewImage
-              src={preview.questionImageUrl}
-              alt="تصویر سؤال"
+              image={preview.questionImage}
+              preferred="medium"
+              alt={preview.questionImage.altText || "تصویر سؤال"}
               className="mx-auto mt-4 max-h-48 w-auto max-w-full rounded-2xl border border-[color:var(--live-border)] bg-black/10 object-contain shadow-lg"
             />
           )}
@@ -236,10 +244,11 @@ export default function QuestionCanvas({
                     {option.isCorrect ? "✓" : formatPersianNumber(option.position)}
                   </span>
 
-                  {option.imageUrl && (
+                  {option.image.url && (
                     <PreviewImage
-                      src={option.imageUrl}
-                      alt=""
+                      image={option.image}
+                      preferred="thumbnail"
+                      alt={option.image.altText}
                       className="size-14 shrink-0 rounded-xl border border-[color:var(--live-border)] bg-black/10 object-cover"
                     />
                   )}

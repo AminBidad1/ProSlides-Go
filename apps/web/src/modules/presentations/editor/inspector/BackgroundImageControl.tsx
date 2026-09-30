@@ -6,7 +6,7 @@ import {
 import { useState } from "react";
 
 import { Button } from "../../../../shared/ui/primitives/Button.tsx";
-import ImagePickerDialog from "./ImagePickerDialog.tsx";
+import LazyImagePickerDialog from "./LazyImagePickerDialog.tsx";
 import ImageUrlDialog from "./ImageUrlDialog.tsx";
 
 type BackgroundImageControlProps = {
@@ -104,7 +104,7 @@ export default function BackgroundImageControl({
         </div>
       </div>
 
-      <ImagePickerDialog
+      <LazyImagePickerDialog
         open={pickerOpen}
         matteColor={backgroundColor}
         currentAssetId={assetId}

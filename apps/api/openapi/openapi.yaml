@@ -1177,6 +1177,12 @@ components:
         title: { type: string, maxLength: 80 }
         text: { type: string, minLength: 1, maxLength: 180 }
         image_url: { type: string, maxLength: 4096 }
+        image_asset_id: { type: string, format: uuid }
+        image_width: { type: integer, minimum: 1, maximum: 8192 }
+        image_height: { type: integer, minimum: 1, maximum: 8192 }
+        image_alt_text: { type: string, maxLength: 300 }
+        image_focal_x: { type: number, format: double, minimum: 0, maximum: 1 }
+        image_focal_y: { type: number, format: double, minimum: 0, maximum: 1 }
     ChoiceResponsePolicy:
       type: object
       additionalProperties: false
@@ -1197,6 +1203,12 @@ components:
         id: { type: string, minLength: 1, maxLength: 128 }
         text: { type: string, minLength: 1, maxLength: 75 }
         image_url: { type: string, maxLength: 4096 }
+        image_asset_id: { type: string, format: uuid }
+        image_width: { type: integer, minimum: 1, maximum: 8192 }
+        image_height: { type: integer, minimum: 1, maximum: 8192 }
+        image_alt_text: { type: string, maxLength: 300 }
+        image_focal_x: { type: number, format: double, minimum: 0, maximum: 1 }
+        image_focal_y: { type: number, format: double, minimum: 0, maximum: 1 }
         order: { type: integer, minimum: 1 }
     ChoiceEvaluationPolicy:
       type: object
@@ -1240,6 +1252,12 @@ components:
         title: { type: string, maxLength: 120 }
         text: { type: string, maxLength: 600 }
         image_url: { type: string, maxLength: 4096 }
+        image_asset_id: { type: string, format: uuid }
+        image_width: { type: integer, minimum: 1, maximum: 8192 }
+        image_height: { type: integer, minimum: 1, maximum: 8192 }
+        image_alt_text: { type: string, maxLength: 300 }
+        image_focal_x: { type: number, format: double, minimum: 0, maximum: 1 }
+        image_focal_y: { type: number, format: double, minimum: 0, maximum: 1 }
     AnswerRequest:
       type: object
       additionalProperties: false

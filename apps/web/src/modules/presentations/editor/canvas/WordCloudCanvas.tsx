@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Cloud, Clock3, MessageCircleMore } from "lucide-react";
 
 import { formatPersianNumber } from "../../../../shared/forms/numbers.ts";
+import { ImagePlacementImage } from "../../../../shared/media/ImagePlacementImage.tsx";
 import { presentationTheme } from "../../../../shared/styles/presentationTheme.ts";
 import { WordCloudView } from "../../../../shared/ui/WordCloudView.tsx";
 import type { EditorSlide } from "../../model/editor.ts";
@@ -135,10 +136,11 @@ export default function WordCloudCanvas({
             {draft.prompt || "پرسش ابر واژه اینجا نمایش داده می‌شود"}
           </h2>
 
-          {draft.imageUrl ? (
-            <img
-              src={draft.imageUrl}
-              alt=""
+          {draft.image.url ? (
+            <ImagePlacementImage
+              image={draft.image}
+              preferred="medium"
+              alt={draft.image.altText || "تصویر پرسش ابر واژه"}
               className="mt-4 max-h-32 max-w-full rounded-2xl object-contain"
             />
           ) : null}

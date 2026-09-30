@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { emptyImagePlacement } from "../src/shared/media/image.ts";
 import {
   buildSlideListItems,
   getSlideListTitle,
@@ -30,13 +31,12 @@ const question = {
     question_time: 10,
     min_point: 0,
     max_point: 100,
-    image_url: "",
-    question_image: "",
+    image: emptyImagePlacement(),
     faster_answers_more_points: false,
     partial_scoring: false,
     options: [
-      { option_id: "a", text: "الف", is_correct: true, image_url: "", order: 1 },
-      { option_id: "b", text: "ب", is_correct: false, image_url: "", order: 2 },
+      { option_id: "a", text: "الف", is_correct: true, image: emptyImagePlacement(), order: 1 },
+      { option_id: "b", text: "ب", is_correct: false, image: emptyImagePlacement(), order: 2 },
     ],
   },
 };
@@ -50,7 +50,7 @@ const content = {
   question: null,
   title: "محتوا",
   content_text: "متن",
-  content_image_url: "",
+  content_image: emptyImagePlacement(),
 };
 
 test("item rail contains only persisted items and keeps post-Activity flow as metadata", () => {

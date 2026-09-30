@@ -419,8 +419,10 @@ func TestStoredV1ActivityWithLegacyMediaURLRemainsDecodable(t *testing.T) {
 		SchemaVersion: ActivitySchemaVersion1,
 		ActivityKind:  ActivityKindChoice,
 		Prompt: ActivityPrompt{
-			Text:     "Legacy media",
-			ImageURL: "data:image/png;base64,AAAA",
+			Text: "Legacy media",
+			ImagePlacement: ImagePlacement{
+				ImageURL: "data:image/png;base64,AAAA",
+			},
 		},
 		Response: ActivityResponsePolicy{
 			Selection: ChoiceSelectionSingle,

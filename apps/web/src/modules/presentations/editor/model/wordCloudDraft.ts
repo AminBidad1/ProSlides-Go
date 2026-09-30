@@ -1,4 +1,10 @@
 import {
+  emptyImagePlacement,
+  imagePlacementEquals,
+  trimImagePlacement,
+  type ImagePlacement,
+} from "../../../../shared/media/image.ts";
+import {
   validateEditorTextActivity,
   type EditorSlide,
   type TextActivityValidationIssue,
@@ -10,7 +16,7 @@ export type WordCloudDraft = {
   order: number;
   title: string;
   prompt: string;
-  imageUrl: string;
+  image: ImagePlacement;
   maxLength: number;
   maxWords: number;
   durationSeconds: number;
@@ -26,7 +32,7 @@ type WordCloudDraftAction =
   | { type: "saved"; draft: WordCloudDraft }
   | { type: "title"; value: string }
   | { type: "prompt"; value: string }
-  | { type: "image"; value: string }
+  | { type: "image"; value: ImagePlacement }
   | { type: "max-length"; value: number }
   | { type: "max-words"; value: number }
   | { type: "duration"; value: number };
@@ -49,7 +55,7 @@ export const createWordCloudDraft = (
     order: slide.order,
     title: slide.text_activity.title || "",
     prompt: slide.text_activity.text || "",
-    imageUrl: slide.text_activity.image_url || "",
+    image: slide.text_activity.image ?? emptyImagePlacement(),
     maxLength: Number(
       slide.text_activity.aggregation === "entry_frequency"
         ? slide.text_activity.max_entry_length || 30
@@ -85,7 +91,7 @@ export function wordCloudDraftReducer(
     case "prompt":
       return patchDraft(state, { prompt: action.value });
     case "image":
-      return patchDraft(state, { imageUrl: action.value });
+      return patchDraft(state, { image: action.value });
     case "max-length":
       return patchDraft(state, { maxLength: action.value });
     case "max-words":
@@ -104,7 +110,7 @@ export const wordCloudDraftEquals = (
   left.order === right.order &&
   left.title === right.title &&
   left.prompt === right.prompt &&
-  left.imageUrl === right.imageUrl &&
+  imagePlacementEquals(left.image, right.image) &&
   left.maxLength === right.maxLength &&
   left.maxWords === right.maxWords &&
   left.durationSeconds === right.durationSeconds;
@@ -115,7 +121,7 @@ export const validateWordCloudDraft = (
   validateEditorTextActivity({
     title: draft.title,
     text: draft.prompt,
-    image_url: draft.imageUrl,
+    image: draft.image,
     max_entry_length: draft.maxLength,
     max_entries: draft.maxWords,
     time_limit: draft.durationSeconds,
@@ -142,7 +148,7 @@ export const wordCloudDraftToEditorSlide = (
     text_activity: {
       title: draft.title,
       text: draft.prompt,
-      image_url: draft.imageUrl.trim(),
+      image: trimImagePlacement(draft.image),
       max_entry_length: draft.maxLength,
       max_entries: draft.maxWords,
       time_limit: draft.durationSeconds,

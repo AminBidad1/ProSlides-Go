@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { emptyImagePlacement } from "../src/shared/media/image.ts";
 import {
   appendPresentationSlide,
   convertSlideToContent,
@@ -26,7 +27,7 @@ const questionSlide = {
   show_leaderboard_after: true,
   title: "",
   content_text: "",
-  content_image_url: "",
+  content_image: emptyImagePlacement(),
   question: {
     question_id: "slide-1",
     title: "",
@@ -37,14 +38,13 @@ const questionSlide = {
     max_point: 100,
     time_limit: 20,
     question_time: 20,
-    image_url: "",
-    question_image: "",
+    image: emptyImagePlacement(),
     faster_answers_more_points: false,
     partial_scoring: true,
     options: [
-      { option_id: "a", text: "الف", is_correct: true, image_url: "", order: 1 },
-      { option_id: "b", text: "ب", is_correct: true, image_url: "", order: 2 },
-      { option_id: "c", text: "ج", is_correct: false, image_url: "", order: 3 },
+      { option_id: "a", text: "الف", is_correct: true, image: emptyImagePlacement(), order: 1 },
+      { option_id: "b", text: "ب", is_correct: true, image: emptyImagePlacement(), order: 2 },
+      { option_id: "c", text: "ج", is_correct: false, image: emptyImagePlacement(), order: 3 },
     ],
   },
 };
@@ -113,7 +113,7 @@ test("question conversion repairs missing options and missing correct answers", 
           option_id: "a",
           text: "الف",
           is_correct: false,
-          image_url: "",
+          image: emptyImagePlacement(),
           order: 8,
         },
       ],

@@ -8,6 +8,12 @@ import {
 
 import { ApiError } from "../../../../shared/api/http.ts";
 import { formatPersianNumber } from "../../../../shared/forms/numbers.ts";
+import {
+  emptyImagePlacement,
+  imagePlacementFromAsset,
+  imagePlacementFromExternalUrl,
+} from "../../../../shared/media/image.ts";
+import { ImagePlacementImage } from "../../../../shared/media/ImagePlacementImage.tsx";
 import Notice, {
   type NoticeTone,
 } from "../../../../shared/ui/Notice.tsx";
@@ -24,6 +30,7 @@ import {
   validateContentDraft,
 } from "../model/contentDraft.ts";
 import { useRequiredContentDraft } from "../model/useContentDraftContext.ts";
+import LazyImagePickerDialog from "./LazyImagePickerDialog.tsx";
 import ImageUrlDialog from "./ImageUrlDialog.tsx";
 
 type ContentInspectorProps = {
@@ -90,7 +97,8 @@ export default function ContentInspector({
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [showValidation, setShowValidation] = useState(false);
   const [conflictPending, setConflictPending] = useState(false);
-  const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [imagePickerOpen, setImagePickerOpen] = useState(false);
+  const [urlDialogOpen, setUrlDialogOpen] = useState(false);
   const [confirmState, setConfirmState] = useState<ConfirmState>({
     kind: "closed",
   });
@@ -115,12 +123,12 @@ export default function ContentInspector({
     if (
       !draft.title.trim() &&
       !draft.text.trim() &&
-      !draft.imageUrl.trim() &&
+      !draft.image.url.trim() &&
       !saving
     ) {
       titleRef.current?.focus();
     }
-  }, [draft.imageUrl, draft.slideId, draft.text, draft.title, saving]);
+  }, [draft.image.url, draft.slideId, draft.text, draft.title, saving]);
 
   const notify = (
     message: string,
@@ -357,17 +365,18 @@ export default function ContentInspector({
                   size="sm"
                   className="shrink-0"
                   disabled={saving || conflictPending}
-                  onClick={() => setImageDialogOpen(true)}
+                  onClick={() => setImagePickerOpen(true)}
                 >
                   <ImageIcon aria-hidden="true" />
-                  {draft.imageUrl ? "تغییر تصویر" : "افزودن تصویر"}
+                  {draft.image.url ? "تغییر تصویر" : "افزودن تصویر"}
                 </Button>
               </div>
 
-              {draft.imageUrl && (
+              {draft.image.url && (
                 <div className="mt-3 flex items-center gap-3 rounded-panel border border-border-subtle bg-canvas p-2">
-                  <img
-                    src={draft.imageUrl}
+                  <ImagePlacementImage
+                    image={draft.image}
+                    preferred="thumbnail"
                     alt=""
                     className="size-20 shrink-0 rounded-control bg-surface object-cover"
                   />
@@ -375,7 +384,9 @@ export default function ContentInspector({
                     dir="ltr"
                     className="min-w-0 flex-1 truncate text-xs text-content-muted"
                   >
-                    {draft.imageUrl}
+                    {draft.image.assetId
+                      ? "تصویر ذخیره‌شده در کتابخانه شما"
+                      : draft.image.url}
                   </span>
                   <Button
                     variant="ghost"
@@ -383,7 +394,7 @@ export default function ContentInspector({
                     disabled={saving || conflictPending}
                     aria-label="حذف تصویر اسلاید محتوا"
                     className="shrink-0 text-danger"
-                    onClick={() => setImage("")}
+                    onClick={() => setImage(emptyImagePlacement())}
                   >
                     <X aria-hidden="true" />
                   </Button>
@@ -453,13 +464,23 @@ export default function ContentInspector({
         </footer>
       </aside>
 
+      <LazyImagePickerDialog
+        open={imagePickerOpen}
+        currentAssetId={draft.image.assetId}
+        title="انتخاب تصویر اسلاید محتوا"
+        description="تصویر جدید آپلود کنید یا از تصاویر قبلی خودتان استفاده کنید."
+        onClose={() => setImagePickerOpen(false)}
+        onSelect={(asset) => setImage(imagePlacementFromAsset(asset))}
+        onUseExternalUrl={() => setUrlDialogOpen(true)}
+      />
+
       <ImageUrlDialog
-        open={imageDialogOpen}
-        initialUrl={draft.imageUrl}
-        title="تصویر اسلاید محتوا"
+        open={urlDialogOpen}
+        initialUrl={draft.image.assetId ? "" : draft.image.url}
+        title="استفاده از لینک تصویر اسلاید محتوا"
         maxLength={CONTENT_LIMITS.imageUrl}
-        onClose={() => setImageDialogOpen(false)}
-        onConfirm={setImage}
+        onClose={() => setUrlDialogOpen(false)}
+        onConfirm={(url) => setImage(imagePlacementFromExternalUrl(url))}
       />
 
       <ConfirmDialog

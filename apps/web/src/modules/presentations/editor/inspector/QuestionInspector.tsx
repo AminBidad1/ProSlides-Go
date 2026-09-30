@@ -8,6 +8,13 @@ import {
 
 import { ApiError } from "../../../../shared/api/http.ts";
 import { formatPersianNumber } from "../../../../shared/forms/numbers.ts";
+import {
+  emptyImagePlacement,
+  imagePlacementFromAsset,
+  imagePlacementFromExternalUrl,
+  type ImagePlacement,
+} from "../../../../shared/media/image.ts";
+import { ImagePlacementImage } from "../../../../shared/media/ImagePlacementImage.tsx";
 import Notice from "../../../../shared/ui/Notice.tsx";
 import { Button } from "../../../../shared/ui/primitives/Button.tsx";
 import { ConfirmDialog } from "../../../../shared/ui/primitives/ConfirmDialog.tsx";
@@ -22,6 +29,7 @@ import {
   validateQuestionDraft,
 } from "../model/questionDraft.ts";
 import { useRequiredQuestionDraft } from "../model/useQuestionDraftContext.ts";
+import LazyImagePickerDialog from "./LazyImagePickerDialog.tsx";
 import ImageUrlDialog from "./ImageUrlDialog.tsx";
 import QuestionOptionsEditor from "./QuestionOptionsEditor.tsx";
 
@@ -114,6 +122,8 @@ function QuestionInspectorInner({
     kind: "closed",
   });
   const [imageTarget, setImageTarget] = useState<ImageTarget>(null);
+  const [imagePickerOpen, setImagePickerOpen] = useState(false);
+  const [urlDialogOpen, setUrlDialogOpen] = useState(false);
   const questionInputRef = useRef<HTMLTextAreaElement>(null);
 
   const validationIssues = useMemo(
@@ -227,20 +237,25 @@ function QuestionInspectorInner({
     onClose(true);
   };
 
-  const currentImageUrl =
+  const currentImage: ImagePlacement =
     imageTarget?.kind === "question"
-      ? draft.imageUrl
+      ? draft.image
       : imageTarget?.kind === "option"
         ? draft.options.find((option) => option.id === imageTarget.optionId)
-            ?.imageUrl || ""
-        : "";
+            ?.image ?? emptyImagePlacement()
+        : emptyImagePlacement();
 
-  const applyImage = (url: string) => {
+  const applyImage = (image: ImagePlacement) => {
     if (imageTarget?.kind === "question") {
-      setQuestionImage(url);
+      setQuestionImage(image);
     } else if (imageTarget?.kind === "option") {
-      setOptionImage(imageTarget.optionId, url);
+      setOptionImage(imageTarget.optionId, image);
     }
+  };
+
+  const openImagePicker = (target: Exclude<ImageTarget, null>) => {
+    setImageTarget(target);
+    setImagePickerOpen(true);
   };
 
   const questionTextError = issueFor(visibleIssues, "question_text");
@@ -364,17 +379,18 @@ function QuestionInspectorInner({
                   className="shrink-0"
                   disabled={isSaving || conflictPending}
                   aria-label={isPoll ? "افزودن یا تغییر تصویر نظرسنجی" : "افزودن یا تغییر تصویر سؤال"}
-                  onClick={() => setImageTarget({ kind: "question" })}
+                  onClick={() => openImagePicker({ kind: "question" })}
                 >
                   <ImageIcon aria-hidden="true" />
                   تصویر
                 </Button>
               </div>
 
-              {draft.imageUrl && (
+              {draft.image.url && (
                 <div className="mt-3 flex items-center gap-3 rounded-panel border border-border-subtle bg-canvas p-2">
-                  <img
-                    src={draft.imageUrl}
+                  <ImagePlacementImage
+                    image={draft.image}
+                    preferred="thumbnail"
                     alt=""
                     className="size-16 shrink-0 rounded-control bg-surface object-cover"
                   />
@@ -382,7 +398,7 @@ function QuestionInspectorInner({
                     dir="ltr"
                     className="min-w-0 flex-1 truncate text-xs text-content-muted"
                   >
-                    {draft.imageUrl}
+                    {draft.image.url}
                   </span>
                   <Button
                     variant="ghost"
@@ -390,7 +406,7 @@ function QuestionInspectorInner({
                     disabled={isSaving || conflictPending}
                     aria-label={isPoll ? "حذف تصویر نظرسنجی" : "حذف تصویر سؤال"}
                     className="shrink-0 text-danger"
-                    onClick={() => setQuestionImage("")}
+                    onClick={() => setQuestionImage(emptyImagePlacement())}
                   >
                     <X aria-hidden="true" />
                   </Button>
@@ -415,9 +431,11 @@ function QuestionInspectorInner({
               onToggleCorrect={toggleCorrect}
               onMove={moveOption}
               onImage={(optionId) =>
-                setImageTarget({ kind: "option", optionId })
+                openImagePicker({ kind: "option", optionId })
               }
-              onRemoveImage={(optionId) => setOptionImage(optionId, "")}
+              onRemoveImage={(optionId) =>
+                setOptionImage(optionId, emptyImagePlacement())
+              }
             />
 
             <section
@@ -722,18 +740,39 @@ function QuestionInspectorInner({
         </footer>
       </aside>
 
-      <ImageUrlDialog
-        open={imageTarget !== null}
-        initialUrl={currentImageUrl}
+      <LazyImagePickerDialog
+        open={imagePickerOpen}
+        currentAssetId={currentImage.assetId}
         title={
           imageTarget?.kind === "question"
             ? isPoll
-              ? "تصویر نظرسنجی"
-              : "تصویر سؤال"
-            : "تصویر گزینه"
+              ? "انتخاب تصویر نظرسنجی"
+              : "انتخاب تصویر سؤال"
+            : "انتخاب تصویر گزینه"
         }
-        onClose={() => setImageTarget(null)}
-        onConfirm={applyImage}
+        description="تصویر جدید آپلود کنید یا از تصاویر قبلی خودتان استفاده کنید."
+        onClose={() => setImagePickerOpen(false)}
+        onSelect={(asset) => applyImage(imagePlacementFromAsset(asset))}
+        onUseExternalUrl={() => setUrlDialogOpen(true)}
+      />
+
+      <ImageUrlDialog
+        open={urlDialogOpen}
+        initialUrl={currentImage.assetId ? "" : currentImage.url}
+        title={
+          imageTarget?.kind === "question"
+            ? isPoll
+              ? "استفاده از لینک تصویر نظرسنجی"
+              : "استفاده از لینک تصویر سؤال"
+            : "استفاده از لینک تصویر گزینه"
+        }
+        onClose={() => {
+          setUrlDialogOpen(false);
+          setImageTarget(null);
+        }}
+        onConfirm={(url) =>
+          applyImage(imagePlacementFromExternalUrl(url))
+        }
       />
 
       <ConfirmDialog

@@ -28,7 +28,7 @@ import {
   prepareImageUpload,
 } from "../lib/prepareImageUpload.ts";
 
-type ImagePickerDialogProps = {
+export type ImagePickerDialogProps = {
   open: boolean;
   currentAssetId?: string;
   matteColor?: string;

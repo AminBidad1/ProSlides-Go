@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { emptyImagePlacement } from "../src/shared/media/image.ts";
 import { presentationTheme } from "../src/shared/styles/presentationTheme.ts";
 import {
   createQuestionDraft,
@@ -26,14 +27,13 @@ const slide = {
     question_time: 30,
     min_point: 20,
     max_point: 100,
-    image_url: "",
-    question_image: "",
+    image: emptyImagePlacement(),
     faster_answers_more_points: true,
     partial_scoring: true,
     options: [
-      { option_id: "a", text: "الف", is_correct: true, image_url: "", order: 1 },
-      { option_id: "b", text: "ب", is_correct: false, image_url: "", order: 2 },
-      { option_id: "c", text: "ج", is_correct: true, image_url: "", order: 3 },
+      { option_id: "a", text: "الف", is_correct: true, image: emptyImagePlacement(), order: 1 },
+      { option_id: "b", text: "ب", is_correct: false, image: emptyImagePlacement(), order: 2 },
+      { option_id: "c", text: "ج", is_correct: true, image: emptyImagePlacement(), order: 3 },
     ],
   },
 };

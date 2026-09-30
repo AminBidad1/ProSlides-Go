@@ -467,7 +467,31 @@ test("register, create a presentation, and open its report @critical", async ({ 
     name: "افزودن یا تغییر تصویر سؤال",
   });
   await questionImageTrigger.click();
-  const imageDialog = page.getByRole("dialog", { name: "تصویر سؤال" });
+  const questionMediaPicker = page.getByRole("dialog", {
+    name: "انتخاب تصویر سؤال",
+  });
+  await expect(questionMediaPicker).toBeVisible();
+  await expect(
+    questionMediaPicker.getByRole("button", {
+      name: "انتخاب فایل",
+      exact: true,
+    }),
+  ).toBeFocused();
+  await expectAccessible(page, "question image media picker");
+  await page.keyboard.press("Escape");
+  await expect(questionMediaPicker).toBeHidden();
+  await expect(questionImageTrigger).toBeFocused();
+
+  await questionImageTrigger.click();
+  await expect(questionMediaPicker).toBeVisible();
+  await questionMediaPicker
+    .getByRole("button", { name: "استفاده از لینک خارجی" })
+    .click();
+  await expect(questionMediaPicker).toBeHidden();
+
+  const imageDialog = page.getByRole("dialog", {
+    name: "استفاده از لینک تصویر سؤال",
+  });
   const imageUrlInput = imageDialog.getByRole("textbox", {
     name: "آدرس تصویر",
   });
@@ -475,7 +499,6 @@ test("register, create a presentation, and open its report @critical", async ({ 
   await expect(imageUrlInput).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(imageDialog).toBeHidden();
-  await expect(questionImageTrigger).toBeFocused();
 
   const changeTypeButton = page.getByRole("button", { name: "تغییر نوع آیتم" });
   await changeTypeButton.click();

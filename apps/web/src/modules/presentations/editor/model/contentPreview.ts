@@ -1,3 +1,4 @@
+import type { ImagePlacement } from "../../../../shared/media/image.ts";
 import {
   validateContentDraft,
   type ContentDraft,
@@ -6,7 +7,7 @@ import {
 type ContentPreviewModel = {
   title: string;
   text: string;
-  imageUrl: string;
+  image: ImagePlacement;
   hasTitle: boolean;
   hasText: boolean;
   hasImage: boolean;
@@ -18,15 +19,15 @@ export const createContentPreviewModel = (
 ): ContentPreviewModel => {
   const title = draft.title.trim();
   const text = draft.text.trim();
-  const imageUrl = draft.imageUrl.trim();
+  const image = draft.image;
 
   return {
     title,
     text,
-    imageUrl,
+    image,
     hasTitle: Boolean(title),
     hasText: Boolean(text),
-    hasImage: Boolean(imageUrl),
+    hasImage: Boolean(image.url.trim()),
     validationIssueCount: validateContentDraft(draft).length,
   };
 };

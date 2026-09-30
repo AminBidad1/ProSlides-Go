@@ -197,8 +197,10 @@ func TestValidateActivityAndContentRejectUnsafeMediaURLs(t *testing.T) {
 		SchemaVersion: ActivitySchemaVersion1,
 		ActivityKind:  ActivityKindChoice,
 		Prompt: ActivityPrompt{
-			Text:     "Choose",
-			ImageURL: "javascript:alert(1)",
+			Text: "Choose",
+			ImagePlacement: ImagePlacement{
+				ImageURL: "javascript:alert(1)",
+			},
 		},
 		Response: ActivityResponsePolicy{
 			Selection: ChoiceSelectionSingle,

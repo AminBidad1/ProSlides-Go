@@ -46,7 +46,7 @@ func validatePresentationSettings(raw json.RawMessage) error {
 	if value, ok := values["background_image_url"]; ok {
 		var resourceURL string
 		if json.Unmarshal(value, &resourceURL) != nil ||
-			!validOptionalBackgroundImageURL(resourceURL, 4096) {
+			!validOptionalImageURL(resourceURL, 4096) {
 			return errInvalidPresentationSettings
 		}
 	}
@@ -90,23 +90,6 @@ func validatePresentationSettings(raw json.RawMessage) error {
 	return nil
 }
 
-
-func validOptionalBackgroundImageURL(value string, maxRunes int) bool {
-	if utf8.RuneCountInString(value) > maxRunes {
-		return false
-	}
-	value = strings.TrimSpace(value)
-	if value == "" {
-		return true
-	}
-	const prefix = "/api/v1/media/assets/"
-	const suffix = "/content"
-	if strings.HasPrefix(value, prefix) && strings.HasSuffix(value, suffix) {
-		id := strings.TrimSuffix(strings.TrimPrefix(value, prefix), suffix)
-		return validUUID(id)
-	}
-	return validOptionalRemoteURL(value, maxRunes)
-}
 
 func validOptionalRemoteURL(value string, maxRunes int) bool {
 	if utf8.RuneCountInString(value) > maxRunes {

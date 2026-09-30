@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { emptyImagePlacement } from "../src/shared/media/image.ts";
 import {
   createQuestionDraft,
   parseDraftInteger,
@@ -28,13 +29,12 @@ const slide = {
     question_time: 30,
     min_point: 0,
     max_point: 100,
-    image_url: "",
-    question_image: "",
+    image: emptyImagePlacement(),
     faster_answers_more_points: false,
     partial_scoring: false,
     options: [
-      { option_id: "a", text: "تهران", is_correct: true, image_url: "", order: 1 },
-      { option_id: "b", text: "شیراز", is_correct: false, image_url: "", order: 2 },
+      { option_id: "a", text: "تهران", is_correct: true, image: emptyImagePlacement(), order: 1 },
+      { option_id: "b", text: "شیراز", is_correct: false, image: emptyImagePlacement(), order: 2 },
     ],
   },
 };
@@ -82,9 +82,9 @@ test("partial scoring only persists while multiple correct answers make it meani
       question_type: "multiple",
       partial_scoring: true,
       options: [
-        { option_id: "a", text: "الف", is_correct: true, image_url: "", order: 1 },
-        { option_id: "b", text: "ب", is_correct: true, image_url: "", order: 2 },
-        { option_id: "c", text: "ج", is_correct: false, image_url: "", order: 3 },
+        { option_id: "a", text: "الف", is_correct: true, image: emptyImagePlacement(), order: 1 },
+        { option_id: "b", text: "ب", is_correct: true, image: emptyImagePlacement(), order: 2 },
+        { option_id: "c", text: "ج", is_correct: false, image: emptyImagePlacement(), order: 3 },
       ],
     },
   };
@@ -233,4 +233,39 @@ test("draft validation mirrors backend timing, scoring, option and unicode limit
 
   const longPersianText = { ...draft, text: "س".repeat(10_001) };
   assert.ok(validateQuestionDraft(longPersianText).some((issue) => issue.code === "question_text_too_long"));
+});
+
+
+test("question draft preserves reusable image identity and placement metadata", () => {
+  const assetId = "123e4567-e89b-42d3-a456-426614174020";
+  const image = {
+    ...emptyImagePlacement(),
+    url: `/api/v1/media/assets/${assetId}/content`,
+    assetId,
+    width: 1600,
+    height: 900,
+    altText: "نمودار نمونه",
+    focalX: 0.25,
+    focalY: 0.7,
+  };
+  const withImages = {
+    ...slide,
+    question: {
+      ...slide.question,
+      image,
+      options: slide.question.options.map((option, index) => ({
+        ...option,
+        image: index === 0 ? image : emptyImagePlacement(),
+      })),
+    },
+  };
+
+  const draft = createQuestionDraft(withImages);
+  assert.ok(draft);
+  assert.deepEqual(draft.image, image);
+  assert.deepEqual(draft.options[0].image, image);
+
+  const serialized = questionDraftToEditorSlide(draft);
+  assert.deepEqual(serialized.question.image, image);
+  assert.deepEqual(serialized.question.options[0].image, image);
 });

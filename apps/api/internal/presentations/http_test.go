@@ -26,12 +26,37 @@ func (f fakeSessions) Authorize(context.Context, string, string) (identity.User,
 	return identity.User{ID: "owner"}, nil
 }
 
+type fakeImageResolver struct {
+	ownerID string
+	assetID string
+	url     string
+	width   int
+	height  int
+	found   bool
+	err     error
+}
+
+func (f fakeImageResolver) ResolveOwnedImage(
+	_ context.Context,
+	ownerID string,
+	assetID string,
+) (string, int, int, bool, error) {
+	if f.err != nil {
+		return "", 0, 0, false, f.err
+	}
+	if !f.found || ownerID != f.ownerID || assetID != f.assetID {
+		return "", 0, 0, false, nil
+	}
+	return f.url, f.width, f.height, true, nil
+}
+
 type fakeStore struct {
 	p                Presentation
 	err              error
 	owner            string
 	accessCode       string
 	expectedRevision *int64
+	updateCalls       int
 	slideKind         string
 	slideContent      json.RawMessage
 }
@@ -51,6 +76,7 @@ func (f *fakeStore) Create(_ context.Context, owner, title string, _ json.RawMes
 func (f *fakeStore) Update(_ context.Context, _, owner string, patch PresentationPatch) (Presentation, error) {
 	f.owner = owner
 	f.expectedRevision = patch.ExpectedRevision
+	f.updateCalls++
 	title := f.p.Title
 	if patch.Title != nil {
 		title = *patch.Title
@@ -370,5 +396,258 @@ func TestUpdatePresentationRejectsInvalidKnownSettings(t *testing.T) {
 		if result.Code != http.StatusBadRequest {
 			t.Fatalf("body=%s status=%d", body, result.Code)
 		}
+	}
+}
+
+
+func TestCreateSlideCanonicalizesOwnedImagePlacement(t *testing.T) {
+	const assetID = "123e4567-e89b-42d3-a456-426614174000"
+	const canonicalURL = "/api/v1/media/assets/" + assetID + "/content"
+
+	m := http.NewServeMux()
+	store := &fakeStore{}
+	NewHTTP(fakeSessions{}, store).WithImageAssets(fakeImageResolver{
+		ownerID: "owner",
+		assetID: assetID,
+		url:     canonicalURL,
+		width:   1920,
+		height:  1080,
+		found:   true,
+	}).Register(m)
+
+	body := `{
+		"position":0,
+		"kind":"activity",
+		"content":{
+			"schema_version":1,
+			"activity_kind":"choice",
+			"prompt":{
+				"title":"",
+				"text":"Choose",
+				"image_url":"https://example.invalid/client-claimed.jpg",
+				"image_asset_id":"` + assetID + `",
+				"image_width":1,
+				"image_height":1
+			},
+			"response":{"selection":"single","options":[
+				{
+					"id":"a",
+					"text":"A",
+					"image_url":"https://example.invalid/option-claimed.jpg",
+					"image_asset_id":"` + assetID + `",
+					"image_width":2,
+					"image_height":2,
+					"order":1
+				},
+				{"id":"b","text":"B","image_url":"","order":2}
+			]},
+			"evaluation":{"mode":"correctness","correct_option_ids":["a"]},
+			"scoring":{"mode":"points","min_points":0,"max_points":100,"speed_bonus":false,"partial_credit":false},
+			"timing":{"duration_seconds":30},
+			"results":{"show_overall_leaderboard_after":false}
+		}
+	}`
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/api/v1/presentations/p/slides",
+		strings.NewReader(body),
+	)
+	req.AddCookie(&http.Cookie{Name: "proslides_session", Value: "token"})
+	req.Header.Set("X-CSRF-Token", "csrf")
+	result := httptest.NewRecorder()
+	m.ServeHTTP(result, req)
+
+	if result.Code != http.StatusCreated {
+		t.Fatalf("status=%d body=%s", result.Code, result.Body.String())
+	}
+
+	var stored ActivityDefinition
+	if err := json.Unmarshal(store.slideContent, &stored); err != nil {
+		t.Fatal(err)
+	}
+	if stored.Prompt.ImageAssetID != assetID ||
+		stored.Prompt.ImageURL != canonicalURL ||
+		stored.Prompt.ImageWidth != 1920 ||
+		stored.Prompt.ImageHeight != 1080 {
+		t.Fatalf("stored image placement was not canonicalized: %+v", stored.Prompt.ImagePlacement)
+	}
+	if stored.Response.Options[0].ImageAssetID != assetID ||
+		stored.Response.Options[0].ImageURL != canonicalURL ||
+		stored.Response.Options[0].ImageWidth != 1920 ||
+		stored.Response.Options[0].ImageHeight != 1080 {
+		t.Fatalf(
+			"stored option image placement was not canonicalized: %+v",
+			stored.Response.Options[0].ImagePlacement,
+		)
+	}
+}
+
+func TestCreateSlideRejectsImageAssetOutsideOwnerBoundary(t *testing.T) {
+	const assetID = "123e4567-e89b-42d3-a456-426614174001"
+	const canonicalURL = "/api/v1/media/assets/" + assetID + "/content"
+
+	m := http.NewServeMux()
+	store := &fakeStore{}
+	NewHTTP(fakeSessions{}, store).WithImageAssets(fakeImageResolver{
+		ownerID: "another-owner",
+		assetID: assetID,
+		url:     canonicalURL,
+		width:   800,
+		height:  600,
+		found:   true,
+	}).Register(m)
+
+	body := `{
+		"position":0,
+		"kind":"content",
+		"content":{
+			"title":"Owned boundary",
+			"text":"",
+			"image_url":"` + canonicalURL + `",
+			"image_asset_id":"` + assetID + `"
+		}
+	}`
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/api/v1/presentations/p/slides",
+		strings.NewReader(body),
+	)
+	req.AddCookie(&http.Cookie{Name: "proslides_session", Value: "token"})
+	req.Header.Set("X-CSRF-Token", "csrf")
+	result := httptest.NewRecorder()
+	m.ServeHTTP(result, req)
+
+	if result.Code != http.StatusBadRequest ||
+		!strings.Contains(result.Body.String(), "invalid_media_reference") {
+		t.Fatalf("status=%d body=%s", result.Code, result.Body.String())
+	}
+	if len(store.slideContent) != 0 {
+		t.Fatal("cross-owner media reference reached the presentation store")
+	}
+}
+
+
+func TestCreateSlideKeepsInvalidExternalImageAsInvalidRequest(t *testing.T) {
+	m := http.NewServeMux()
+	store := &fakeStore{}
+	NewHTTP(fakeSessions{}, store).Register(m)
+
+	body := `{
+		"position":0,
+		"kind":"content",
+		"content":{
+			"title":"Unsafe image",
+			"text":"",
+			"image_url":"javascript:alert(1)"
+		}
+	}`
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/api/v1/presentations/p/slides",
+		strings.NewReader(body),
+	)
+	req.AddCookie(&http.Cookie{Name: "proslides_session", Value: "token"})
+	req.Header.Set("X-CSRF-Token", "csrf")
+	result := httptest.NewRecorder()
+	m.ServeHTTP(result, req)
+
+	if result.Code != http.StatusBadRequest ||
+		!strings.Contains(result.Body.String(), "invalid_request") {
+		t.Fatalf("status=%d body=%s", result.Code, result.Body.String())
+	}
+	if len(store.slideContent) != 0 {
+		t.Fatal("invalid external image reached the presentation store")
+	}
+}
+
+
+func TestUpdatePresentationCanonicalizesOwnedBackgroundImage(t *testing.T) {
+	const assetID = "123e4567-e89b-42d3-a456-426614174002"
+	const canonicalURL = "/api/v1/media/assets/" + assetID + "/content"
+
+	m := http.NewServeMux()
+	store := &fakeStore{}
+	NewHTTP(fakeSessions{}, store).WithImageAssets(fakeImageResolver{
+		ownerID: "owner",
+		assetID: assetID,
+		url:     canonicalURL,
+		width:   1920,
+		height:  1080,
+		found:   true,
+	}).Register(m)
+
+	body := `{
+		"settings":{
+			"background_image_url":"https://example.invalid/client-claimed.jpg",
+			"background_image_asset_id":"` + assetID + `"
+		}
+	}`
+	req := httptest.NewRequest(
+		http.MethodPatch,
+		"/api/v1/presentations/p",
+		strings.NewReader(body),
+	)
+	req.AddCookie(&http.Cookie{Name: "proslides_session", Value: "token"})
+	req.Header.Set("X-CSRF-Token", "csrf")
+	result := httptest.NewRecorder()
+	m.ServeHTTP(result, req)
+
+	if result.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", result.Code, result.Body.String())
+	}
+	if store.updateCalls != 1 {
+		t.Fatalf("update calls=%d", store.updateCalls)
+	}
+	var updated Presentation
+	if err := json.Unmarshal(result.Body.Bytes(), &updated); err != nil {
+		t.Fatal(err)
+	}
+	var settings map[string]any
+	if err := json.Unmarshal(updated.Settings, &settings); err != nil {
+		t.Fatal(err)
+	}
+	if settings["background_image_url"] != canonicalURL ||
+		settings["background_image_asset_id"] != assetID {
+		t.Fatalf("background image was not canonicalized: %#v", settings)
+	}
+}
+
+func TestUpdatePresentationRejectsBackgroundImageOutsideOwnerBoundary(t *testing.T) {
+	const assetID = "123e4567-e89b-42d3-a456-426614174003"
+	const claimedURL = "/api/v1/media/assets/" + assetID + "/content"
+
+	m := http.NewServeMux()
+	store := &fakeStore{}
+	NewHTTP(fakeSessions{}, store).WithImageAssets(fakeImageResolver{
+		ownerID: "another-owner",
+		assetID: assetID,
+		url:     claimedURL,
+		width:   800,
+		height:  600,
+		found:   true,
+	}).Register(m)
+
+	body := `{
+		"settings":{
+			"background_image_url":"` + claimedURL + `",
+			"background_image_asset_id":"` + assetID + `"
+		}
+	}`
+	req := httptest.NewRequest(
+		http.MethodPatch,
+		"/api/v1/presentations/p",
+		strings.NewReader(body),
+	)
+	req.AddCookie(&http.Cookie{Name: "proslides_session", Value: "token"})
+	req.Header.Set("X-CSRF-Token", "csrf")
+	result := httptest.NewRecorder()
+	m.ServeHTTP(result, req)
+
+	if result.Code != http.StatusBadRequest ||
+		!strings.Contains(result.Body.String(), "invalid_media_reference") {
+		t.Fatalf("status=%d body=%s", result.Code, result.Body.String())
+	}
+	if store.updateCalls != 0 {
+		t.Fatalf("cross-owner background reached store: calls=%d", store.updateCalls)
 	}
 }

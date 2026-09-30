@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import { emptyImagePlacement } from "../src/shared/media/image.ts";
 import {
   editorSlideToDefinition,
   presentationToEditor,
@@ -134,7 +135,7 @@ test("Word Cloud round-trips through the canonical Text Activity transport", () 
     text_activity: {
       title: "نظر جمع",
       text: "سه واژه بنویسید",
-      image_url: "",
+      image: emptyImagePlacement(),
       max_length: 80,
       max_words: 3,
       time_limit: 30,
@@ -265,5 +266,59 @@ test("slide update is one conditional PUT with the canonical definition", async 
   assert.equal(
     JSON.parse(calls[0].init.body).content.response.options[0].id,
     "a",
+  );
+});
+
+
+test("editor transport round-trips reusable image placement metadata", () => {
+  const assetId = "123e4567-e89b-42d3-a456-426614174022";
+  const contentURL = `/api/v1/media/assets/${assetId}/content`;
+  const dto = {
+    ...presentationDTO,
+    slides: [{
+      ...presentationDTO.slides[0],
+      content: {
+        ...presentationDTO.slides[0].content,
+        prompt: {
+          title: "",
+          text: "Choose",
+          image_url: contentURL,
+          image_asset_id: assetId,
+          image_width: 1600,
+          image_height: 900,
+          image_alt_text: "تصویر سؤال",
+          image_focal_x: 0.25,
+          image_focal_y: 0.75,
+        },
+        response: {
+          ...presentationDTO.slides[0].content.response,
+          options: presentationDTO.slides[0].content.response.options.map(
+            (option, index) => index === 0 ? {
+              ...option,
+              image_url: contentURL,
+              image_asset_id: assetId,
+              image_width: 1600,
+              image_height: 900,
+            } : option,
+          ),
+        },
+      },
+    }],
+  };
+
+  const editor = presentationToEditor(dto);
+  const question = editor.slides[0].question;
+  assert.equal(question.image.assetId, assetId);
+  assert.equal(question.image.width, 1600);
+  assert.equal(question.image.focalX, 0.25);
+  assert.equal(question.options[0].image.assetId, assetId);
+
+  const definition = editorSlideToDefinition(editor.slides[0]);
+  assert.equal(definition.content.prompt.image_asset_id, assetId);
+  assert.equal(definition.content.prompt.image_width, 1600);
+  assert.equal(definition.content.prompt.image_focal_y, 0.75);
+  assert.equal(
+    definition.content.response.options[0].image_asset_id,
+    assetId,
   );
 });

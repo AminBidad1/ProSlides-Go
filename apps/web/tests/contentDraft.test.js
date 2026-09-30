@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { emptyImagePlacement } from "../src/shared/media/image.ts";
 import {
   contentDraftEquals,
   contentDraftReducer,
@@ -19,7 +20,7 @@ const slide = {
   question: null,
   title: "عنوان",
   content_text: "متن توضیحی",
-  content_image_url: "",
+  content_image: emptyImagePlacement(),
 };
 
 test("content draft owns title text and image without JSON string dirty checks", () => {
@@ -41,11 +42,11 @@ test("content draft accepts title-only text-only or image-only slides", () => {
   assert.ok(draft);
 
   assert.equal(
-    validateContentDraft({ ...draft, title: "فقط عنوان", text: "", imageUrl: "" }).length,
+    validateContentDraft({ ...draft, title: "فقط عنوان", text: "", image: emptyImagePlacement() }).length,
     0,
   );
   assert.equal(
-    validateContentDraft({ ...draft, title: "", text: "فقط متن", imageUrl: "" }).length,
+    validateContentDraft({ ...draft, title: "", text: "فقط متن", image: emptyImagePlacement() }).length,
     0,
   );
   assert.equal(
@@ -53,12 +54,12 @@ test("content draft accepts title-only text-only or image-only slides", () => {
       ...draft,
       title: "",
       text: "",
-      imageUrl: "https://example.com/image.jpg",
+      image: { ...emptyImagePlacement(), url: "https://example.com/image.jpg" },
     }).length,
     0,
   );
   assert.ok(
-    validateContentDraft({ ...draft, title: "", text: "", imageUrl: "" })
+    validateContentDraft({ ...draft, title: "", text: "", image: emptyImagePlacement() })
       .some((issue) => issue.code === "content_required"),
   );
 });
@@ -103,4 +104,28 @@ test("content serialization preserves authored whitespace and slide revision", (
   assert.equal(serialized.item_kind, "content");
   assert.equal(serialized.activity_kind, undefined);
   assert.equal(serialized.question, null);
+});
+
+
+test("content draft preserves reusable image identity across edits", () => {
+  const assetId = "123e4567-e89b-42d3-a456-426614174021";
+  const image = {
+    ...emptyImagePlacement(),
+    url: `/api/v1/media/assets/${assetId}/content`,
+    assetId,
+    width: 1200,
+    height: 800,
+    altText: "تصویر محتوا",
+    focalX: 0.4,
+    focalY: 0.6,
+  };
+  const draft = createContentDraft({
+    ...slide,
+    content_image: image,
+  });
+  assert.ok(draft);
+
+  const changed = { ...draft, text: "متن ویرایش‌شده" };
+  const serialized = contentDraftToEditorSlide(changed);
+  assert.deepEqual(serialized.content_image, image);
 });

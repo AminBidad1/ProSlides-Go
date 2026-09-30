@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer } from "react";
 
+import type { ImagePlacement } from "../../../../shared/media/image.ts";
 import type { EditorSlide } from "../../model/editor.ts";
 import {
   createWordCloudDraft,
@@ -47,7 +48,7 @@ export function useWordCloudDraft(slide: EditorSlide) {
     markSaved,
     setTitle: useCallback((value: string) => dispatch({ type: "title", value }), []),
     setPrompt: useCallback((value: string) => dispatch({ type: "prompt", value }), []),
-    setImage: useCallback((value: string) => dispatch({ type: "image", value }), []),
+    setImage: useCallback((value: ImagePlacement) => dispatch({ type: "image", value }), []),
     setMaxLength: useCallback((value: number) => dispatch({ type: "max-length", value }), []),
     setMaxWords: useCallback((value: number) => dispatch({ type: "max-words", value }), []),
     setDurationSeconds: useCallback((value: number) => dispatch({ type: "duration", value }), []),

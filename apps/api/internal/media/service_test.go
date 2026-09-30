@@ -378,3 +378,63 @@ func TestUploadImageRejectsOversizedAndCorruptInput(t *testing.T) {
 		t.Fatalf("invalid error = %v", err)
 	}
 }
+
+
+func TestResolveOwnedImageEnforcesOwnerAndPurpose(t *testing.T) {
+	store := newFakeStore()
+	const assetID = "123e4567-e89b-42d3-a456-426614174099"
+	store.assets[assetID] = Asset{
+		ID:       assetID,
+		OwnerID:  "owner-a",
+		Purpose:  PurposeImage,
+		Status:   StatusReady,
+		Width:    1920,
+		Height:   1080,
+	}
+
+	service := NewService(store, NewMemoryObjectStore())
+	url, width, height, found, err := service.ResolveOwnedImage(
+		context.Background(),
+		"owner-a",
+		assetID,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !found ||
+		url != assetContentURL(assetID) ||
+		width != 1920 ||
+		height != 1080 {
+		t.Fatalf(
+			"owned image resolution = url:%q width:%d height:%d found:%v",
+			url,
+			width,
+			height,
+			found,
+		)
+	}
+
+	if _, _, _, found, err = service.ResolveOwnedImage(
+		context.Background(),
+		"owner-b",
+		assetID,
+	); err != nil || found {
+		t.Fatalf("cross-owner image resolution found=%v err=%v", found, err)
+	}
+
+	store.assets[assetID] = Asset{
+		ID:       assetID,
+		OwnerID:  "owner-a",
+		Purpose:  "future-purpose",
+		Status:   StatusReady,
+		Width:    1920,
+		Height:   1080,
+	}
+	if _, _, _, found, err = service.ResolveOwnedImage(
+		context.Background(),
+		"owner-a",
+		assetID,
+	); err != nil || found {
+		t.Fatalf("non-image purpose resolution found=%v err=%v", found, err)
+	}
+}

@@ -1,4 +1,5 @@
 import { formatPersianNumber } from "../../../../shared/forms/numbers.ts";
+import type { ImagePlacement } from "../../../../shared/media/image.ts";
 import {
   parseDraftInteger,
   validateQuestionDraft,
@@ -8,14 +9,14 @@ import {
 type QuestionPreviewOption = {
   id: string;
   text: string;
-  imageUrl: string;
+  image: ImagePlacement;
   isCorrect: boolean;
   position: number;
 };
 
 type QuestionPreviewModel = {
   questionText: string;
-  questionImageUrl: string;
+  questionImage: ImagePlacement;
   typeLabel: string;
   interactionLabel: string;
   durationLabel: string;
@@ -59,7 +60,7 @@ export const createQuestionPreviewModel = (
 
   return {
     questionText: draft.text.trim(),
-    questionImageUrl: draft.imageUrl.trim(),
+    questionImage: draft.image,
     typeLabel:
       draft.type === "single" ? "تک‌گزینه‌ای" : "چندگزینه‌ای",
     interactionLabel:
@@ -74,7 +75,7 @@ export const createQuestionPreviewModel = (
     options: draft.options.map((option, index) => ({
       id: option.id,
       text: option.text.trim(),
-      imageUrl: option.imageUrl.trim(),
+      image: option.image,
       isCorrect:
         draft.evaluationMode === "correctness" &&
         option.isCorrect,

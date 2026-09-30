@@ -59,23 +59,25 @@ func normalizeSlideDefinition(kind string, raw json.RawMessage) (string, json.Ra
 		}
 		return ItemKindActivity, normalized, nil
 	case "content":
-		var value struct {
-			Title    string `json:"title"`
-			Text     string `json:"text"`
-			ImageURL string `json:"image_url"`
-		}
+		var value ContentDefinition
 		if err := decodeStrictObject(raw, &value); err != nil {
 			return "", nil, err
 		}
-		if (strings.TrimSpace(value.Title) == "" && strings.TrimSpace(value.Text) == "" && strings.TrimSpace(value.ImageURL) == "") ||
+		if (strings.TrimSpace(value.Title) == "" &&
+			strings.TrimSpace(value.Text) == "" &&
+			!value.ImagePlacement.hasImage()) ||
 			utf8.RuneCountInString(value.Title) > maxContentTitleRunes ||
 			authoredLineCount(value.Title) > maxContentTitleLines ||
 			utf8.RuneCountInString(value.Text) > maxContentTextRunes ||
 			authoredLineCount(value.Text) > maxContentTextLines ||
-			!validOptionalRemoteURL(value.ImageURL, 4096) {
+			value.ImagePlacement.validateAuthoring() != nil {
 			return "", nil, errInvalidSlideDefinition
 		}
-		return kind, raw, nil
+		normalized, err := json.Marshal(value)
+		if err != nil {
+			return "", nil, errInvalidSlideDefinition
+		}
+		return kind, normalized, nil
 	default:
 		return "", nil, errInvalidSlideDefinition
 	}

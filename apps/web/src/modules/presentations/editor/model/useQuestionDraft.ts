@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer } from "react";
 
 import { createSecureUUID } from "../../../../shared/browser/secureUuid.ts";
+import type { ImagePlacement } from "../../../../shared/media/image.ts";
 import type { EditorSlide } from "../../model/editor.ts";
 import {
   createQuestionDraft,
@@ -45,7 +46,7 @@ export function useQuestionDraft(slide: EditorSlide) {
     dispatch({ type: "question-text", value });
   }, []);
 
-  const setQuestionImage = useCallback((value: string) => {
+  const setQuestionImage = useCallback((value: ImagePlacement) => {
     dispatch({ type: "question-image", value });
   }, []);
 
@@ -85,7 +86,7 @@ export function useQuestionDraft(slide: EditorSlide) {
     dispatch({ type: "option-text", optionId, value });
   }, []);
 
-  const setOptionImage = useCallback((optionId: string, value: string) => {
+  const setOptionImage = useCallback((optionId: string, value: ImagePlacement) => {
     dispatch({ type: "option-image", optionId, value });
   }, []);
 

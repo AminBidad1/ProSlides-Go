@@ -208,17 +208,36 @@ Cross-Origin-Resource-Policy: same-origin
 
 Asset identity and image placement are different data.
 
-Background placement currently persists:
+Background placement persists its existing theme-specific placement:
+an immutable asset ID for first-party media, a compatibility delivery URL,
+normalized focal x/y coordinates and cover rendering.
 
-- immutable asset ID when the image is first-party;
-- compatibility delivery URL;
-- normalized focal x/y coordinates;
-- cover rendering.
+Question prompts, answer options, Word Cloud prompts and Content images use the
+shared Presentation image-placement contract. The wire representation keeps
+`image_url` for compatibility and may additionally carry
+`image_asset_id`, intrinsic `image_width`/`image_height`,
+`image_alt_text` and normalized `image_focal_x`/`image_focal_y`.
 
-The next authoring migration extends the same principle to Question, Option,
-Word Cloud and Content images. Those placements may choose different defaults
-(for example contain for informational images and cover for square options),
-but they must use the same Media Asset and shared rendering contract.
+For first-party media, the Go API treats the asset ID as the authority. It
+verifies that the ready image belongs to the authenticated owner and
+canonicalizes the delivery URL and intrinsic dimensions before persistence.
+A client cannot claim another owner's asset or make submitted dimensions
+authoritative. External HTTP(S) URLs remain supported without an asset ID for
+legacy authoring compatibility.
+
+The Editor has one `ImagePlacement` model across these non-background slots.
+Drafting, validation, previews and serialization preserve asset identity instead
+of collapsing a reusable asset back into a URL. All slots use the same media
+picker for upload/reuse, with the external-URL path kept as a secondary
+compatibility action. Preview surfaces request an appropriate rendition for first-party media and
+fall back once to the immutable master when a historical asset does not have
+that rendition. Missing variants therefore do not turn an otherwise valid
+legacy asset into a broken editor preview.
+
+Stored legacy definitions remain readable even when an old image URL would no
+longer be accepted for a new authoring write. New writes apply the current URL
+and first-party asset rules. This read/write distinction is intentional
+migration compatibility, not a second authoring model.
 
 A placement change must never create a new Media Asset.
 
