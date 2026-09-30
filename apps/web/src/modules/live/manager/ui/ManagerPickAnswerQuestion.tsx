@@ -13,7 +13,7 @@ import {
   questionProjectionTextClass,
 } from "../../model/projectionLayout.ts";
 import type { LegacyQuestionSlide } from "../../model/serverData.ts";
-import { participantTheme } from "../../participant/theme.ts";
+import { managerTheme } from "../theme.ts";
 import { useLiveSession } from "../../react/useLiveSession.ts";
 import { useServerData } from "../../react/useServerData.ts";
 import { LiveMediaImage } from "../../ui/LiveMediaImage.tsx";
@@ -242,7 +242,7 @@ export function ManagerPickAnswerQuestion({
     await sendEnd();
   };
 
-  const theme = participantTheme(quiz);
+  const theme = managerTheme(quiz);
   const awaitingResults =
     currentQuestion !== null &&
     timerState.remaining <= 0 &&

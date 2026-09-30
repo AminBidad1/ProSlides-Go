@@ -3,7 +3,8 @@ import {
   CheckCircle2,
   Image as ImageIcon,
   LoaderCircle,
-  Palette,
+  Monitor,
+  Smartphone,
   Trash2,
   X,
 } from "lucide-react";
@@ -43,6 +44,8 @@ type ConfirmState =
   | { kind: "discard" }
   | { kind: "reload-conflict" };
 
+type PreviewSurface = "stage" | "participant";
+
 export default function DesignInspector({
   quizId,
   onClose,
@@ -68,6 +71,8 @@ export default function DesignInspector({
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [conflictPending, setConflictPending] = useState(false);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [previewSurface, setPreviewSurface] =
+    useState<PreviewSurface>("stage");
   const [confirmState, setConfirmState] = useState<ConfirmState>({
     kind: "closed",
   });
@@ -77,18 +82,17 @@ export default function DesignInspector({
     [draft],
   );
 
-  const theme = useMemo(
-    () =>
-      presentationTheme({
-        background: {
-          color: draft.backgroundColor,
-          image: draft.backgroundImageUrl,
-          text_color: draft.textColor,
-        },
+  const themeInput = useMemo(
+    () => ({
+      background: {
+        color: draft.backgroundColor,
+        image: draft.backgroundImageUrl,
         text_color: draft.textColor,
-        accent_color: draft.accentColor,
-        visualization_palette: draft.visualizationPalette,
-      }),
+      },
+      text_color: draft.textColor,
+      accent_color: draft.accentColor,
+      visualization_palette: draft.visualizationPalette,
+    }),
     [
       draft.backgroundColor,
       draft.backgroundImageUrl,
@@ -97,6 +101,17 @@ export default function DesignInspector({
       draft.visualizationPalette,
     ],
   );
+
+  const stageTheme = useMemo(
+    () => presentationTheme(themeInput, { surface: "stage" }),
+    [themeInput],
+  );
+  const participantPreviewTheme = useMemo(
+    () => presentationTheme(themeInput, { surface: "participant" }),
+    [themeInput],
+  );
+  const previewTheme =
+    previewSurface === "stage" ? stageTheme : participantPreviewTheme;
 
   const selectedPreset = useMemo(
     () => activeDesignPreset(draft),
@@ -198,7 +213,7 @@ export default function DesignInspector({
           <div>
             <h2 className="text-base font-bold">طراحی ارائه</h2>
             <p className="mt-1 text-xs leading-5 text-content-muted">
-              تم، رنگ متن و رنگ‌های نمودار در پیش‌نمایش و اجرای زنده یکسان استفاده می‌شوند.
+              هویت بصری ارائه را تنظیم کنید؛ هر سطح زنده همان تم را متناسب با نقش و اندازه نمایش می‌دهد.
             </p>
           </div>
           <Button
@@ -351,14 +366,24 @@ export default function DesignInspector({
                 ))}
               </div>
 
-              <div className="mt-2 flex items-center justify-between rounded-control bg-canvas px-3 py-2 text-xs">
-                <span className="text-content-muted">کنتراست متن و پس‌زمینه</span>
-                <span
-                  dir="ltr"
-                  className="font-mono font-bold text-success-ink"
-                >
-                  {theme.contrastRatio.toFixed(2)}:1
-                </span>
+              <div className="mt-2 rounded-control bg-canvas px-3 py-2 text-xs">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-content-muted">
+                    کنتراست متن و رنگ پایه
+                  </span>
+                  <span
+                    dir="ltr"
+                    className="font-mono font-bold text-success-ink"
+                  >
+                    {stageTheme.contrastRatio.toFixed(2)}:1
+                  </span>
+                </div>
+                {draft.backgroundImageUrl ? (
+                  <p className="mt-1.5 leading-5 text-content-muted">
+                    روی تصویر، لایه محافظ خوانایی به‌صورت خودکار اعمال می‌شود؛
+                    عدد بالا فقط رنگ پایه را می‌سنجد.
+                  </p>
+                ) : null}
               </div>
             </section>
 
@@ -416,7 +441,7 @@ export default function DesignInspector({
                     تصویر پس‌زمینه
                   </h3>
                   <p className="mt-1 text-xs leading-5 text-content-muted">
-                    تصویر روی رنگ پایه قرار می‌گیرد؛ رنگ پایه به‌عنوان fallback حفظ می‌شود.
+                    تصویر روی Stage و نمای مدیریت نمایش داده می‌شود. موبایل مخاطب برای سرعت و خوانایی از رنگ‌های همین تم استفاده می‌کند.
                   </p>
                 </div>
                 <Button
@@ -434,71 +459,134 @@ export default function DesignInspector({
               </div>
 
               {draft.backgroundImageUrl && (
-                <div className="mt-3 flex items-center gap-3 rounded-panel border border-border-subtle bg-canvas p-2">
-                  <div
-                    className="h-16 w-24 shrink-0 rounded-control border border-border-subtle bg-cover bg-center"
-                    style={{
-                      backgroundImage: `url(${JSON.stringify(draft.backgroundImageUrl)})`,
-                      backgroundColor: draft.backgroundColor,
-                    }}
-                    aria-label="پیش‌نمایش تصویر پس‌زمینه"
-                    role="img"
-                  />
-                  <span
-                    dir="ltr"
-                    className="min-w-0 flex-1 truncate text-xs text-content-muted"
-                  >
-                    {draft.backgroundImageUrl}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="shrink-0 text-danger"
-                    disabled={saving || conflictPending}
-                    aria-label="حذف تصویر پس‌زمینه"
-                    onClick={() => setBackgroundImageUrl("")}
-                  >
-                    <Trash2 aria-hidden="true" />
-                  </Button>
+                <div className="mt-3 rounded-panel border border-border-subtle bg-canvas p-2.5">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="h-16 w-24 shrink-0 rounded-control border border-border-subtle bg-cover bg-center"
+                      style={{
+                        backgroundImage: `url(${JSON.stringify(draft.backgroundImageUrl)})`,
+                        backgroundColor: draft.backgroundColor,
+                      }}
+                      aria-label="پیش‌نمایش تصویر پس‌زمینه"
+                      role="img"
+                    />
+                    <span
+                      dir="ltr"
+                      className="min-w-0 flex-1 truncate text-xs text-content-muted"
+                    >
+                      {draft.backgroundImageUrl}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0 text-danger"
+                      disabled={saving || conflictPending}
+                      aria-label="حذف تصویر پس‌زمینه"
+                      onClick={() => setBackgroundImageUrl("")}
+                    >
+                      <Trash2 aria-hidden="true" />
+                    </Button>
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-content-muted">
+                    تصویر با پوشش کامل نمایش داده می‌شود و ممکن است در نسبت‌های
+                    مختلف صفحه از لبه‌ها برش بخورد. تنظیم نقطه تمرکز همراه با
+                    Media Asset در مرحله بعد اضافه می‌شود.
+                  </p>
                 </div>
               )}
             </section>
 
             <section aria-labelledby="design-preview-heading">
-              <h3
-                id="design-preview-heading"
-                className="text-sm font-semibold"
-              >
-                نمونه طراحی
-              </h3>
-              <div
-                className="mt-2 overflow-hidden rounded-panel border border-[color:var(--live-border)] bg-cover bg-center p-5 text-[color:var(--live-fg)] shadow-sm"
-                style={theme.style}
-              >
-                <div className="flex items-center gap-2 text-xs font-bold text-[color:var(--live-muted)]">
-                  <Palette className="size-4" aria-hidden="true" />
-                  پیش‌نمایش واقعی تم روی Stage
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <h3
+                    id="design-preview-heading"
+                    className="text-sm font-semibold"
+                  >
+                    پیش‌نمایش سطح زنده
+                  </h3>
+                  <p className="mt-1 text-xs leading-5 text-content-muted">
+                    Stage و موبایل عمداً یک پس‌زمینه یکسان ندارند؛ هویت تم حفظ
+                    می‌شود، اما خوانایی و مصرف داده اولویت دارند.
+                  </p>
                 </div>
-                <p className="mt-4 text-xl font-black">
+              </div>
+
+              <div
+                className="mt-3 grid grid-cols-2 gap-1 rounded-control bg-canvas p-1"
+                role="group"
+                aria-label="انتخاب سطح پیش‌نمایش"
+              >
+                <button
+                  type="button"
+                  aria-pressed={previewSurface === "stage"}
+                  onClick={() => setPreviewSurface("stage")}
+                  className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-control px-2 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus aria-pressed:bg-surface aria-pressed:shadow-sm"
+                >
+                  <Monitor className="size-3.5" aria-hidden="true" />
+                  نمایشگر ارائه
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={previewSurface === "participant"}
+                  onClick={() => setPreviewSurface("participant")}
+                  className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-control px-2 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus aria-pressed:bg-surface aria-pressed:shadow-sm"
+                >
+                  <Smartphone className="size-3.5" aria-hidden="true" />
+                  موبایل مخاطب
+                </button>
+              </div>
+
+              <div
+                className={
+                  previewSurface === "stage"
+                    ? "mt-3 aspect-video overflow-hidden rounded-panel border border-[color:var(--live-border)] bg-cover bg-center p-4 text-[color:var(--live-fg)] shadow-sm"
+                    : "mx-auto mt-3 min-h-72 w-full max-w-52 overflow-hidden rounded-[1.75rem] border border-[color:var(--live-border)] bg-cover bg-center p-4 text-[color:var(--live-fg)] shadow-sm"
+                }
+                style={previewTheme.style}
+              >
+                <div className="flex items-center gap-2 text-[11px] font-bold text-[color:var(--live-muted)]">
+                  {previewSurface === "stage" ? (
+                    <Monitor className="size-3.5" aria-hidden="true" />
+                  ) : (
+                    <Smartphone className="size-3.5" aria-hidden="true" />
+                  )}
+                  {previewSurface === "stage"
+                    ? "نمای تقریبی Stage"
+                    : "نمای تقریبی مخاطب"}
+                </div>
+                <p
+                  className={
+                    previewSurface === "stage"
+                      ? "mt-4 text-xl font-black"
+                      : "mt-5 text-base font-black"
+                  }
+                >
                   عنوان نمونه ارائه
                 </p>
-                <p className="mt-2 text-sm leading-6 text-[color:var(--live-muted)]">
-                  این متن برای بررسی خوانایی از فاصله و روی پروژکتور نمایش داده می‌شود.
+                <p
+                  className={
+                    previewSurface === "stage"
+                      ? "mt-2 text-sm leading-6 text-[color:var(--live-muted)]"
+                      : "mt-2 text-xs leading-5 text-[color:var(--live-muted)]"
+                  }
+                >
+                  خوانایی محتوا در هر سطح مهم‌تر از یکسان‌بودن تزئینات است.
                 </p>
-                <div className="mt-4 flex items-end gap-2" aria-hidden="true">
-                  {theme.palette.slice(0, 6).map((color, index) => (
+                <div className="mt-4 flex items-end gap-1.5" aria-hidden="true">
+                  {previewTheme.palette.slice(0, 5).map((color, index) => (
                     <span
                       key={color + index}
                       className="flex-1 rounded-t-md"
                       style={{
-                        height: `${18 + index * 5}px`,
+                        height: `${14 + index * 4}px`,
                         backgroundColor: color,
                       }}
                     />
                   ))}
                 </div>
                 <div
-                  className="mt-3 inline-flex rounded-full border border-[color:var(--live-border)] px-3 py-1.5 text-xs font-black"
+                  className="mt-3 inline-flex rounded-full border border-[color:var(--live-border)] px-2.5 py-1 text-[11px] font-black"
                   style={{
                     backgroundColor: "var(--live-accent-soft)",
                     color: "var(--live-fg)",
@@ -507,6 +595,14 @@ export default function DesignInspector({
                   رنگ تأکیدی
                 </div>
               </div>
+
+              {draft.backgroundImageUrl &&
+              previewSurface === "participant" ? (
+                <p className="mt-2 text-xs leading-5 text-content-muted">
+                  تصویر پس‌زمینه روی موبایل مخاطب بارگیری نمی‌شود؛ رنگ پایه،
+                  رنگ تأکیدی و پالت تم حفظ می‌شوند.
+                </p>
+              ) : null}
             </section>
 
             <Notice tone="info" className="items-start">

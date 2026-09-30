@@ -3,7 +3,7 @@ import { motion as Motion } from "framer-motion";
 
 import type { LivePresentationModel } from "../../model/presentation.ts";
 import type { LegacyLiveUser } from "../../model/serverData.ts";
-import { participantTheme } from "../../participant/theme.ts";
+import { managerTheme } from "../theme.ts";
 import { useLiveSession } from "../../react/useLiveSession.ts";
 
 type ManagerFinalLeaderboardProps = {
@@ -91,7 +91,7 @@ export function ManagerFinalLeaderboard({
     });
   }, [leaderboardData]);
   const isSolo = Number(participantCount || 0) === 1;
-  const theme = participantTheme(quiz);
+  const theme = managerTheme(quiz);
 
   return (
     <div

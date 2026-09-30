@@ -577,7 +577,7 @@ export default function StageRoute() {
     text_color: snapshot.presentation.text_color,
     accent_color: snapshot.presentation.accent_color,
     visualization_palette: snapshot.presentation.visualization_palette,
-  });
+  }, { surface: "stage" });
   const item = normalizeLiveSlide(snapshot.active_item, snapshot.session);
 
   let body;

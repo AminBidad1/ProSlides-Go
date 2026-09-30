@@ -3,7 +3,7 @@ import { AnimatePresence, motion as Motion } from "framer-motion";
 
 import { getColorForUser } from "../../../../shared/lib/playerColor.ts";
 import type { LegacyLiveUser } from "../../model/serverData.ts";
-import { participantTheme } from "../../participant/theme.ts";
+import { managerTheme } from "../theme.ts";
 import { useLiveSession } from "../../react/useLiveSession.ts";
 import { useServerData } from "../../react/useServerData.ts";
 import { ManagerControls } from "./ManagerControls.tsx";
@@ -93,7 +93,7 @@ export function ManagerLeaderBoard({
     await sendEnd();
   };
 
-  const theme = participantTheme(quiz);
+  const theme = managerTheme(quiz);
 
   return (
     <div

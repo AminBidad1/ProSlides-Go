@@ -12,6 +12,16 @@ export interface PresentationThemeInput {
   visualization_palette?: readonly string[];
 }
 
+export type PresentationThemeSurface =
+  | "stage"
+  | "manager"
+  | "participant"
+  | "editor";
+
+export type PresentationThemeOptions = {
+  surface?: PresentationThemeSurface;
+};
+
 export type PresentationThemePreset = {
   id: string;
   label: string;
@@ -203,7 +213,9 @@ export const findPresentationThemePreset = (input: {
 
 export const presentationTheme = (
   input?: PresentationThemeInput,
+  options: PresentationThemeOptions = {},
 ) => {
+  const surface = options.surface ?? "stage";
   const background = normalizeHex(
     input?.background?.color,
     "#312e81",
@@ -224,19 +236,31 @@ export const presentationTheme = (
     input?.visualization_palette,
   );
   const image = input?.background?.image?.trim() ?? "";
+  const showsBackgroundImage =
+    image.length > 0 && surface !== "participant";
   const foregroundIsLight = luminance(foreground) > 0.45;
   const contrastTarget = foregroundIsLight ? "#000000" : "#ffffff";
-  const imageOverlay = foregroundIsLight
-    ? "rgba(0,0,0,.46)"
-    : "rgba(255,255,255,.62)";
+  const imageOverlay =
+    surface === "manager"
+      ? foregroundIsLight
+        ? "rgba(0,0,0,.58)"
+        : "rgba(255,255,255,.72)"
+      : foregroundIsLight
+        ? "rgba(0,0,0,.46)"
+        : "rgba(255,255,255,.62)";
+  const decorativeBackground =
+    `radial-gradient(circle at 15% 10%, color-mix(in srgb, ${accent} 18%, transparent), transparent 32%), linear-gradient(145deg, ${background}, color-mix(in srgb, ${background} 90%, ${contrastTarget}))`;
 
   return {
     background,
     foreground,
     accent,
     palette,
+    surface,
     contrastRatio: presentationContrastRatio(background, foreground),
     image,
+    hasBackgroundImage: image.length > 0,
+    showsBackgroundImage,
     style: {
       "--live-bg": background,
       "--live-fg": foreground,
@@ -254,9 +278,9 @@ export const presentationTheme = (
       "--live-palette-7": palette[6 % palette.length],
       "--live-palette-8": palette[7 % palette.length],
       backgroundColor: background,
-      backgroundImage: image
+      backgroundImage: showsBackgroundImage
         ? `linear-gradient(${imageOverlay}, ${imageOverlay}), url(${JSON.stringify(image)})`
-        : `radial-gradient(circle at 15% 10%, color-mix(in srgb, ${accent} 18%, transparent), transparent 32%), linear-gradient(145deg, ${background}, color-mix(in srgb, ${background} 90%, ${contrastTarget}))`,
+        : decorativeBackground,
     } as CSSProperties,
   };
 };

@@ -52,3 +52,53 @@ test("invalid or undersized palettes fall back to the product palette", () => {
   );
   assert.ok(PRESENTATION_THEME_PRESETS.length >= 4);
 });
+
+
+test("participant theme keeps brand styling without loading the background image", () => {
+  const theme = presentationTheme(
+    {
+      background: {
+        color: "#083344",
+        image: "https://example.com/large-background.jpg",
+      },
+      text_color: "#f8fafc",
+      accent_color: "#22d3ee",
+    },
+    { surface: "participant" },
+  );
+
+  assert.equal(theme.hasBackgroundImage, true);
+  assert.equal(theme.showsBackgroundImage, false);
+  assert.doesNotMatch(
+    String(theme.style.backgroundImage),
+    /large-background\.jpg/,
+  );
+  assert.match(String(theme.style.backgroundImage), /radial-gradient/);
+});
+
+test("manager theme retains the image with stronger readability protection", () => {
+  const stage = presentationTheme(
+    {
+      background: {
+        color: "#111827",
+        image: "https://example.com/bg.jpg",
+      },
+      text_color: "#ffffff",
+    },
+    { surface: "stage" },
+  );
+  const manager = presentationTheme(
+    {
+      background: {
+        color: "#111827",
+        image: "https://example.com/bg.jpg",
+      },
+      text_color: "#ffffff",
+    },
+    { surface: "manager" },
+  );
+
+  assert.equal(manager.showsBackgroundImage, true);
+  assert.match(String(stage.style.backgroundImage), /rgba\(0,0,0,.46\)/);
+  assert.match(String(manager.style.backgroundImage), /rgba\(0,0,0,.58\)/);
+});

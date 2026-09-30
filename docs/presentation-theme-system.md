@@ -1,7 +1,7 @@
 # Presentation theme and color system
 
 Status: active implementation plan  
-Last reviewed: 2026-09-29
+Last reviewed: 2026-09-30
 
 ## Purpose
 
@@ -26,6 +26,9 @@ without introducing a second visual contract.
 6. Theme changes are draftable, revision-aware mutations and follow the same conflict
    behavior as other Editor settings.
 7. Projector readability has priority over decorative effects.
+8. Theme rendering is surface-aware. Stage, manager and participant surfaces share
+   one visual contract but may intentionally use different background treatment when
+   projection readability, control clarity, mobile performance or data usage require it.
 
 ## Persisted contract
 
@@ -61,6 +64,18 @@ remain valid presentation themes; they simply no longer match a built-in preset.
   so saved output and preview do not disagree.
 - Background-image overlays adapt to the foreground polarity. Light text receives a
   darkening overlay; dark text receives a lightening overlay.
+- Stage keeps the authored background image as part of the projected identity.
+- Manager keeps the image but applies stronger readability protection because controls,
+  timers and private operational state must remain legible.
+- Participant intentionally does not render the decorative background image. It keeps
+  the same base color, readable foreground, accent and visualization palette and uses
+  the lightweight decorative theme background instead. This avoids landscape-to-
+  portrait crop problems and avoids making every participant download a large
+  projection-only image.
+- The numeric contrast status in the Editor represents text against the persisted base
+  color. When an image is present, the UI must not present that number as a measured
+  contrast ratio for the image itself; live image readability is protected by the
+  renderer treatment.
 - Decorative background gradients must not materially reduce contrast in any region.
 - Color is never the only indication of correctness, error or selection.
 
@@ -83,7 +98,9 @@ a live Session because responses arrive or the viewport changes.
 A live Session uses the frozen presentation settings captured when the Session starts.
 Background, foreground, accent and visualization palette are therefore part of the
 public display-only presentation metadata returned to participant, manager and Stage
-clients.
+clients. Receiving a frozen background image reference does not require every surface
+to render it: participant deliberately omits decorative background imagery while Stage
+and manager retain it according to their surface contract.
 
 Editing the source presentation after a Session starts must not restyle that Session.
 
@@ -94,9 +111,13 @@ The Design inspector order is:
 1. curated theme gallery with immediate draft preview;
 2. custom background, text and accent colors;
 3. visualization palette;
-4. optional background image;
-5. representative projection preview and contrast status;
+4. optional background image with concise explanation of live-surface behavior;
+5. explicit Stage/mobile preview switch and base-color contrast status;
 6. save/discard/conflict actions.
+
+The preview must describe itself as representative/approximate rather than claiming
+pixel parity with every projector or phone. When an image exists, the mobile preview
+shows the derived image-free participant theme and explains why the image is omitted.
 
 The UI should favor recognition over hexadecimal entry, but always show canonical hex
 values for precise brand work. Native color inputs remain an enhancement, not the only
@@ -126,6 +147,25 @@ Required automated coverage for material theme changes:
 Browser verification should cover one light and one dark theme in the Editor and Stage,
 including a background image. Static visual baselines are only added if the surface is
 stable enough to provide signal.
+
+## Background evolution
+
+The current persisted contract remains backward-compatible URL + base color. This
+delivery slice deliberately fixes rendering boundaries before changing storage.
+
+The next background/media evolution should:
+
+1. replace externally hosted background URLs with immutable first-party Media Assets;
+2. store normalized image dimensions and a non-destructive focal point;
+3. keep background rendering as cover/fill only, with focal positioning instead of a
+   generic fit/stretch/tile control set;
+4. add persisted Solid / Gradient / Image background kinds through the existing theme
+   contract rather than component-local styling;
+5. retain a mandatory base color for image fallback and participant rendering;
+6. keep image/background versions frozen with live Session definitions.
+
+Do not add per-slide background overrides, animated backgrounds or freeform image
+editing until a measured product need justifies that complexity.
 
 ## Future extensions
 

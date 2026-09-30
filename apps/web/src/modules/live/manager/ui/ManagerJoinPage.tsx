@@ -7,7 +7,7 @@ import {
   findLiveActivityStartIssue,
   type LiveActivityStartIssue,
 } from "../../model/presentationFlow.ts";
-import { participantTheme } from "../../participant/theme.ts";
+import { managerTheme } from "../theme.ts";
 import { useLiveSession } from "../../react/useLiveSession.ts";
 import { useServerData } from "../../react/useServerData.ts";
 import { ManagerQrPanel } from "./ManagerQrPanel.tsx";
@@ -140,7 +140,7 @@ export function ManagerJoinPage({
     }
   };
 
-  const theme = participantTheme(quiz);
+  const theme = managerTheme(quiz);
 
   return (
     <div

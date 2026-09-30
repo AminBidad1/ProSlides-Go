@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { isContentSlide } from "../../model/presentationFlow.ts";
 import type { LegacyContentSlide } from "../../model/serverData.ts";
-import { participantTheme } from "../../participant/theme.ts";
+import { managerTheme } from "../theme.ts";
 import { useLiveSession } from "../../react/useLiveSession.ts";
 import { ProjectedContentCard } from "../../ui/ProjectedContentCard.tsx";
 import { ManagerControls } from "./ManagerControls.tsx";
@@ -45,7 +45,7 @@ export function ManagerContentSlide({
     await sendEnd();
   };
 
-  const theme = participantTheme(quiz);
+  const theme = managerTheme(quiz);
 
   return (
     <div

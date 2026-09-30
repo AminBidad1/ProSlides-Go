@@ -364,7 +364,7 @@ test("participant live UI is Persian, theme-driven, and disclosure-safe", () => 
   assert.match(entry, /data\.presentation\.background_color/);
   assert.match(entry, /data\.presentation\.text_color/);
   assert.match(shell, /dir="rtl"/);
-  assert.match(theme, /presentationTheme as participantTheme/);
+  assert.match(theme, /presentationTheme\(input, \{ surface: "participant" \}\)/);
   assert.match(sharedTheme, /--live-bg/);
   assert.match(question, /ثبت پاسخ/);
   assert.match(question, /پاسخ‌گویی پایان یافت/);
