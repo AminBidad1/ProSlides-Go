@@ -2196,6 +2196,64 @@ test("image upload is reusable across presentations and uses bounded background 
   expect(firstSaved.settings.background_image_asset_id).toBe(asset.id);
   expect(firstSaved.settings.background_image_url).toBe(asset.url);
 
+  const activityContent = choiceActivityContent({
+    text: "سؤال تصویری برای اجرای زنده",
+    options: [
+      { id: "media-choice-a-" + unique, text: "گزینه درست", isCorrect: true },
+      { id: "media-choice-b-" + unique, text: "گزینه دیگر", isCorrect: false },
+    ],
+  });
+  activityContent.prompt = {
+    ...activityContent.prompt,
+    image_url: asset.url,
+    image_asset_id: asset.id,
+    image_width: asset.width,
+    image_height: asset.height,
+  };
+
+  await page.evaluate(
+    async ({ presentationId, content }) => {
+      const cookieValue = (name) => {
+        const prefix = encodeURIComponent(name) + "=";
+        const item = document.cookie
+          .split("; ")
+          .find((part) => part.startsWith(prefix));
+        return item ? decodeURIComponent(item.slice(prefix.length)) : "";
+      };
+      const csrf = cookieValue("proslides_csrf");
+      const presentationResponse = await fetch(
+        "/api/v1/presentations/" + presentationId,
+        { credentials: "include" },
+      );
+      const presentation = await presentationResponse.json();
+      if (!presentationResponse.ok) {
+        throw new Error("read presentation failed: " + presentationResponse.status);
+      }
+
+      const response = await fetch(
+        "/api/v1/presentations/" + presentationId + "/slides",
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            "If-Match": String(presentation.revision),
+            ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+          },
+          body: JSON.stringify({
+            position: 1,
+            kind: "activity",
+            content,
+          }),
+        },
+      );
+      if (!response.ok) {
+        throw new Error("create image activity failed: " + response.status);
+      }
+    },
+    { presentationId: fixtures.firstId, content: activityContent },
+  );
+
   await page.goto("/manager/panel/" + fixtures.secondId);
   await page.getByRole("button", { name: "طراحی", exact: true }).click();
   const secondInspector = page.getByRole("complementary", {
@@ -2276,8 +2334,17 @@ test("image upload is reusable across presentations and uses bounded background 
   await expectNoDocumentScroll(stage);
   await stage.close();
 
+  const liveManager = await context.newPage();
+  const liveManagerFailures = watchRuntime(liveManager);
+  await liveManager.goto("/manager/presentation/" + fixtures.firstId);
+  await expect(
+    liveManager.getByRole("button", { name: /شروع/ }),
+  ).toBeEnabled({ timeout: 15_000 });
+  await liveManager.close();
+
   expect(failures).toEqual([]);
   expect(stageFailures).toEqual([]);
+  expect(liveManagerFailures).toEqual([]);
 });
 
 

@@ -938,18 +938,32 @@ test("projected Content uses one shared split-safe renderer", () => {
   assert.match(manager, /ProjectedContentCard/);
 });
 
-test("editor and live preflight consume one shared authoring policy", () => {
+test("authoring shares one media policy while live media stays non-blocking", () => {
   const policy = source("src/shared/presentation/liveAuthoringPolicy.ts");
+  const mediaPolicy = source("src/shared/media/imageUrl.ts");
+  const imagePlacement = source("src/shared/media/image.ts");
   const editor = source("src/modules/presentations/model/editor.ts");
+  const design = source("src/modules/presentations/editor/model/designDraft.ts");
   const flow = source("src/modules/live/model/presentationFlow.ts");
 
   assert.match(policy, /LIVE_QUESTION_LIMITS/);
   assert.match(policy, /LIVE_TEXT_ACTIVITY_LIMITS/);
   assert.match(policy, /LIVE_CONTENT_LIMITS/);
+  assert.match(mediaPolicy, /FIRST_PARTY_IMAGE_CONTENT_URL/);
+  assert.match(mediaPolicy, /isOptionalImageURL/);
   assert.match(editor, /liveAuthoringPolicy/);
+  assert.match(editor, /media\/imageUrl/);
+  assert.match(design, /media\/imageUrl/);
   assert.match(flow, /liveAuthoringPolicy/);
   assert.match(flow, /content_density_invalid/);
   assert.match(flow, /text_response_invalid/);
+  assert.match(imagePlacement, /imageAssetIdFromContentURL/);
+  assert.doesNotMatch(imagePlacement, /FIRST_PARTY_IMAGE_URL|isOptionalImageURL/);
+  assert.doesNotMatch(design, /FIRST_PARTY_MEDIA_URL|HTTP_URL/);
+  assert.doesNotMatch(
+    flow,
+    /media\/imageUrl|isOptionalLiveHttpUrl|isOptionalImageURL|media_invalid/,
+  );
 });
 
 test("participant live timers use bounded render cadence", () => {

@@ -5,6 +5,7 @@ import { emptyImagePlacement } from "../src/shared/media/image.ts";
 import {
   getContentValidationError,
   getQuestionValidationError,
+  getTextActivityValidationError,
 } from "../src/modules/presentations/model/editor.ts";
 import {
   getPresentationValidationError,
@@ -67,13 +68,51 @@ test("uses separate projector-safe option limits for quizzes and polls", () => {
   );
 });
 
-test("rejects non-http media URLs before save or live start", () => {
+test("editor validation accepts reusable first-party images in every authored slot", () => {
+  const firstParty = "/api/v1/media/assets/123e4567-e89b-42d3-a456-426614174060/content";
+  const image = { ...emptyImagePlacement(), url: firstParty };
+
+  assert.equal(
+    getQuestionValidationError({
+      ...validQuestion,
+      image,
+      options: validQuestion.options.map((option, index) => ({
+        ...option,
+        image: index === 0 ? image : emptyImagePlacement(),
+      })),
+    }),
+    null,
+  );
+
+  assert.equal(
+    getContentValidationError({
+      title: "Intro",
+      content_image: image,
+    }),
+    null,
+  );
+
+  assert.equal(
+    getTextActivityValidationError({
+      title: "",
+      text: "موضوع را با چند واژه توصیف کنید",
+      image,
+      max_length: 40,
+      max_words: 3,
+      time_limit: 30,
+      aggregation: "word_frequency",
+    }),
+    null,
+  );
+});
+
+test("rejects unsafe media URLs before save or live start", () => {
   assert.match(
     getQuestionValidationError({
       ...validQuestion,
       image: { ...emptyImagePlacement(), url: "javascript:alert(1)" },
     }),
-    /http/i,
+    /معتبر|کتابخانه/i,
   );
   assert.match(
     getQuestionValidationError({
@@ -86,7 +125,7 @@ test("rejects non-http media URLs before save or live start", () => {
         },
       })),
     }),
-    /http/i,
+    /معتبر|کتابخانه/i,
   );
   assert.match(
     getContentValidationError({
@@ -96,7 +135,7 @@ test("rejects non-http media URLs before save or live start", () => {
         url: "ftp://example.com/image.png",
       },
     }),
-    /http/i,
+    /معتبر|کتابخانه/i,
   );
 });
 

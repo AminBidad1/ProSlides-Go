@@ -1,3 +1,5 @@
+import { imageAssetIdFromContentURL } from "./imageUrl.ts";
+
 export type ImagePlacement = {
   url: string;
   assetId: string;
@@ -132,27 +134,6 @@ export const imagePlacementEquals = (
   left.altText === right.altText &&
   left.focalX === right.focalX &&
   left.focalY === right.focalY;
-
-const FIRST_PARTY_IMAGE_URL =
-  /^\/api\/v1\/media\/assets\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/content$/i;
-
-const imageAssetIdFromContentURL = (value: string): string =>
-  value.trim().match(FIRST_PARTY_IMAGE_URL)?.[1] ?? "";
-
-const isFirstPartyImageURL = (value: string): boolean =>
-  Boolean(imageAssetIdFromContentURL(value));
-
-export const isOptionalImageURL = (value: string): boolean => {
-  const normalized = value.trim();
-  if (!normalized) return true;
-  if (isFirstPartyImageURL(normalized)) return true;
-  try {
-    const url = new URL(normalized);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
-};
 
 const renditionURL = (
   assetId: string,

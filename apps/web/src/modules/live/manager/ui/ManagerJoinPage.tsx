@@ -76,14 +76,10 @@ export function ManagerJoinPage({
         return "محدودیت پاسخ ابر واژه با قرارداد اجرای زنده سازگار نیست؛ آن را در ویرایشگر اصلاح کنید.";
       case "activity_timing_invalid":
         return "زمان پاسخ‌گویی باید بین ۵ ثانیه تا ۲۰ دقیقه باشد.";
-      case "activity_media_invalid":
-        return "یکی از تصاویر فعالیت آدرس معتبر http یا https ندارد.";
       case "content_required":
         return "یکی از اسلایدهای محتوا خالی است؛ پیش از اجرا عنوان، متن یا تصویر اضافه کنید.";
       case "content_density_invalid":
         return "یکی از اسلایدهای محتوا برای نمایش زنده بیش از حد متراکم است؛ متن آن را در ویرایشگر اصلاح کنید.";
-      case "content_media_invalid":
-        return "یکی از اسلایدهای محتوا آدرس تصویر معتبر http یا https ندارد.";
       case "choice_prompt_required":
         return "پیش از اجرا، متن فعالیت انتخابی را وارد کنید.";
       case "choice_prompt_invalid":

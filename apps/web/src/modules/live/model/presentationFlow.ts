@@ -2,7 +2,6 @@ import {
   LIVE_CONTENT_LIMITS,
   LIVE_QUESTION_LIMITS,
   LIVE_TEXT_ACTIVITY_LIMITS,
-  isOptionalLiveHttpUrl,
   liveTextLength,
   liveTextLineCount,
 } from "../../../shared/presentation/liveAuthoringPolicy.ts";
@@ -179,13 +178,11 @@ export type LiveActivityStartIssue =
   | "choice_option_invalid"
   | "choice_correct_answer_invalid"
   | "activity_timing_invalid"
-  | "activity_media_invalid"
   | "text_prompt_required"
   | "text_prompt_invalid"
   | "text_response_invalid"
   | "content_required"
-  | "content_density_invalid"
-  | "content_media_invalid";
+  | "content_density_invalid";
 
 export const getLiveActivityStartIssue = (
   slide: unknown,
@@ -208,12 +205,6 @@ export const getLiveActivityStartIssue = (
     ) {
       return "content_density_invalid";
     }
-    if (
-      liveTextLength(imageUrl) > LIVE_CONTENT_LIMITS.imageUrl ||
-      !isOptionalLiveHttpUrl(imageUrl)
-    ) {
-      return "content_media_invalid";
-    }
     return null;
   }
 
@@ -221,15 +212,11 @@ export const getLiveActivityStartIssue = (
 
   const prompt = String(slide.question_text ?? "").trim();
   const title = String(slide.question_title ?? "");
-  const imageUrl = String(slide.image_url ?? "");
   const duration = Number(slide.question_time);
   const timingInvalid =
     !Number.isInteger(duration) ||
     duration < LIVE_QUESTION_LIMITS.minDurationSeconds ||
     duration > LIVE_QUESTION_LIMITS.maxDurationSeconds;
-  const mediaInvalid =
-    liveTextLength(imageUrl) > LIVE_QUESTION_LIMITS.imageUrl ||
-    !isOptionalLiveHttpUrl(imageUrl);
 
   if (slide.activity_kind === "text") {
     if (!prompt) return "text_prompt_required";
@@ -242,7 +229,6 @@ export const getLiveActivityStartIssue = (
       return "text_prompt_invalid";
     }
     if (timingInvalid) return "activity_timing_invalid";
-    if (mediaInvalid) return "activity_media_invalid";
 
     const entryBased = slide.response_aggregation === "entry_frequency";
     const responseLength = Number(
@@ -278,7 +264,6 @@ export const getLiveActivityStartIssue = (
     return "choice_prompt_invalid";
   }
   if (timingInvalid) return "activity_timing_invalid";
-  if (mediaInvalid) return "activity_media_invalid";
 
   const options = Array.isArray(slide.options) ? slide.options : [];
   if (options.length < LIVE_QUESTION_LIMITS.minOptions) {
@@ -296,15 +281,12 @@ export const getLiveActivityStartIssue = (
   for (const option of options) {
     const id = String(option.option_id ?? "").trim();
     const optionText = String(option.option_text ?? "").trim();
-    const optionImage = String(option.image_url ?? "");
     if (
       !id ||
       optionIds.has(id) ||
       !optionText ||
       liveTextLength(optionText) > LIVE_QUESTION_LIMITS.optionText ||
-      liveTextLineCount(optionText) > LIVE_QUESTION_LIMITS.optionMaxLines ||
-      liveTextLength(optionImage) > LIVE_QUESTION_LIMITS.imageUrl ||
-      !isOptionalLiveHttpUrl(optionImage)
+      liveTextLineCount(optionText) > LIVE_QUESTION_LIMITS.optionMaxLines
     ) {
       return "choice_option_invalid";
     }

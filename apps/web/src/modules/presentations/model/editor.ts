@@ -1,7 +1,5 @@
-import {
-  isOptionalImageURL,
-  type ImagePlacement,
-} from "../../../shared/media/image.ts";
+import type { ImagePlacement } from "../../../shared/media/image.ts";
+import { isOptionalImageURL } from "../../../shared/media/imageUrl.ts";
 export type QuestionType = "single" | "multiple";
 export type EvaluationMode = "none" | "correctness";
 export type ScoringMode = "none" | "points";
@@ -182,7 +180,7 @@ export const validateEditorTextActivity = (
     issues.push({
       code: "image_url_invalid",
       field: "prompt_image",
-      message: "آدرس تصویر ابر واژه باید یک لینک معتبر http یا https باشد.",
+      message: "تصویر ابر واژه باید از کتابخانه انتخاب شود یا آدرس خارجی معتبر داشته باشد.",
     });
   }
   if (
@@ -338,7 +336,7 @@ export const validateEditorQuestion = (
     issues.push({
       code: "question_image_invalid",
       field: "question_image",
-      message: "آدرس تصویر سؤال باید یک لینک معتبر http یا https باشد.",
+      message: "تصویر سؤال باید از کتابخانه انتخاب شود یا آدرس خارجی معتبر داشته باشد.",
     });
   }
 
@@ -419,7 +417,7 @@ export const validateEditorQuestion = (
         code: "option_image_invalid",
         field: "option_image",
         optionId: id || undefined,
-        message: "آدرس تصویر گزینه باید یک لینک معتبر http یا https باشد.",
+        message: "تصویر گزینه باید از کتابخانه انتخاب شود یا آدرس خارجی معتبر داشته باشد.",
       });
     }
   }
@@ -623,7 +621,7 @@ export const validateEditorContent = (
     issues.push({
       code: "content_image_invalid",
       field: "content_image",
-      message: "آدرس تصویر باید یک لینک معتبر http یا https باشد.",
+      message: "تصویر باید از کتابخانه انتخاب شود یا آدرس خارجی معتبر داشته باشد.",
     });
   }
 

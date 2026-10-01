@@ -10,6 +10,11 @@ import { toLivePresentationModel } from "../src/modules/live/routes/useLivePrese
 const optionA = "f335ac87-4586-4254-a2cb-1978b7e5a421";
 const optionB = "5bbab239-6d13-4813-8c4a-4f9b39f1852e";
 
+const firstPartyPromptImage =
+  "/api/v1/media/assets/123e4567-e89b-42d3-a456-426614174050/content";
+const firstPartyContentImage =
+  "/api/v1/media/assets/123e4567-e89b-42d3-a456-426614174052/content";
+
 const choice = {
   id: "choice-1",
   revision: 2,
@@ -209,6 +214,61 @@ test("legacy Choice activities respect quiz and poll projection caps", () => {
   );
 });
 
+test("media references never block an already-created live session", () => {
+  assert.equal(
+    getLiveActivityStartIssue({
+      item_kind: "activity",
+      activity_kind: "choice",
+      question_text: "سؤال تصویری",
+      question_type: "single",
+      question_time: 10,
+      image_url: "javascript:alert(1)",
+      has_correct_answer: true,
+      options: [
+        {
+          option_id: "a",
+          option_text: "الف",
+          image_url: "data:image/png;base64,AAAA",
+          answer: true,
+        },
+        {
+          option_id: "b",
+          option_text: "ب",
+          image_url: "",
+          answer: false,
+        },
+      ],
+    }),
+    null,
+  );
+
+  assert.equal(
+    getLiveActivityStartIssue({
+      item_kind: "activity",
+      activity_kind: "text",
+      question_text: "ابر واژه تصویری",
+      question_time: 30,
+      image_url: firstPartyPromptImage,
+      response_aggregation: "word_frequency",
+      response_max_length: 40,
+      response_max_words: 3,
+      options: [],
+      has_correct_answer: false,
+    }),
+    null,
+  );
+
+  assert.equal(
+    getLiveActivityStartIssue({
+      item_kind: "content",
+      title: "محتوا",
+      content_text: "",
+      content_image_url: firstPartyContentImage,
+    }),
+    null,
+  );
+});
+
 test("preflight blocks legacy slides that violate current projection policy", () => {
   assert.equal(
     getLiveActivityStartIssue({
@@ -251,16 +311,6 @@ test("preflight blocks legacy slides that violate current projection policy", ()
       content_image_url: "",
     }),
     "content_density_invalid",
-  );
-
-  assert.equal(
-    getLiveActivityStartIssue({
-      item_kind: "content",
-      title: "محتوا",
-      content_text: "",
-      content_image_url: "data:image/png;base64,AAAA",
-    }),
-    "content_media_invalid",
   );
 });
 

@@ -273,6 +273,17 @@ A client cannot claim another owner's asset or make submitted dimensions
 authoritative. External HTTP(S) URLs remain supported without an asset ID for
 legacy authoring compatibility.
 
+The web client has one authoring URL-policy boundary at
+`apps/web/src/shared/media/imageUrl.ts`. Editor and background-design validation
+must consume that boundary instead of defining their own HTTP-only or
+first-party-media regular expressions. Live preflight intentionally does not
+revalidate media URLs: new Sessions have already crossed the authoritative Go
+validation boundary, while an existing Session must keep navigating even when an
+image later fails to load. Live rendering degrades through `LiveMediaImage`
+instead of turning media failure into a Session-control failure. The external-URL
+dialog may validate its own HTTP(S) input UX, and audio URLs remain a separate
+contract.
+
 The Editor has one `ImagePlacement` model across these non-background slots.
 Drafting, validation, previews and serialization preserve asset identity instead
 of collapsing a reusable asset back into a URL. All slots use the same media

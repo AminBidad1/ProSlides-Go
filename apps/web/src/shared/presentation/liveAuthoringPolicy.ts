@@ -46,17 +46,3 @@ export const liveTextLineCount = (value: unknown): number => {
   return normalized.split("\n").length;
 };
 
-export const isOptionalLiveHttpUrl = (value: unknown): boolean => {
-  const raw = String(value ?? "").trim();
-  if (!raw) return true;
-
-  try {
-    const parsed = new URL(raw);
-    return (
-      (parsed.protocol === "http:" || parsed.protocol === "https:") &&
-      Boolean(parsed.hostname)
-    );
-  } catch {
-    return false;
-  }
-};

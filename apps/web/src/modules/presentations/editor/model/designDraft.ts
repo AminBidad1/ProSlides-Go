@@ -8,6 +8,7 @@ import {
   presentationTheme,
   type PresentationThemePreset,
 } from "../../../../shared/styles/presentationTheme.ts";
+import { isImageAssetId, isOptionalImageURL } from "../../../../shared/media/imageUrl.ts";
 import type { EditorPresentation } from "../../model/editor.ts";
 
 export const DESIGN_LIMITS = {
@@ -15,10 +16,6 @@ export const DESIGN_LIMITS = {
 } as const;
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
-const HTTP_URL = /^https?:\/\//i;
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const FIRST_PARTY_MEDIA_URL =
-  /^\/api\/v1\/media\/assets\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/content$/i;
 
 export type DesignDraft = {
   presentationId: string;
@@ -279,7 +276,7 @@ export const validateDesignDraft = (
   const assetID = draft.backgroundImageAssetId.trim();
   if (
     assetID &&
-    !UUID.test(assetID)
+    !isImageAssetId(assetID)
   ) {
     issues.push({
       code: "background_image_asset_invalid",
@@ -294,11 +291,7 @@ export const validateDesignDraft = (
       field: "background_image",
       message: "آدرس تصویر پس‌زمینه بیش از حد طولانی است.",
     });
-  } else if (
-    image &&
-    !HTTP_URL.test(image) &&
-    !FIRST_PARTY_MEDIA_URL.test(image)
-  ) {
+  } else if (!isOptionalImageURL(image)) {
     issues.push({
       code: "background_image_invalid",
       field: "background_image",
