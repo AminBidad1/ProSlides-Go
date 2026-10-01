@@ -1,0 +1,123 @@
+services:
+  postgres:
+    image: ${BASE_REGISTRY:-docker.io/library}/postgres:16.15-alpine
+    environment:
+      POSTGRES_DB: proslides
+      POSTGRES_USER: proslides
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in the test-server env file}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U proslides -d proslides"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - app
+
+  redis:
+    image: ${BASE_REGISTRY:-docker.io/library}/redis:7.4.3-alpine
+    command: redis-server --appendonly yes --save 60 1000 --loglevel warning
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - app
+
+  api:
+    build:
+      context: ../apps/api
+      args:
+        BASE_REGISTRY: ${BASE_REGISTRY:-docker.io/library}
+    environment:
+      APP_ENV: staging
+      HTTP_ADDR: :8080
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      DATABASE_URL: postgres://proslides:${POSTGRES_PASSWORD}@postgres:5432/proslides?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      MEDIA_STORAGE_BACKEND: filesystem
+      MEDIA_STORAGE_PATH: /var/lib/proslides-media
+      DEPENDENCY_CHECK_TIMEOUT: ${DEPENDENCY_CHECK_TIMEOUT:-2s}
+      MIGRATION_TIMEOUT: ${MIGRATION_TIMEOUT:-2m}
+      LIVE_REQUEST_TIMEOUT: ${LIVE_REQUEST_TIMEOUT:-10s}
+      DATABASE_POOL_MAX_CONNS: ${DATABASE_POOL_MAX_CONNS:-20}
+      DATABASE_POOL_MIN_CONNS: ${DATABASE_POOL_MIN_CONNS:-2}
+      DATABASE_CONN_MAX_LIFETIME: ${DATABASE_CONN_MAX_LIFETIME:-30m}
+      DATABASE_CONN_MAX_IDLE_TIME: ${DATABASE_CONN_MAX_IDLE_TIME:-5m}
+      SESSION_TTL: ${SESSION_TTL:-168h}
+      AUTH_REQUIRE_EMAIL_VERIFICATION: "false"
+      PASSWORD_RESET_TTL: ${PASSWORD_RESET_TTL:-15m}
+      PUBLIC_WEB_URL: ${TEST_PUBLIC_URL:?set TEST_PUBLIC_URL in the test-server env file}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_JWKS_URL: ${GOOGLE_JWKS_URL:-https://www.googleapis.com/oauth2/v3/certs}
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-172.16.0.0/12}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/readyz"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+    stop_grace_period: 30s
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - media_data:/var/lib/proslides-media
+    networks:
+      - app
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+
+  web:
+    build:
+      context: ../apps/web
+      args:
+        BASE_REGISTRY: ${BASE_REGISTRY:-docker.io/library}
+        VITE_API_BASE_URL: /api/v1
+        VITE_LIVE_API_BASE_URL: /api/v1
+        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${TEST_BIND_ADDR:-0.0.0.0}:${TEST_HTTP_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/web-healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - app
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+
+networks:
+  app:
+
+volumes:
+  postgres_data:
+  redis_data:
+  media_data:

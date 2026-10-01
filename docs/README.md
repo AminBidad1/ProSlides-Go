@@ -27,7 +27,8 @@ authoritative document rather than preserving two narratives.
 | What proves a capacity level? | `capacity-plan.md`; dated results live under `archive/` |
 | Which environment values exist? | `configuration.md` + checked-in examples |
 | How do I run and verify locally? | `local-development.md` |
-| How is a release deployed? | `deployment-runbook.md` |
+| How do I deploy the lightweight single-host test server? | `test-server-runbook.md` |
+| How is a production release deployed? | `deployment-runbook.md` |
 | How is media storage migrated between providers? | `runbooks/media-storage-migration.md` |
 | How are backup, restore, retention, rollback and incidents handled? | `operations-runbook.md` |
 | What is the external HTTP/SSE contract? | `../apps/api/openapi/openapi.yaml` |

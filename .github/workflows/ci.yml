@@ -100,6 +100,23 @@ jobs:
       - name: Validate local Compose
         run: docker compose --env-file apps/api/.env.example config --quiet
 
+      - name: Validate test-server Compose
+        env:
+          POSTGRES_PASSWORD: 0123456789abcdef0123456789abcdef
+          TEST_PUBLIC_URL: http://127.0.0.1:8080
+        run: docker compose --env-file deploy/.env.test-server.example -f deploy/compose.test-server.yaml config --quiet
+
+      - name: Exercise test-server preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          test_env="$RUNNER_TEMP/proslides-test-server.env"
+          cp deploy/.env.test-server.example "$test_env"
+          sed -i 's|^TEST_PUBLIC_URL=.*|TEST_PUBLIC_URL=http://127.0.0.1:8080|' "$test_env"
+          sed -i 's|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=0123456789abcdef0123456789abcdef|' "$test_env"
+          chmod 600 "$test_env"
+          bash deploy/test-server-preflight.sh "$test_env"
+
       - name: Validate production Compose
         env:
           API_IMAGE: example.invalid/proslides/api:test
@@ -119,7 +136,7 @@ jobs:
         run: docker compose --env-file deploy/.env.production.example -f deploy/compose.production.yaml config --quiet
 
       - name: Validate operational shell commands
-        run: bash -n deploy/postgres-backup.sh deploy/postgres-restore.sh deploy/postgres-prune-live-events.sh
+        run: bash -n deploy/test-server-preflight.sh deploy/postgres-backup.sh deploy/postgres-restore.sh deploy/postgres-prune-live-events.sh
 
   browser-e2e:
     needs: containers

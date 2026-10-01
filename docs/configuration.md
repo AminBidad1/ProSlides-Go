@@ -124,6 +124,27 @@ default; the API, PostgreSQL, and Redis host ports remain loopback-bound. The
 PostgreSQL/Redis defaults are local only and must not be reused as production
 credentials.
 
+### Test-server Compose variables
+
+The lightweight single-host test stack uses
+`deploy/compose.test-server.yaml` and keeps API, PostgreSQL, and Redis private
+to its Compose network.
+
+| Variable | Default/example | Purpose |
+|---|---|---|
+| `COMPOSE_PROJECT_NAME` | `proslides-test` | Stable Compose project/volume namespace for the test server. |
+| `TEST_PUBLIC_URL` | required | Absolute HTTP/HTTPS address testers actually open; passed to the API as `PUBLIC_WEB_URL`. |
+| `TEST_BIND_ADDR` | `0.0.0.0` | Host address for the single published web port. |
+| `TEST_HTTP_PORT` | `8080` | Host web port for the test server. |
+| `POSTGRES_PASSWORD` | required | URL-safe test PostgreSQL password; embedded in the private Compose-only `DATABASE_URL`. |
+| `TRUSTED_PROXY_CIDRS` | `172.16.0.0/12` in the test example | Private proxy ranges accepted behind the internal web container; the API port is not published. |
+| `BASE_REGISTRY` | `docker.io/library` | Base-image registry; may be changed when another mirror is required. |
+
+The test-server stack sets `APP_ENV=staging`, uses filesystem media, disables
+email verification, and builds web/API images directly from the checked-out
+commit. This is deliberately less strict than production and must not be used as
+production-readiness evidence.
+
 ## Dependency and failure behavior
 
 - `GET /healthz` is process-only and does not prove dependencies.
@@ -174,3 +195,5 @@ Canonical local examples live in
 [`apps/web/.env.example`](../apps/web/.env.example). Host-mode API values are in
 [`apps/api/.env.local.example`](../apps/api/.env.local.example); production keys
 are inventoried in [`deploy/.env.production.example`](../deploy/.env.production.example).
+The single-host test-server inventory is
+[`deploy/.env.test-server.example`](../deploy/.env.test-server.example).

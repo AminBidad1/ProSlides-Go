@@ -1,5 +1,9 @@
 # Deployment runbook
 
+This runbook is the production reference. For a lightweight single-host test
+environment with local PostgreSQL, Redis, and filesystem media, use
+[`test-server-runbook.md`](test-server-runbook.md) instead.
+
 ## Supported reference topology
 
 The repository supplies portable OCI images and a single-host Compose reference:
