@@ -42,14 +42,21 @@ function SectionHeader({
   title,
   description,
   onTint = false,
+  align = "center",
 }: {
   eyebrow: string;
   title: string;
   description: string;
   onTint?: boolean;
+  align?: "center" | "start";
 }) {
   return (
-    <div className="mx-auto max-w-3xl text-center">
+    <div
+      className={[
+        "w-full max-w-3xl text-center",
+        align === "start" ? "lg:me-auto lg:text-start" : "mx-auto",
+      ].join(" ")}
+    >
       <p className="text-xs font-bold text-brand">{eyebrow}</p>
       <h2 className="mt-3 text-2xl font-bold leading-tight text-content md:text-4xl">
         {title}
@@ -91,7 +98,7 @@ function JoinForm({
     >
       <div className="flex min-w-0 flex-1 items-center gap-2" dir="ltr">
         {!mobile ? (
-          <span className="hidden text-[11px] font-semibold text-content-muted md:inline">
+          <span className="hidden text-xs font-semibold text-content-muted md:inline">
             proslides.ir/
           </span>
         ) : null}
@@ -117,7 +124,7 @@ function JoinForm({
       <Button
         type="submit"
         size="sm"
-        className="h-10 shrink-0 rounded-control bg-stage px-4 text-xs font-bold text-content-inverse hover:bg-stage-soft"
+        className="h-10 shrink-0 rounded-control bg-surface-inverse px-4 text-xs font-bold text-content-inverse hover:bg-surface-inverse-soft"
       >
         ورود
       </Button>
@@ -210,7 +217,7 @@ export default function LandingRoute() {
       />
 
       <div className="hidden border-b border-border-subtle bg-surface/90 backdrop-blur-xl sm:block">
-        <div className="mx-auto flex max-w-6xl items-center justify-center gap-3 px-6 py-2">
+        <div className="mx-auto flex max-w-6xl items-center justify-center gap-3 px-6 py-1.5">
           <span className="text-sm font-semibold text-content-muted">
             شرکت‌کننده هستید؟ با کد جلسه مستقیم وارد شوید.
           </span>
@@ -227,7 +234,7 @@ export default function LandingRoute() {
       </div>
 
       <header className="sticky top-0 z-40 border-b border-border-subtle bg-surface/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
           <button
             type="button"
             onClick={() => scrollTo("home")}
@@ -251,7 +258,7 @@ export default function LandingRoute() {
                 className={[
                   "min-h-10 rounded-full px-4 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
                   activeSection === item.id
-                    ? "bg-stage text-content-inverse"
+                    ? "bg-brand text-content-inverse"
                     : "hover:bg-canvas hover:text-content",
                 ].join(" ")}
               >
@@ -350,20 +357,20 @@ export default function LandingRoute() {
         ) : null}
       </header>
 
-      <main className="relative mx-auto flex max-w-6xl flex-col gap-24 px-4 pb-16 pt-9 sm:px-6 md:gap-32 md:pb-20 md:pt-16">
+      <main className="relative mx-auto max-w-6xl px-4 pb-16 pt-9 sm:px-6 md:pb-20 md:pt-16">
         <div
           className="landing-ambient pointer-events-none absolute inset-x-0 top-0 -z-10 h-[44rem]"
           aria-hidden="true"
         />
 
         <section id="home" className="scroll-mt-32">
-          <div className="grid items-center gap-12 lg:grid-cols-[0.88fr_1.12fr] lg:gap-16">
+          <div className="grid items-center gap-10 lg:grid-cols-[0.96fr_1.04fr] lg:gap-14">
             <div className="text-center lg:text-start">
               <p className="inline-flex items-center gap-2 rounded-full border border-brand-border bg-brand-soft/80 px-4 py-2 text-xs font-bold text-brand-ink">
                 <Sparkles className="size-4" aria-hidden="true" />
                 از ارائه یک‌طرفه تا مشارکت زنده
               </p>
-              <h1 className="mt-6 text-4xl font-bold leading-[1.28] tracking-tight md:text-6xl md:leading-[1.16]">
+              <h1 className="mx-auto mt-6 max-w-2xl text-4xl font-bold leading-[1.28] tracking-tight md:text-6xl md:leading-[1.16] lg:mx-0">
                 ارائه‌ای بسازید که مخاطب فقط تماشاگر آن نباشد
               </h1>
               <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-content-muted md:text-lg lg:mx-0">
@@ -391,16 +398,20 @@ export default function LandingRoute() {
           </div>
         </section>
 
-        <section id="journey" className="scroll-mt-32">
+        <section id="journey" className="mt-24 scroll-mt-32 md:mt-28">
           <SectionHeader
             eyebrow="از ساخت تا نتیجه"
             title="یک ارائه، یک جریان پیوسته"
             description="ProSlides فقط لحظه پاسخ‌گویی نیست؛ همان ارائه از آماده‌سازی تا ورود مخاطب، اجرای زنده و مرور نتیجه ادامه پیدا می‌کند."
+            align="start"
           />
           <LandingProductJourney />
         </section>
 
-        <section id="activities" className="scroll-mt-32 rounded-showcase bg-brand-soft/45 px-4 py-10 sm:px-8 md:py-14">
+        <section
+          id="activities"
+          className="landing-section-band landing-section-band-brand mt-20 scroll-mt-32 py-12 md:mt-24 md:py-16"
+        >
           <SectionHeader
             eyebrow="فعالیت‌های اصلی"
             title="برای هر لحظه، یک نوع مشارکت"
@@ -412,18 +423,22 @@ export default function LandingRoute() {
           </div>
         </section>
 
-        <section id="audience" className="scroll-mt-32">
+        <section id="audience" className="mt-20 scroll-mt-32 md:mt-24">
           <SectionHeader
             eyebrow="کاربردها"
             title="برای کلاس، جلسه، رویداد و آموزش"
             description="نوع فعالیت با موقعیت تغییر می‌کند، اما مسیر مخاطب همان است: ورود با کد، پاسخ در مرورگر و مشاهده نتیجه روی صفحه ارائه."
+            align="start"
           />
           <LandingUseCaseShowcase />
         </section>
 
-        <section aria-labelledby="landing-trust-title">
+        <section
+          aria-labelledby="landing-trust-title"
+          className="landing-section-band landing-section-band-surface mt-16 py-10 md:mt-20 md:py-12"
+        >
           <div className="mx-auto max-w-3xl text-center">
-            <p className="text-xs font-bold text-brand">واقعیت‌های محصول، نه عددهای تبلیغاتی</p>
+            <p className="text-xs font-bold text-brand">آنچه برای اجرای یک جلسه لازم دارید</p>
             <h2 id="landing-trust-title" className="mt-3 text-2xl font-bold text-content">
               برای اجرای واقعی جلسه طراحی شده است
             </h2>
@@ -447,8 +462,8 @@ export default function LandingRoute() {
           </div>
         </section>
 
-        <section aria-labelledby="final-cta">
-          <div className="relative overflow-hidden rounded-showcase bg-stage px-6 py-10 text-content-inverse shadow-feature sm:px-10">
+        <section aria-labelledby="final-cta" className="mt-16 md:mt-20">
+          <div className="relative overflow-hidden rounded-feature bg-surface-inverse px-6 py-10 text-content-inverse shadow-card sm:px-10">
             <div className="landing-dark-glow pointer-events-none absolute inset-0" aria-hidden="true" />
             <div className="relative grid gap-6 md:grid-cols-[1fr_auto] md:items-center">
               <div>
@@ -456,7 +471,7 @@ export default function LandingRoute() {
                 <h2 id="final-cta" className="mt-3 text-2xl font-bold md:text-3xl">
                   ارائه را بسازید؛ مخاطب را وارد جریان کنید.
                 </h2>
-                <p className="mt-3 max-w-2xl text-sm leading-7 text-stage-muted">
+                <p className="mt-3 max-w-2xl text-sm leading-7 text-content-inverse-muted">
                   اولین ارائه را آماده کنید و وقتی زمان اجرا رسید، مخاطبان با یک کد وارد همان تجربه می‌شوند.
                 </p>
               </div>

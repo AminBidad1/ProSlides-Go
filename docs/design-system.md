@@ -83,8 +83,8 @@ overlap, or loss of controls.
 
 The design system separates meaning from values:
 
-- canvas / surface / raised surface / overlay
-- content / muted content / inverse content
+- canvas / surface / raised surface / inverse surface / overlay
+- content / muted content / inverse content / inverse-muted content
 - subtle separator border / control border / focus
 - brand / success / warning / danger / info
 - neutral Stage baseline and authored presentation theme
@@ -119,6 +119,60 @@ those authored roles instead of raw product-palette utilities. Private Backstage
 is intentionally different: it is operational product chrome, uses the product
 dark/Stage token vocabulary, and must not inherit authored presentation colors
 as its surface contract.
+
+## Marketing composition and visual hierarchy
+
+Public marketing surfaces may use a more expressive typographic and spatial
+system than dense product workspaces, but they still consume the same semantic
+tokens and accessibility rules.
+
+Major section spacing is relational rather than globally uniform. Use tighter
+spacing for content that belongs to one narrative step and larger spacing when
+the user is entering a new idea. As a practical baseline, mobile marketing
+sections usually need roughly 64–80px between major ideas and desktop sections
+roughly 80–112px; local heading-to-content spacing is typically 24–40px. These
+are composition ranges, not page-specific magic numbers. Do not apply one large
+gap to every sibling section merely for consistency.
+
+A marketing section should normally have one dominant elevated or framed
+surface. Nested product previews may contain panels, but each deeper layer should
+be visually quieter: lower radius, lower elevation, or no shadow. Avoid
+"card inside card inside card" composition where borders, shadows, and rounded
+corners all repeat at every level.
+
+Elevation communicates hierarchy rather than decoration. Reserve feature-level
+shadows for signature surfaces such as a hero product demonstration. Ordinary
+cards generally use a subtle border, a card-level shadow, or neither. Do not
+combine the strongest radius and strongest shadow by default.
+
+Large showcase radii are reserved for signature marketing or projection-like
+surfaces. Nested content should step down through feature, card, and control
+radii so the visual hierarchy remains legible.
+
+The semantic Stage palette is reserved for audience-facing presentation or
+projection previews. Generic dark marketing/product chrome uses
+surface-inverse / content-inverse roles even when its current neutral values
+match Stage. This preserves the meaning of Stage and allows either system to
+evolve independently.
+
+Marketing body copy normally uses 14–18px text depending on hierarchy and
+viewport. Metadata may use 12px. Essential instructions, controls, or explanatory
+copy must not be reduced to 10–11px simply to fit a dense mockup. Product-preview
+instrumentation may be compact only when it is genuinely incidental and remains
+legible.
+
+Repeated sections should vary composition where that improves scanability.
+Not every section needs a centered eyebrow/title/description stack. Alternating
+centered showcase headings with RTL-aligned editorial headings is preferred when
+the content relationship supports it. Alignment changes must remain logical and
+direction-aware rather than hard-coded left/right geometry.
+
+Long marketing pages may use a small number of full-bleed tonal chapter bands to
+mark meaningful transitions. Prefer one brand-tinted chapter and, when useful,
+one neutral surface chapter over alternating every section. The page should not
+become zebra-striped, and background changes must not be used as a substitute
+for heading hierarchy or spacing. Content inside a tonal band still follows the
+same contrast and semantic-token rules.
 
 ## Controls and forms
 

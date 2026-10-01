@@ -49,14 +49,14 @@ const SCENARIOS: Array<{
 
 export default function LandingUseCaseShowcase() {
   return (
-    <div className="mt-10 grid gap-x-10 sm:grid-cols-2">
+    <div className="mt-10 grid gap-x-12 sm:grid-cols-2 lg:gap-x-16">
       {SCENARIOS.map(({ label, title, description, tags, Icon }) => (
         <article
           key={label}
           className="group border-t border-border-subtle py-7 sm:py-8"
         >
           <div className="flex items-start gap-4">
-            <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-card bg-brand-soft text-brand transition-colors group-hover:bg-brand-muted">
+            <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-card bg-brand-soft/70 text-brand transition-colors group-hover:bg-brand-muted">
               <Icon className="size-5" aria-hidden="true" />
             </span>
             <div className="min-w-0">

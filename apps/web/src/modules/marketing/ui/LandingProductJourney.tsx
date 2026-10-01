@@ -59,7 +59,7 @@ const STEPS: Array<{
 function ProductScene({ id }: { id: JourneyId }) {
   if (id === "create") {
     return (
-      <div className="min-h-72 rounded-feature bg-canvas p-3 sm:p-4">
+      <div className="min-h-72 rounded-card bg-canvas p-3 sm:p-4">
         <div className="grid gap-3 sm:grid-cols-[4rem_1fr]">
           <div className="hidden space-y-2 rounded-card border border-border-subtle bg-surface p-2 sm:block">
             {[0, 1, 2].map((item) => (
@@ -76,8 +76,8 @@ function ProductScene({ id }: { id: JourneyId }) {
           </div>
           <div className="rounded-card border border-border-subtle bg-surface p-4 sm:p-5">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[10px] font-bold text-brand">کوئیز · اسلاید ۲</span>
-              <span className="rounded-full bg-brand-soft px-2 py-1 text-[10px] font-bold text-brand-ink">
+              <span className="text-xs font-bold text-brand">کوئیز · اسلاید ۲</span>
+              <span className="rounded-full bg-brand-soft px-2 py-1 text-xs font-bold text-brand-ink">
                 تنظیمات در همان ادیتور
               </span>
             </div>
@@ -94,7 +94,7 @@ function ProductScene({ id }: { id: JourneyId }) {
                 </div>
               ))}
             </div>
-            <div className="mt-5 flex items-center gap-2 text-[10px] font-semibold text-content-muted">
+            <div className="mt-5 flex items-center gap-2 text-xs font-semibold text-content-muted">
               <SlidersHorizontal className="size-4 text-brand" aria-hidden="true" />
               زمان پاسخ، امتیازدهی و نمایش نتیجه
             </div>
@@ -106,7 +106,7 @@ function ProductScene({ id }: { id: JourneyId }) {
 
   if (id === "join") {
     return (
-      <div className="grid min-h-72 gap-4 rounded-feature bg-stage p-4 text-content-inverse sm:grid-cols-[1fr_11rem] sm:p-5">
+      <div className="grid min-h-72 gap-4 rounded-card bg-stage p-4 text-content-inverse sm:grid-cols-[1fr_11rem] sm:p-5">
         <div className="flex flex-col justify-center rounded-card border border-stage-border bg-stage-soft p-5">
           <p className="text-xs font-bold text-brand-border">برای ورود به جلسه</p>
           <p className="mt-4 text-3xl font-bold tracking-[0.16em] sm:text-4xl" dir="ltr">
@@ -118,7 +118,7 @@ function ProductScene({ id }: { id: JourneyId }) {
             بدون نصب، از مرورگر
           </div>
         </div>
-        <div className="rounded-feature bg-surface p-4 text-content">
+        <div className="rounded-card bg-surface p-4 text-content">
           <div className="mx-auto h-1.5 w-12 rounded-full bg-content/10" />
           <p className="mt-5 text-xs font-bold text-brand">ورود به جلسه</p>
           <div
@@ -137,7 +137,7 @@ function ProductScene({ id }: { id: JourneyId }) {
 
   if (id === "live") {
     return (
-      <div className="min-h-72 rounded-feature bg-stage p-5 text-content-inverse sm:p-6">
+      <div className="min-h-72 rounded-card bg-stage p-5 text-content-inverse sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <span className="text-xs font-bold text-brand-border">صفحه ارائه · نظرسنجی</span>
           <span className="rounded-full bg-stage-soft px-3 py-1 text-xs text-stage-muted">
@@ -172,7 +172,7 @@ function ProductScene({ id }: { id: JourneyId }) {
   }
 
   return (
-    <div className="min-h-72 rounded-feature bg-canvas p-4 sm:p-5">
+    <div className="min-h-72 rounded-card bg-canvas p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-bold text-brand">گزارش جلسه نمونه</p>
@@ -189,7 +189,7 @@ function ProductScene({ id }: { id: JourneyId }) {
             className="rounded-card border border-border-subtle bg-surface p-3 text-center"
           >
             <div className="font-brand text-xl font-bold text-content">{value}</div>
-            <div className="mt-1 text-[10px] font-semibold text-content-muted">{label}</div>
+            <div className="mt-1 text-xs font-semibold text-content-muted">{label}</div>
           </div>
         ))}
       </div>
@@ -219,7 +219,7 @@ export default function LandingProductJourney() {
   return (
     <div className="mt-10">
       <div
-        className="grid grid-cols-4 gap-2 rounded-card border border-border-subtle bg-surface p-2 shadow-card"
+        className="grid grid-cols-4 gap-2 rounded-card border border-border-subtle bg-surface p-2"
         role="group"
         aria-label="مراحل کار با ProSlides"
       >
@@ -233,7 +233,7 @@ export default function LandingProductJourney() {
               "flex min-h-12 items-center justify-center gap-2 rounded-control px-2 py-2 text-xs font-bold",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus sm:text-sm",
               active === id
-                ? "bg-stage text-content-inverse"
+                ? "bg-brand text-content-inverse"
                 : "text-content hover:bg-canvas",
             ].join(" ")}
           >
@@ -244,14 +244,14 @@ export default function LandingProductJourney() {
       </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[0.72fr_1.28fr] lg:items-stretch">
-        <article className="rounded-feature bg-brand-soft/60 p-5 sm:p-6">
-          <span className="inline-flex size-11 items-center justify-center rounded-card bg-surface text-brand shadow-card">
+        <article className="border-s-2 border-brand-border py-2 ps-5 sm:ps-6 lg:self-center">
+          <span className="inline-flex size-11 items-center justify-center rounded-card bg-brand-soft text-brand">
             <ActiveIcon className="size-5" aria-hidden="true" />
           </span>
           <p className="mt-4 text-xs font-bold text-brand">{step.eyebrow}</p>
           <h3 className="mt-2 text-xl font-bold leading-9 text-content">{step.title}</h3>
-          <p className="mt-3 text-sm leading-7 text-content-muted-on-tint">{step.description}</p>
-          <p className="mt-5 text-xs font-semibold leading-6 text-content-muted-on-tint">
+          <p className="mt-3 text-sm leading-7 text-content-muted">{step.description}</p>
+          <p className="mt-5 text-xs font-semibold leading-6 text-content-muted">
             نمای روبه‌رو فقط با انتخاب شما عوض می‌شود؛ اسکرول صفحه آن را جابه‌جا نمی‌کند.
           </p>
         </article>
@@ -259,11 +259,11 @@ export default function LandingProductJourney() {
         <div
           id="landing-product-scene"
           aria-label="نمای مرحله انتخاب‌شده"
-          className="overflow-hidden rounded-showcase border border-border-subtle bg-surface p-3 shadow-feature"
+          className="overflow-hidden rounded-feature border border-border-subtle bg-surface p-3 shadow-card"
         >
           <div className="flex items-center justify-between px-2 pb-3 pt-1">
             <span className="text-xs font-bold text-brand">نمای محصول</span>
-            <span className="text-[11px] font-semibold text-content-muted">نمونه نمایشی</span>
+            <span className="text-xs font-semibold text-content-muted">نمونه نمایشی</span>
           </div>
           <ProductScene id={active} />
         </div>

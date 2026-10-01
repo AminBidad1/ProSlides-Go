@@ -46,7 +46,7 @@ const POLL_ROWS = [
 function ActivityPreview({ type }: { type: "wordcloud" | "quiz" | "poll" }) {
   if (type === "wordcloud") {
     return (
-      <div className="flex min-h-36 flex-wrap content-center items-center justify-center gap-x-3 gap-y-2 rounded-card bg-stage p-4 text-content-inverse">
+      <div className="flex min-h-36 flex-wrap content-center items-center justify-center gap-x-3 gap-y-2 rounded-control bg-stage p-4 text-content-inverse">
         {WORD_CLOUD_WORDS.map(([word, size, tone], index) => (
           <span
             key={word}
@@ -66,8 +66,8 @@ function ActivityPreview({ type }: { type: "wordcloud" | "quiz" | "poll" }) {
 
   if (type === "quiz") {
     return (
-      <div className="min-h-36 rounded-card bg-stage p-4 text-content-inverse">
-        <p className="text-[11px] font-bold text-stage-accent">نتیجه نمونه</p>
+      <div className="min-h-36 rounded-control bg-stage p-4 text-content-inverse">
+        <p className="text-xs font-bold text-stage-accent">نتیجه نمونه</p>
         <div className="mt-3 space-y-2">
           {["مشارکت زنده مخاطبان", "متن طولانی‌تر", "اسلایدهای بیشتر"].map(
             (item, index) => (
@@ -90,12 +90,12 @@ function ActivityPreview({ type }: { type: "wordcloud" | "quiz" | "poll" }) {
   }
 
   return (
-    <div className="min-h-36 rounded-card bg-stage p-4 text-content-inverse">
-      <p className="text-[11px] font-bold text-stage-accent">نتیجه نمونه</p>
+    <div className="min-h-36 rounded-control bg-stage p-4 text-content-inverse">
+      <p className="text-xs font-bold text-stage-accent">نتیجه نمونه</p>
       <div className="mt-4 space-y-3">
         {POLL_ROWS.map(([label, value, tone]) => (
           <div key={label}>
-            <div className="flex items-center justify-between text-[11px] font-semibold">
+            <div className="flex items-center justify-between text-xs font-semibold">
               <span>{label}</span>
               <span>{value.toLocaleString("fa-IR")}٪</span>
             </div>
@@ -118,7 +118,7 @@ export default function LandingActivityPlayground() {
       {ACTIVITIES.map(({ title, description, Icon, preview }) => (
         <article
           key={title}
-          className="rounded-feature border border-border-subtle bg-surface p-4 shadow-card sm:p-5"
+          className="flex h-full flex-col rounded-card border border-border-subtle bg-surface p-4 sm:p-5"
         >
           <div className="flex items-center gap-3">
             <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-card bg-brand-soft text-brand">
@@ -126,10 +126,10 @@ export default function LandingActivityPlayground() {
             </span>
             <h3 className="text-lg font-bold text-content">{title}</h3>
           </div>
-          <p className="mt-3 min-h-14 text-sm leading-7 text-content-muted md:min-h-20">
+          <p className="mt-3 text-sm leading-7 text-content-muted">
             {description}
           </p>
-          <div className="mt-4" aria-hidden="true">
+          <div className="mt-auto pt-5" aria-hidden="true">
             <ActivityPreview type={preview} />
           </div>
         </article>

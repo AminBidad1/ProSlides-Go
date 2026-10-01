@@ -163,6 +163,8 @@ test("marketing routes are typed, module-owned, RTL-safe and deliberately concis
   assert.match(indexCss, /prefers-reduced-motion: reduce/);
   assert.match(indexCss, /--font-brand: "Outfit", "Vazirmatn"/);
   assert.match(indexCss, /--color-content-muted-on-tint:/);
+  assert.match(indexCss, /--color-surface-inverse:/);
+  assert.match(indexCss, /--color-content-inverse-muted:/);
   assert.match(indexCss, /--color-stage:/);
   assert.match(indexCss, /--color-data-violet:/);
   assert.match(indexCss, /--color-data-violet-on-stage:/);
@@ -170,6 +172,18 @@ test("marketing routes are typed, module-owned, RTL-safe and deliberately concis
   assert.match(indexCss, /--radius-showcase:/);
   assert.match(indexCss, /--shadow-feature:/);
   assert.match(marketingSurfaces, /bg-stage/);
+  assert.doesNotMatch(landing, /bg-stage/);
+  assert.match(landing, /bg-surface-inverse/);
+  assert.match(landing, /landing-section-band-brand/);
+  assert.match(landing, /landing-section-band-surface/);
+  assert.match(landing, /lg:me-auto lg:text-start/);
+  assert.match(indexCss, /\.landing-section-band::before/);
+  assert.match(indexCss, /inset-inline:/);
+  assert.match(indexCss, /\.landing-ambient\s*\{[^}]*inset-inline:/s);
+  assert.match(journey, /\? "bg-brand text-content-inverse"/);
+  assert.match(journey, /border-s-2/);
+  assert.doesNotMatch(journey, /shadow-feature/);
+  assert.doesNotMatch(marketingSurfaces, /text-\[(?:10|11)px\]/);
   assert.match(marketingSurfaces, /bg-data-(?:violet|cyan|emerald)/);
   assert.match(marketingSurfaces, /rounded-showcase/);
   assert.doesNotMatch(marketingSurfaces, /rounded-\[[^\]]+\]/);
