@@ -1,7 +1,10 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion as Motion } from "framer-motion";
 
-import { getColorForUser } from "../../../../shared/lib/playerColor.ts";
+import {
+  getColorForUser,
+  getTextColorForPlayerColor,
+} from "../../../../shared/lib/playerColor.ts";
 import type { LegacyLiveUser } from "../../model/serverData.ts";
 import { managerTheme } from "../theme.ts";
 import { useLiveSession } from "../../react/useLiveSession.ts";
@@ -131,7 +134,7 @@ export function ManagerLeaderBoard({
             </p>
           </div>
 
-          <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 bg-[color:var(--live-surface)] p-4 shadow-2xl backdrop-blur sm:p-5">
+          <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden live-panel rounded-feature p-4 sm:p-5">
             {players.length === 0 ? (
               <div
                 className="grid min-h-52 place-items-center text-center text-[color:var(--live-muted)]"
@@ -160,8 +163,11 @@ export function ManagerLeaderBoard({
                         className="grid grid-cols-[3rem_minmax(0,1fr)_auto] items-center gap-3"
                       >
                         <span
-                          className="grid h-10 w-10 place-items-center rounded-full font-black text-white"
-                          style={{ backgroundColor: player.color }}
+                          className="grid h-10 w-10 place-items-center rounded-full font-black"
+                          style={{
+                            backgroundColor: player.color,
+                            color: getTextColorForPlayerColor(player.color),
+                          }}
                         >
                           {(player.rank ?? index + 1).toLocaleString("fa-IR")}
                         </span>
@@ -169,7 +175,7 @@ export function ManagerLeaderBoard({
                         <button
                           type="button"
                           onClick={() => toggleName(player.user_id)}
-                          className="relative min-h-14 overflow-hidden rounded-xl bg-white/10 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                          className="relative min-h-14 overflow-hidden rounded-card live-theme-overlay-soft text-start live-theme-focusable focus-visible:outline-none"
                           aria-pressed={hidden}
                           aria-label={
                             hidden
@@ -179,7 +185,7 @@ export function ManagerLeaderBoard({
                         >
                           {width > 0 ? (
                             <Motion.span
-                              className="absolute inset-y-0 start-0 rounded-xl opacity-70"
+                              className="absolute inset-y-0 start-0 rounded-control opacity-70"
                               style={{ backgroundColor: player.color }}
                               initial={{ width: 0 }}
                               animate={{ width: `${width}%` }}

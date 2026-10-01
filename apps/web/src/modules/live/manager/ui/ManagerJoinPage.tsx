@@ -165,7 +165,7 @@ export function ManagerJoinPage({
           showQr ? "sm:ps-84" : ""
         }`}
       >
-        <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 bg-[color:var(--live-surface)] p-4 shadow-2xl backdrop-blur-md sm:p-6">
+        <section className="flex min-h-0 flex-1 flex-col overflow-hidden live-panel rounded-feature p-4 sm:p-6">
           <div className="text-center">
             <p className="text-sm text-[color:var(--live-muted)]">
               {Number(participantCount).toLocaleString("fa-IR")} بازیکن آماده
@@ -202,7 +202,7 @@ export function ManagerJoinPage({
               onClick={() => void handleStart()}
               disabled={!isConnected || startPending}
               aria-busy={startPending}
-              className="min-h-14 min-w-44 rounded-2xl bg-brand px-7 text-lg font-black text-content-inverse shadow-xl hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/50"
+              className="min-h-14 min-w-44 rounded-card bg-brand px-7 text-lg font-black text-content-inverse shadow-card hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-50 live-theme-focusable"
             >
               {startPending ? "در حال شروع…" : "شروع ارائه"}
             </button>

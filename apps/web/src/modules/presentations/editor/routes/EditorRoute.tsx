@@ -22,6 +22,7 @@ import {
 } from "../registry/editorItemRenderRegistry.tsx";
 import EditorShell from "../shell/EditorShell.tsx";
 import { X, ArrowRight, Plus, RefreshCw, Sparkles } from "lucide-react";
+import { Button } from "../../../../shared/ui/primitives/Button.tsx";
 import { ConfirmDialog } from "../../../../shared/ui/primitives/ConfirmDialog.tsx";
 import EditorRouteSkeleton from "./EditorRouteSkeleton";
 import Notice from "../../../../shared/ui/Notice";
@@ -199,21 +200,21 @@ export default function EditorPage() {
   if (error || !quiz) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-brand-soft px-4" dir="rtl">
-        <div className="w-full max-w-md rounded-3xl border border-danger-border bg-surface p-8 text-center shadow-panel">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-danger-soft text-danger">
+        <div className="w-full max-w-md rounded-feature border border-danger-border bg-surface p-8 text-center shadow-panel">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-card bg-danger-soft text-danger">
             <RefreshCw className="h-6 w-6" aria-hidden="true" />
           </div>
-          <h1 className="mt-5 text-xl font-black text-slate-900">ویرایشگر بارگذاری نشد</h1>
-          <p className="mt-2 text-sm leading-7 text-slate-500">
+          <h1 className="mt-5 text-xl font-black text-content">ویرایشگر بارگذاری نشد</h1>
+          <p className="mt-2 text-sm leading-7 text-content-muted">
             اتصال را بررسی کنید و دوباره تلاش کنید. تغییر ذخیره‌نشده‌ای در این صفحه ایجاد نشده است.
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <button type="button" onClick={startRouteLoad} className="rounded-control bg-brand px-5 py-3 font-bold text-content-inverse hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus">
+            <Button type="button" onClick={startRouteLoad} size="lg">
               تلاش دوباره
-            </button>
-            <button type="button" onClick={() => navigate("/manager/panel")} className="rounded-xl border border-slate-200 bg-white px-5 py-3 font-bold text-slate-700 hover:bg-slate-50">
+            </Button>
+            <Button type="button" variant="outline" size="lg" onClick={() => navigate("/manager/panel")}>
               {fa.managerShell.backToDashboard}
-            </button>
+            </Button>
           </div>
           <span className="sr-only">{error || "ارائه پیدا نشد"}</span>
         </div>
@@ -452,24 +453,20 @@ function QuestionEditor({
         />
       </div>
     ) : activeRegistration ? (
-      <div className="max-w-md text-center text-slate-500">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-muted text-brand">
+      <div className="max-w-md text-center text-content-muted">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-card bg-brand-muted text-brand">
           <Sparkles className="h-7 w-7" aria-hidden="true" />
         </div>
-        <h1 className="mt-5 text-xl font-black text-slate-900">
+        <h1 className="mt-5 text-xl font-black text-content">
           نوع این آیتم را انتخاب کنید
         </h1>
         <p className="mb-5 mt-2 text-sm leading-7">
           یک فعالیت انتخابی یا اسلاید محتوایی بسازید. رفتار نتیجه و
           رتبه‌بندی، بخشی از تنظیمات فعالیت است و آیتم جداگانه نیست.
         </p>
-        <button
-          type="button"
-          onClick={handleTypeChangeClick}
-          className="rounded-control bg-brand px-5 py-3 font-bold text-content-inverse hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-        >
+        <Button type="button" onClick={handleTypeChangeClick} size="lg">
           انتخاب نوع آیتم
-        </button>
+        </Button>
       </div>
     ) : (
       <div className="max-w-md text-center">
@@ -481,7 +478,7 @@ function QuestionEditor({
     )
   ) : (
     <div className="mx-auto max-w-lg px-5 text-center">
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-muted text-brand">
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-card bg-brand-muted text-brand">
         <Sparkles className="h-8 w-8" aria-hidden="true" />
       </div>
       <p className="mt-3 text-sm font-bold text-brand">
@@ -489,19 +486,20 @@ function QuestionEditor({
           ? "ارائه شما آماده است"
           : "شروع یک ارائه تازه"}
       </p>
-      <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+      <h1 className="mt-2 text-2xl font-black tracking-tight text-content">
         اولین آیتم را بسازید
       </h1>
-      <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-slate-500">
+      <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-content-muted">
         با یک فعالیت تعاملی یا اسلاید محتوایی شروع کنید. نوع آیتم در مرحله
         بعد انتخاب می‌شود.
       </p>
-      <button
+      <Button
         type="button"
+        size="lg"
         onClick={slideMutations.beginAddSlide}
         disabled={isAddingSlide}
         autoFocus={createdPresentation}
-        className="mt-6 inline-flex items-center gap-2 rounded-control bg-brand px-6 py-3 font-bold text-content-inverse shadow-lg transition hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-70"
+        className="mt-6"
       >
         {isAddingSlide ? (
           <RefreshCw
@@ -512,15 +510,16 @@ function QuestionEditor({
           <Plus className="h-5 w-5" aria-hidden="true" />
         )}
         {isAddingSlide ? "در حال ساخت…" : "ساخت اولین آیتم"}
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
+        variant="ghost"
         onClick={() => navigate("/manager/panel")}
-        className="mx-auto mt-4 flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+        className="mx-auto mt-4"
       >
         <ArrowRight className="h-4 w-4" aria-hidden="true" />
         {fa.managerShell.backToDashboard}
-      </button>
+      </Button>
     </div>
   );
 
@@ -531,10 +530,10 @@ function QuestionEditor({
         if (!open) slideMutations.cancelTypeSelection();
       }}
     >
-      <DialogPrimitive.Overlay className="absolute inset-0 z-30 bg-black/40 backdrop-blur-sm" />
+      <DialogPrimitive.Overlay className="absolute inset-0 z-30 bg-overlay-soft backdrop-blur-sm" />
       <DialogPrimitive.Content
         ref={typePickerContentRef}
-        className="absolute inset-x-3 z-40 mx-auto flex w-auto max-w-[440px] flex-col items-center space-y-4 rounded-3xl bg-white p-6 shadow-2xl outline-none sm:inset-x-auto sm:w-[440px]"
+        className="absolute inset-x-3 z-40 mx-auto flex w-auto max-w-[440px] flex-col items-center space-y-4 rounded-feature bg-surface p-6 shadow-feature outline-none sm:inset-x-auto sm:w-[440px]"
         aria-labelledby="item-type-title"
         onOpenAutoFocus={(event) => {
           typePickerReturnFocusRef.current =
@@ -564,7 +563,7 @@ function QuestionEditor({
           </h2>
         </DialogPrimitive.Title>
         <DialogPrimitive.Description asChild>
-          <p className="text-center text-sm text-slate-500">
+          <p className="text-center text-sm text-content-muted">
             نوع آیتم را بعداً هم می‌توانید تغییر دهید. تبدیل نوع ممکن است
             محتوای مخصوص نوع قبلی را جایگزین کند.
           </p>
@@ -589,7 +588,7 @@ function QuestionEditor({
               data-item-type-choice={index === 0 ? "first" : undefined}
               onClick={() => void slideMutations.selectType(choice.id)}
               disabled={isSelectingType}
-              className="w-full rounded-2xl border border-brand-border bg-brand-soft px-4 py-3 text-brand-ink transition hover:border-brand hover:bg-brand-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-panel border border-brand-border bg-brand-soft px-4 py-3 text-brand-ink transition hover:border-brand hover:bg-brand-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-60"
             >
               <span className="flex flex-col items-center">
                 <span className="font-semibold">
@@ -604,12 +603,9 @@ function QuestionEditor({
         })}
 
         <DialogPrimitive.Close asChild>
-          <button
-            type="button"
-            className="min-h-10 rounded-lg px-3 text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-          >
+          <Button type="button" variant="ghost">
             انصراف
-          </button>
+          </Button>
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
     </DialogPrimitive.Root>
@@ -629,19 +625,15 @@ function QuestionEditor({
         />
       ) : activeRegistration ? (
         <div className="flex h-full flex-col items-center justify-center p-4 text-center">
-          <div className="rounded-2xl bg-warning-soft p-4 text-warning-ink">
+          <div className="rounded-panel bg-warning-soft p-4 text-warning-ink">
             <Sparkles className="h-8 w-8" aria-hidden="true" />
           </div>
-          <p className="mt-4 font-medium text-gray-700">
+          <p className="mt-4 font-medium text-content">
             برای ویرایش، ابتدا نوع این آیتم را انتخاب کنید.
           </p>
-          <button
-            type="button"
-            onClick={handleTypeChangeClick}
-            className="mt-4 rounded-control bg-brand px-4 py-2 font-bold text-content-inverse hover:bg-brand-strong"
-          >
+          <Button type="button" onClick={handleTypeChangeClick} className="mt-4">
             انتخاب نوع آیتم
-          </button>
+          </Button>
         </div>
       ) : (
         <Notice tone="warning" className="m-1 items-start">
@@ -671,14 +663,16 @@ function QuestionEditor({
 
   const topActions =
     activeSlide && activeRegistration ? (
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="sm"
         onClick={handleTypeChangeClick}
-        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-brand-border bg-surface px-3 text-xs font-bold text-content-muted transition hover:bg-brand-soft hover:text-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+        className="text-content-muted hover:text-brand-strong"
       >
         <Sparkles className="size-3.5" aria-hidden="true" />
         تغییر نوع آیتم
-      </button>
+      </Button>
     ) : null;
 
   const mobileItemRail =
@@ -687,25 +681,26 @@ function QuestionEditor({
         <button
           type="button"
           aria-label="بستن فهرست آیتم‌ها"
-          className="absolute inset-0 bg-black/40"
+          className="absolute inset-0 bg-overlay-soft"
           onClick={() => panels.closePanel("slides")}
         />
         <div
-          className="absolute inset-x-0 bottom-0 overflow-y-auto rounded-t-2xl bg-white p-4 shadow-2xl"
+          className="absolute inset-x-0 bottom-0 overflow-y-auto rounded-t-feature bg-surface p-4 shadow-feature"
           style={{
             top: "calc(4rem + env(safe-area-inset-top))",
           }}
         >
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-bold text-gray-800">آیتم‌ها</h2>
-            <button
+            <h2 className="font-bold text-content">آیتم‌ها</h2>
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               aria-label="بستن فهرست آیتم‌ها"
               onClick={() => panels.closePanel("slides")}
-              className="rounded-lg p-2 transition hover:bg-gray-100"
             >
-              <X className="h-5 w-5 text-gray-500" aria-hidden="true" />
-            </button>
+              <X className="h-5 w-5 text-content-muted" aria-hidden="true" />
+            </Button>
           </div>
           <SlidesPanel
             slides={slideOrder.orderedSlides}
@@ -760,7 +755,7 @@ function QuestionEditor({
               {typeSelectionNotice && (
                 <Notice
                   tone="success"
-                  className="absolute bottom-3 left-1/2 z-40 -translate-x-1/2 shadow-lg"
+                  className="absolute bottom-3 left-1/2 z-40 -translate-x-1/2 shadow-card"
                 >
                   {typeSelectionNotice}
                 </Notice>
@@ -788,7 +783,7 @@ function QuestionEditor({
               <Notice
                 tone={notice.tone}
                 pending={notice.pending}
-                className="shadow-lg"
+                className="shadow-card"
               >
                 {notice.message}
               </Notice>
@@ -799,18 +794,20 @@ function QuestionEditor({
             <div className="fixed inset-x-4 top-20 z-50 mx-auto max-w-xl">
               <Notice
                 tone="warning"
-                className="shadow-lg"
+                className="shadow-card"
                 action={(
-                  <button
+                  <Button
                     type="button"
+                    size="sm"
+                    variant="outline"
                     onClick={async () => {
                       await refreshQuiz();
                       editorStatus.clearConflict();
                     }}
-                    className="rounded-control border border-warning-border px-3 py-1.5 text-xs font-bold hover:bg-warning-soft"
+                    className="border-warning-border text-warning-ink hover:bg-warning-soft"
                   >
                     بارگذاری دوباره
-                  </button>
+                  </Button>
                 )}
               >
                 {editorStatus.conflictMessage}

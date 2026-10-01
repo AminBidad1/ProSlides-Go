@@ -2,8 +2,13 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 
-import { getColorForUser } from "../../../../shared/lib/playerColor.ts";
+import {
+  getColorForUser,
+  getTextColorForPlayerColor,
+} from "../../../../shared/lib/playerColor.ts";
+import { Button } from "../../../../shared/ui/primitives/Button.tsx";
 import { ConfirmDialog } from "../../../../shared/ui/primitives/ConfirmDialog.tsx";
+import { Input } from "../../../../shared/ui/primitives/Input.tsx";
 import { WordCloudView } from "../../../../shared/ui/WordCloudView.tsx";
 import type { LivePresentationModel } from "../../model/presentation.ts";
 import { useManagerActivityProgress } from "../useManagerActivityProgress.ts";
@@ -314,17 +319,17 @@ export function ManagerBackstageDrawer({
     return (
       <main
         dir="rtl"
-        className="grid min-h-dvh place-items-center bg-slate-950 px-5 py-10 text-white"
+        className="grid min-h-dvh place-items-center bg-stage px-5 py-10 text-content-inverse"
         data-backstage-privacy-gate="true"
       >
-        <section className="w-full max-w-xl rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl sm:p-8">
+        <section className="w-full max-w-xl rounded-feature border border-stage-border bg-stage-soft/50 p-6 shadow-feature sm:p-8">
           <p className="text-xs font-black text-warning">
             سطح خصوصی ارائه‌دهنده
           </p>
           <h1 className="mt-2 text-2xl font-black sm:text-3xl">
             پیش از نمایش اطلاعات پشت‌صحنه
           </h1>
-          <p className="mt-4 text-sm font-medium leading-7 text-white/70">
+          <p className="mt-4 text-sm font-medium leading-7 text-stage-muted">
             این پنجره می‌تواند تعداد پاسخ‌ها، نتیجه بسته‌شده و رتبه‌بندی خصوصی را
             نشان دهد. ابتدا مطمئن شوید این پنجره روی ویدئوپروژکتور، اشتراک صفحه یا
             نمایشگر عمومی دیده نمی‌شود.
@@ -332,11 +337,11 @@ export function ManagerBackstageDrawer({
           <button
             type="button"
             onClick={() => setPrivateSurfaceArmed(true)}
-            className="mt-6 min-h-12 w-full rounded-2xl bg-brand px-4 font-black text-content-inverse hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25"
+            className="mt-6 min-h-12 w-full rounded-card bg-brand px-4 font-black text-content-inverse hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
           >
             نمایش پشت‌صحنه خصوصی
           </button>
-          <p className="mt-3 text-xs leading-6 text-white/45">
+          <p className="mt-3 text-xs leading-6 text-stage-muted">
             اگر فقط یک نمایشگر دارید و همان تصویر برای مخاطبان پخش می‌شود، این
             صفحه را باز نگه ندارید.
           </p>
@@ -352,7 +357,7 @@ export function ManagerBackstageDrawer({
           href={privateBackstageHref}
           target="_blank"
           rel="noreferrer"
-          className="fixed end-4 top-20 z-40 grid min-h-11 place-items-center rounded-2xl border border-white/15 bg-slate-950/90 px-4 text-sm font-black text-white shadow-xl backdrop-blur hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+          className="fixed end-4 top-20 z-40 grid min-h-11 place-items-center rounded-card border border-stage-border bg-stage/90 px-4 text-sm font-black text-content-inverse shadow-card backdrop-blur hover:bg-stage-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
           aria-label="باز کردن پشت‌صحنه خصوصی در پنجره جدا"
         >
           پشت‌صحنه خصوصی
@@ -368,14 +373,14 @@ export function ManagerBackstageDrawer({
 
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay
-            className={backstageMode ? "hidden" : "fixed inset-0 z-[60] bg-black/55"}
+            className={backstageMode ? "hidden" : "fixed inset-0 z-[60] bg-overlay"}
           />
           <DialogPrimitive.Content
             dir="rtl"
             className={
               backstageMode
-                ? "fixed inset-0 z-[61] flex w-full flex-col overflow-y-auto bg-slate-950 p-5 text-white outline-none sm:p-7"
-                : "fixed inset-y-0 end-0 z-[61] flex w-[min(36rem,94vw)] flex-col overflow-y-auto border-0 border-s border-white/10 bg-slate-950 p-5 text-white shadow-2xl outline-none"
+                ? "fixed inset-0 z-[61] flex w-full flex-col overflow-y-auto bg-stage p-5 text-content-inverse outline-none sm:p-7"
+                : "fixed inset-y-0 end-0 z-[61] flex w-[min(36rem,94vw)] flex-col overflow-y-auto border-0 border-s border-stage-border bg-stage p-5 text-content-inverse shadow-feature outline-none"
             }
             aria-labelledby="backstage-title"
             onEscapeKeyDown={(event) => {
@@ -393,16 +398,16 @@ export function ManagerBackstageDrawer({
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-bold text-white/55">کنترل خصوصی ارائه‌دهنده</p>
+                <p className="text-xs font-bold text-stage-muted">کنترل خصوصی ارائه‌دهنده</p>
                 {backstageMode ? (
-                  <div className="mt-2 flex max-w-2xl flex-wrap items-center gap-2 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-xs font-bold leading-6 text-warning">
+                  <div className="mt-2 flex max-w-2xl flex-wrap items-center gap-2 rounded-control border border-warning/30 bg-warning/10 px-3 py-2 text-xs font-bold leading-6 text-warning">
                     <span className="min-w-0 flex-1">
                       این صفحه خصوصی است و نباید روی نمایشگر سالن یا اشتراک عمومی نمایش داده شود.
                     </span>
                     <button
                       type="button"
                       onClick={() => setPrivateSurfaceArmed(false)}
-                      className="min-h-9 rounded-lg border border-warning/30 px-3 text-xs font-black hover:bg-warning/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warning/60"
+                      className="min-h-9 rounded-control border border-warning/30 px-3 text-xs font-black hover:bg-warning/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warning/60"
                     >
                       پوشاندن اطلاعات
                     </button>
@@ -421,7 +426,7 @@ export function ManagerBackstageDrawer({
                 <DialogPrimitive.Close asChild>
                   <button
                     type="button"
-                    className="grid min-h-11 min-w-11 place-items-center rounded-full bg-white/10 text-2xl hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                    className="grid min-h-11 min-w-11 place-items-center rounded-full bg-stage-soft text-2xl hover:bg-stage-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
                     aria-label="بستن پشت‌صحنه"
                   >
                     ×
@@ -431,14 +436,14 @@ export function ManagerBackstageDrawer({
             </div>
 
             <div className="mt-5 grid grid-cols-2 gap-3">
-              <div className="rounded-2xl bg-white/5 p-4">
-                <p className="text-xs text-white/55">شرکت‌کنندگان</p>
+              <div className="rounded-card bg-stage-soft/50 p-4">
+                <p className="text-xs text-stage-muted">شرکت‌کنندگان</p>
                 <p className="mt-1 text-2xl font-black">
                   {Number(participantCount || 0).toLocaleString("fa-IR")}
                 </p>
               </div>
               <div
-                className="rounded-2xl bg-white/5 p-4"
+                className="rounded-card bg-stage-soft/50 p-4"
                 aria-live="polite"
                 aria-atomic="true"
                 aria-label={
@@ -450,7 +455,7 @@ export function ManagerBackstageDrawer({
                     : responseCount.toLocaleString("fa-IR") + " پاسخ ثبت‌شده"
                 }
               >
-                <p className="text-xs text-white/55">پاسخ‌های فعالیت</p>
+                <p className="text-xs text-stage-muted">پاسخ‌های فعالیت</p>
                 <p className="mt-1 text-2xl font-black">
                   {session?.activity_phase === "accepting" &&
                   responseDenominator > 0
@@ -462,7 +467,7 @@ export function ManagerBackstageDrawer({
                 {responseProgress != null ? (
                   <>
                     <div
-                      className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10"
+                      className="mt-3 h-1.5 overflow-hidden rounded-full bg-stage-soft"
                       aria-hidden="true"
                     >
                       <div
@@ -470,7 +475,7 @@ export function ManagerBackstageDrawer({
                         style={{ width: responseProgress + "%" }}
                       />
                     </div>
-                    <p className="mt-2 text-xs text-white/50">
+                    <p className="mt-2 text-xs text-stage-muted">
                       {responseProgress.toLocaleString("fa-IR")}٪ پاسخ داده‌اند
                     </p>
                   </>
@@ -478,79 +483,80 @@ export function ManagerBackstageDrawer({
               </div>
             </div>
 
-            <section className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+            <section className="mt-4 rounded-card border border-stage-border bg-stage-soft/50 p-4">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-sm font-black">کنترل اجرا</h3>
-                <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs text-white/60">
+                <span className="rounded-full bg-stage-soft px-2.5 py-1 text-xs text-stage-muted">
                   {stageView}
                 </span>
               </div>
 
-              <div className="mt-4 rounded-2xl bg-black/20 p-4">
-                <p className="text-xs text-white/50">آیتم جاری</p>
+              <div className="mt-4 rounded-card bg-stage/50 p-4">
+                <p className="text-xs text-stage-muted">آیتم جاری</p>
                 <p className="mt-1 line-clamp-2 font-black" dir="auto">
                   {currentItem}
                 </p>
-                <div className="mt-3 border-t border-white/10 pt-3">
-                  <p className="text-xs text-white/50">آیتم بعدی</p>
-                  <p className="mt-1 line-clamp-2 text-sm font-bold text-white/80" dir="auto">
+                <div className="mt-3 border-t border-stage-border pt-3">
+                  <p className="text-xs text-stage-muted">آیتم بعدی</p>
+                  <p className="mt-1 line-clamp-2 text-sm font-bold text-content-inverse/80" dir="auto">
                     {nextItem}
                   </p>
                 </div>
               </div>
 
-              <button
+              <Button
                 type="button"
+                size="lg"
                 onClick={() => void runPrimaryControl()}
                 disabled={primaryControl.kind === "disabled" || commandPending}
-                className="mt-4 min-h-12 w-full rounded-2xl bg-brand px-4 font-black text-content-inverse hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25"
+                className="mt-4 w-full"
               >
                 {primaryControl.label}
-              </button>
-              <p className="mt-2 text-xs leading-6 text-white/50">
+              </Button>
+              <p className="mt-2 text-xs leading-6 text-stage-muted">
                 هر فرمان با state version فعلی ارسال می‌شود؛ وضعیت Stage فقط پس از تأیید سرور تغییر می‌کند.
               </p>
               {commandError ? (
-                <p className="mt-3 rounded-xl bg-danger/15 p-3 text-xs leading-6 text-danger" role="alert">
+                <p className="mt-3 rounded-control bg-danger/15 p-3 text-xs leading-6 text-danger" role="alert">
                   {commandError}
                 </p>
               ) : null}
             </section>
 
-            <section className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+            <section className="mt-4 rounded-card border border-stage-border bg-stage-soft/50 p-4">
               <h3 className="text-sm font-black">وضعیت زنده و بازیابی</h3>
               <dl className="mt-3 space-y-2 text-sm">
                 <div className="flex justify-between gap-3">
-                  <dt className="text-white/55">اتصال</dt>
+                  <dt className="text-stage-muted">اتصال</dt>
                   <dd className={isStreamConnected ? "text-success" : "text-warning"}>
                     {isStreamConnected ? "متصل" : "در حال بازیابی"}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-3">
-                  <dt className="text-white/55">فعالیت</dt>
+                  <dt className="text-stage-muted">فعالیت</dt>
                   <dd>{phaseLabel(session?.activity_phase)}</dd>
                 </div>
                 <div className="flex justify-between gap-3">
-                  <dt className="text-white/55">نسخه وضعیت</dt>
+                  <dt className="text-stage-muted">نسخه وضعیت</dt>
                   <dd dir="ltr">{session?.state_version ?? "—"}</dd>
                 </div>
                 <div className="flex justify-between gap-3">
-                  <dt className="text-white/55">آخرین رویداد</dt>
+                  <dt className="text-stage-muted">آخرین رویداد</dt>
                   <dd dir="ltr">{managerSnapshot?.last_event_id ?? "—"}</dd>
                 </div>
               </dl>
               {!isStreamConnected && connectionError ? (
-                <p className="mt-3 rounded-xl bg-warning/15 p-3 text-xs leading-6 text-warning" role="status">
+                <p className="mt-3 rounded-control bg-warning/15 p-3 text-xs leading-6 text-warning" role="status">
                   ارتباط زنده در حال بازیابی است. snapshot معتبر قبل از ادامه event stream دوباره خوانده می‌شود.
                 </p>
               ) : null}
             </section>
 
             {activityResultVisible && currentQuestion ? (
-              <section className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+              <section className="mt-4 rounded-card border border-stage-border bg-stage-soft/50 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="text-sm font-black">نتیجه خصوصی فعالیت</h3>
-                  <span className="text-xs text-white/55">
+                  <span className="text-xs text-stage-muted">
                     {responseCount.toLocaleString("fa-IR")} پاسخ
                   </span>
                 </div>
@@ -558,34 +564,34 @@ export function ManagerBackstageDrawer({
                   <>
                     <WordCloudView
                       terms={wordTerms}
-                      className="mt-3 min-h-44 rounded-2xl bg-black/20 p-3"
+                      className="mt-3 min-h-44 rounded-card bg-stage/50 p-3"
                       emptyLabel="هنوز عبارتی برای نمایش وجود ندارد."
                       ariaLabel="پیش‌نمایش خصوصی ابر واژه"
                     />
                     {backstageMode && wordCloudModeration ? (
-                      <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3 sm:p-4">
+                      <div className="mt-4 rounded-card border border-stage-border bg-stage/50 p-3 sm:p-4">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div>
                             <h4 className="text-sm font-black">
                               مدیریت واژه‌های ابر
                             </h4>
-                            <p className="mt-1 max-w-xl text-xs leading-6 text-white/55">
+                            <p className="mt-1 max-w-xl text-xs leading-6 text-stage-muted">
                               پنهان‌کردن فقط نمایش aggregate را تغییر می‌دهد؛
                               پاسخ خام شرکت‌کننده برای گزارش و audit حذف نمی‌شود.
                             </p>
                           </div>
-                          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white/65">
+                          <span className="rounded-full bg-stage-soft px-3 py-1 text-xs font-bold text-stage-muted">
                             {hiddenModerationCount.toLocaleString("fa-IR")} پنهان
                           </span>
                         </div>
 
                         {session?.activity_phase === "revealed" ? (
-                          <p className="mt-3 rounded-xl border border-warning/25 bg-warning/10 px-3 py-2 text-xs font-bold leading-6 text-warning">
+                          <p className="mt-3 rounded-control border border-warning/25 bg-warning/10 px-3 py-2 text-xs font-bold leading-6 text-warning">
                             نتیجه اکنون نمایش داده شده است؛ هر تغییر پس از همگام‌سازی
                             فوراً روی Stage و نتیجه شرکت‌کنندگان اعمال می‌شود.
                           </p>
                         ) : (
-                          <p className="mt-3 rounded-xl bg-white/5 px-3 py-2 text-xs leading-6 text-white/55">
+                          <p className="mt-3 rounded-control bg-stage-soft/50 px-3 py-2 text-xs leading-6 text-stage-muted">
                             نتیجه هنوز عمومی نشده است. می‌توانید واژه‌ها را پیش از
                             نمایش نتیجه بازبینی کنید.
                           </p>
@@ -593,20 +599,21 @@ export function ManagerBackstageDrawer({
 
                         <label className="mt-3 block">
                           <span className="sr-only">جست‌وجوی واژه برای مدیریت</span>
-                          <input
+                          <Input
                             type="search"
+                            tone="dark"
                             value={moderationQuery}
                             onChange={(event) =>
                               setModerationQuery(event.target.value)
                             }
                             placeholder="جست‌وجوی واژه…"
-                            className="min-h-11 w-full rounded-xl border border-white/10 bg-slate-950/70 px-3 text-sm font-medium text-white outline-none placeholder:text-white/35 focus:border-brand/70 focus:ring-2 focus:ring-brand/30"
+                            className="min-h-11 font-medium"
                           />
                         </label>
 
                         {moderationError ? (
                           <p
-                            className="mt-3 rounded-xl bg-danger/10 px-3 py-2 text-xs font-bold leading-6 text-danger"
+                            className="mt-3 rounded-control bg-danger/10 px-3 py-2 text-xs font-bold leading-6 text-danger"
                             role="alert"
                           >
                             {moderationError}
@@ -625,10 +632,10 @@ export function ManagerBackstageDrawer({
                                 <div
                                   key={term.canonical_key}
                                   className={
-                                    "flex min-h-12 items-center gap-3 rounded-xl border px-3 py-2 " +
+                                    "flex min-h-12 items-center gap-3 rounded-control border px-3 py-2 " +
                                     (term.hidden
                                       ? "border-warning/20 bg-warning/5"
-                                      : "border-white/10 bg-white/5")
+                                      : "border-stage-border bg-stage-soft/50")
                                   }
                                 >
                                   <div className="min-w-0 flex-1">
@@ -636,15 +643,15 @@ export function ManagerBackstageDrawer({
                                       className={
                                         "truncate text-sm font-black " +
                                         (term.hidden
-                                          ? "text-white/45 line-through"
-                                          : "text-white")
+                                          ? "text-stage-muted line-through"
+                                          : "text-content-inverse")
                                       }
                                       dir="auto"
                                       title={term.text}
                                     >
                                       {term.text}
                                     </p>
-                                    <p className="mt-0.5 text-xs text-white/45">
+                                    <p className="mt-0.5 text-xs text-stage-muted">
                                       {term.count.toLocaleString("fa-IR")} بار
                                       {term.hidden ? " · پنهان" : " · قابل نمایش"}
                                     </p>
@@ -662,7 +669,7 @@ export function ManagerBackstageDrawer({
                                       commandPending
                                     }
                                     className={
-                                      "min-h-9 shrink-0 rounded-lg border px-3 text-xs font-black focus-visible:outline-none focus-visible:ring-2 disabled:cursor-wait disabled:opacity-45 " +
+                                      "min-h-9 shrink-0 rounded-control border px-3 text-xs font-black focus-visible:outline-none focus-visible:ring-2 disabled:cursor-wait disabled:opacity-45 " +
                                       (term.hidden
                                         ? "border-success/30 bg-success/10 text-success hover:bg-success/15 focus-visible:ring-success/50"
                                         : "border-danger/30 bg-danger/10 text-danger hover:bg-danger/15 focus-visible:ring-danger/50")
@@ -683,7 +690,7 @@ export function ManagerBackstageDrawer({
                               );
                             })
                           ) : (
-                            <p className="rounded-xl bg-white/5 p-3 text-center text-xs text-white/50">
+                            <p className="rounded-control bg-stage-soft/50 p-3 text-center text-xs text-stage-muted">
                               {moderationQuery.trim()
                                 ? "واژه‌ای با این جست‌وجو پیدا نشد."
                                 : "واژه‌ای برای مدیریت وجود ندارد."}
@@ -707,12 +714,12 @@ export function ManagerBackstageDrawer({
                       return (
                         <div
                           key={String(option.option_id ?? index)}
-                          className="flex min-h-11 items-center gap-3 rounded-xl bg-black/20 px-3 py-2"
+                          className="flex min-h-11 items-center gap-3 rounded-control bg-stage/50 px-3 py-2"
                         >
                           <span
                             className={
                               "h-2.5 w-2.5 shrink-0 rounded-full " +
-                              (correct ? "bg-success" : "bg-white/30")
+                              (correct ? "bg-success" : "bg-stage-muted/40")
                             }
                             aria-hidden="true"
                           />
@@ -739,9 +746,9 @@ export function ManagerBackstageDrawer({
             ) : null}
 
             {activityResultVisible && currentQuestion?.is_scored !== false ? (
-              <section className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+              <section className="mt-4 rounded-card border border-stage-border bg-stage-soft/50 p-4">
                 <h3 className="text-sm font-black">برترین‌های این فعالیت</h3>
-                <p className="mt-1 text-xs leading-6 text-white/50">
+                <p className="mt-1 text-xs leading-6 text-stage-muted">
                   این رتبه فقط عملکرد همین فعالیت را نشان می‌دهد و با رتبه‌بندی کلی جلسه متفاوت است.
                 </p>
                 {topPerformers.length > 0 ? (
@@ -749,11 +756,16 @@ export function ManagerBackstageDrawer({
                     {topPerformers.map((performer) => (
                       <li
                         key={performer.participant_id}
-                        className="grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-2 rounded-xl bg-black/20 px-3 py-2"
+                        className="grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-2 rounded-control bg-stage/50 px-3 py-2"
                       >
                         <span
-                          className="grid h-8 w-8 place-items-center rounded-full text-xs font-black text-white"
-                          style={{ backgroundColor: getColorForUser(performer.participant_id) }}
+                          className="grid h-8 w-8 place-items-center rounded-full text-xs font-black"
+                          style={{
+                            backgroundColor: getColorForUser(performer.participant_id),
+                            color: getTextColorForPlayerColor(
+                              getColorForUser(performer.participant_id),
+                            ),
+                          }}
                         >
                           {performer.rank.toLocaleString("fa-IR")}
                         </span>
@@ -768,7 +780,7 @@ export function ManagerBackstageDrawer({
                     ))}
                   </ol>
                 ) : (
-                  <p className="mt-3 rounded-xl bg-black/20 p-3 text-center text-xs text-white/55">
+                  <p className="mt-3 rounded-control bg-stage/50 p-3 text-center text-xs text-stage-muted">
                     هنوز عملکرد امتیازی ثبت نشده است.
                   </p>
                 )}
@@ -780,21 +792,23 @@ export function ManagerBackstageDrawer({
                 href={`/manager/stage/${session.id}`}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-4 grid min-h-12 place-items-center rounded-2xl border border-white/20 bg-white/10 px-4 text-center font-black text-white hover:bg-white/15 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/20"
+                className="mt-4 grid min-h-12 place-items-center rounded-card border border-stage-border bg-stage-soft px-4 text-center font-black text-content-inverse hover:bg-stage-border focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
               >
                 باز کردن Stage در پنجره جدید
               </a>
             ) : null}
 
-            <button
+            <Button
               type="button"
+              variant="inverse"
+              size="lg"
               onClick={openPrivateRanking}
               disabled={managerSnapshot?.has_scoring !== true}
-              className="mt-3 min-h-12 rounded-2xl bg-white px-4 font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
+              className="mt-3"
             >
               مشاهده خصوصی رتبه‌بندی کلی
-            </button>
-            <p className="mt-2 text-xs leading-6 text-white/50">
+            </Button>
+            <p className="mt-2 text-xs leading-6 text-stage-muted">
               رتبه‌بندی خصوصی Stage را تغییر نمی‌دهد و از roster محدود manager خوانده می‌شود.
             </p>
 
@@ -803,7 +817,7 @@ export function ManagerBackstageDrawer({
                 type="button"
                 onClick={() => setConfirmEnd(true)}
                 disabled={commandPending || Boolean(moderationPendingKey)}
-                className="mt-5 min-h-11 rounded-xl border border-danger/40 bg-danger/10 px-4 text-sm font-bold text-danger hover:bg-danger/15 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/60"
+                className="mt-5 min-h-11 rounded-control border border-danger/40 bg-danger/10 px-4 text-sm font-bold text-danger hover:bg-danger/15 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/60"
               >
                 پایان جلسه
               </button>

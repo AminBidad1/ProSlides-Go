@@ -14,7 +14,11 @@ import {
   ImagePlacementImage,
 } from "../../../../shared/media/ImagePlacementImage.tsx";
 import type { ImagePlacement } from "../../../../shared/media/image.ts";
-import { presentationTheme } from "../../../../shared/styles/presentationTheme.ts";
+import {
+  DEFAULT_PRESENTATION_ACCENT,
+  DEFAULT_PRESENTATION_FOREGROUND,
+  presentationTheme,
+} from "../../../../shared/styles/presentationTheme.ts";
 import { useOptionalDesignDraft } from "../model/useDesignDraftContext.ts";
 import { createQuestionDraft } from "../model/questionDraft.ts";
 import { createQuestionPreviewModel } from "../model/questionPreview.ts";
@@ -53,7 +57,7 @@ function PreviewImage({
   if (failed) {
     return (
       <div
-        className={`${className} grid place-items-center border border-[color:var(--live-border)] bg-black/20 text-[color:var(--live-muted)]`}
+        className={`${className} grid place-items-center border border-[color:var(--live-border)] live-theme-contrast-soft text-[color:var(--live-muted)]`}
         role="img"
         aria-label="تصویر قابل نمایش نیست"
       >
@@ -82,8 +86,8 @@ export default function QuestionCanvas({
   quizBackgroundImage,
   quizBackgroundFocalX = 0.5,
   quizBackgroundFocalY = 0.5,
-  textColor = "#111827",
-  accentColor = "#8b5cf6",
+  textColor = DEFAULT_PRESENTATION_FOREGROUND,
+  accentColor = DEFAULT_PRESENTATION_ACCENT,
   visualizationPalette,
   isFullSize = true,
 }: QuestionCanvasProps) {
@@ -151,7 +155,7 @@ export default function QuestionCanvas({
   return (
     <section
       aria-label="پیش‌نمایش سؤال"
-      className="relative flex h-full max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-[color:var(--live-border)] bg-cover bg-center text-[color:var(--live-fg)] shadow-lg"
+      className="relative flex h-full max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-card border border-[color:var(--live-border)] bg-cover bg-center text-[color:var(--live-fg)] shadow-card"
       style={theme.style}
     >
       <div
@@ -159,7 +163,7 @@ export default function QuestionCanvas({
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
-            <span className="rounded-full border border-[color:var(--live-border)] bg-black/25 px-3 py-1.5 backdrop-blur-md">
+            <span className="rounded-full border border-[color:var(--live-border)] live-theme-contrast-medium px-3 py-1.5 backdrop-blur-md">
               پیش‌نمایش شرکت‌کننده
             </span>
             {controller?.dirty && (
@@ -180,11 +184,11 @@ export default function QuestionCanvas({
           </div>
 
           <div className="flex flex-wrap items-center justify-end gap-2 text-xs font-bold">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--live-border)] bg-black/25 px-3 py-1.5">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--live-border)] live-theme-contrast-medium px-3 py-1.5">
               <Clock3 className="size-3.5" aria-hidden="true" />
               {preview.durationLabel}
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--live-border)] bg-black/25 px-3 py-1.5">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--live-border)] live-theme-contrast-medium px-3 py-1.5">
               <Gauge className="size-3.5" aria-hidden="true" />
               {preview.pointsLabel}
             </span>
@@ -209,7 +213,7 @@ export default function QuestionCanvas({
               image={preview.questionImage}
               preferred="medium"
               alt={preview.questionImage.altText || "تصویر سؤال"}
-              className="mx-auto mt-4 max-h-48 w-auto max-w-full rounded-2xl border border-[color:var(--live-border)] bg-black/10 object-contain shadow-lg"
+              className="mx-auto mt-4 max-h-48 w-auto max-w-full rounded-card border border-[color:var(--live-border)] live-theme-contrast-soft object-contain shadow-card"
             />
           )}
 
@@ -225,10 +229,10 @@ export default function QuestionCanvas({
                 <article
                   key={option.id}
                   aria-label={`گزینه ${formatPersianNumber(option.position)}: ${option.text || `گزینه ${formatPersianNumber(option.position)}`}${option.isCorrect ? "، پاسخ صحیح" : ""}`}
-                  className={`relative flex min-h-16 items-center gap-3 rounded-2xl border-2 p-3 text-start backdrop-blur-md ${
+                  className={`relative flex min-h-16 items-center gap-3 rounded-card border-2 p-3 text-start backdrop-blur-md ${
                     option.isCorrect
-                      ? "border-emerald-300/80 bg-emerald-950/35"
-                      : "border-[color:var(--live-border)] bg-white/10"
+                      ? "border-success/70 bg-success/15"
+                      : "border-[color:var(--live-border)] live-theme-overlay-soft"
                   }`}
                 >
                   <span
@@ -236,7 +240,7 @@ export default function QuestionCanvas({
                       draft.type === "single" ? "rounded-full" : "rounded-md"
                     } ${
                       option.isCorrect
-                        ? "border-emerald-200 bg-emerald-950/60 text-emerald-100"
+                        ? "border-success bg-success/20 text-[color:var(--live-fg)]"
                         : "border-current text-[color:var(--live-muted)]"
                     }`}
                     aria-hidden="true"
@@ -249,7 +253,7 @@ export default function QuestionCanvas({
                       image={option.image}
                       preferred="thumbnail"
                       alt={option.image.altText}
-                      className="size-14 shrink-0 rounded-xl border border-[color:var(--live-border)] bg-black/10 object-cover"
+                      className="size-14 shrink-0 rounded-control border border-[color:var(--live-border)] live-theme-contrast-soft object-cover"
                     />
                   )}
 
@@ -261,7 +265,7 @@ export default function QuestionCanvas({
                   </span>
 
                   {option.isCorrect && (
-                    <span className="ms-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-950/75 px-2 py-1 text-[11px] font-bold text-emerald-100">
+                    <span className="ms-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-success/20 px-2 py-1 text-[11px] font-bold text-[color:var(--live-fg)]">
                       <CheckCircle2 className="size-3.5" aria-hidden="true" />
                       صحیح
                     </span>
@@ -273,27 +277,27 @@ export default function QuestionCanvas({
         </div>
 
         <footer className="mt-4 flex flex-wrap items-center gap-2 border-t border-[color:var(--live-border)] pt-3 text-xs font-bold text-[color:var(--live-muted)]">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-black/20 px-2.5 py-1">
+          <span className="inline-flex items-center gap-1.5 rounded-full live-theme-contrast-soft px-2.5 py-1">
             <ListChecks className="size-3.5" aria-hidden="true" />
             {preview.optionCountLabel}
           </span>
           {preview.fasterAnswersMorePoints && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-black/20 px-2.5 py-1">
+            <span className="inline-flex items-center gap-1.5 rounded-full live-theme-contrast-soft px-2.5 py-1">
               <Zap className="size-3.5" aria-hidden="true" />
               امتیاز وابسته به سرعت
             </span>
           )}
           {preview.partialScoring && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-black/20 px-2.5 py-1">
+            <span className="inline-flex items-center gap-1.5 rounded-full live-theme-contrast-soft px-2.5 py-1">
               امتیازدهی جزئی
             </span>
           )}
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-black/20 px-2.5 py-1">
+          <span className="inline-flex items-center gap-1.5 rounded-full live-theme-contrast-soft px-2.5 py-1">
             <CheckCircle2 className="size-3.5" aria-hidden="true" />
             نتیجه فعالیت پس از پاسخ‌گویی
           </span>
           {preview.showLeaderboardAfter && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-black/20 px-2.5 py-1">
+            <span className="inline-flex items-center gap-1.5 rounded-full live-theme-contrast-soft px-2.5 py-1">
               <Trophy className="size-3.5" aria-hidden="true" />
               سپس رتبه‌بندی کلی
             </span>

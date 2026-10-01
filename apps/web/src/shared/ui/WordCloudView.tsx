@@ -24,12 +24,15 @@ export function WordCloudView({
   ariaLabel = "ابر واژه",
   displayMode = "embedded",
 }: WordCloudViewProps) {
+  const fallbackShape =
+    displayMode === "projection" ? "rounded-projection" : "rounded-panel";
+
   return (
     <Suspense
       fallback={
         <div
           className={
-            "grid min-h-40 place-items-center rounded-3xl border border-current/10 bg-current/5 px-6 text-center text-sm opacity-70 " +
+            `grid min-h-40 place-items-center ${fallbackShape} border border-current/10 bg-current/5 px-6 text-center text-sm opacity-70 ` +
             className
           }
           role="status"

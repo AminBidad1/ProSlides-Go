@@ -402,6 +402,8 @@ test("shared design primitives use the ProSlides token vocabulary and accessible
   const variants = source("src/shared/ui/primitives/button.variants.ts");
   const input = source("src/shared/ui/primitives/Input.tsx");
   const inputVariants = source("src/shared/ui/primitives/input.variants.ts");
+  const textarea = source("src/shared/ui/primitives/Textarea.tsx");
+  const select = source("src/shared/ui/primitives/Select.tsx");
   const confirm = source("src/shared/ui/primitives/ConfirmDialog.tsx");
   const indexCss = source("src/index.css");
 
@@ -416,6 +418,8 @@ test("shared design primitives use the ProSlides token vocabulary and accessible
   assert.match(inputVariants, /border-border-control/);
   assert.match(inputVariants, /aria-\[invalid=true\]:border-danger/);
   assert.match(inputVariants, /focus-visible:border-focus/);
+  assert.match(textarea, /textareaVariants/);
+  assert.match(select, /border-border-control/);
   assert.match(indexCss, /--color-border-control:\s*#7b899d/);
   assert.match(indexCss, /font-synthesis:\s*none/);
   assert.match(indexCss, /scroll-padding-block-start:\s*5rem/);
@@ -428,6 +432,85 @@ test("shared design primitives use the ProSlides token vocabulary and accessible
   assert.match(confirm, /aria-busy/);
 });
 
+
+test("design-system drift guard rejects raw product chrome and duplicate form primitives", () => {
+  const files = readdirSync(new URL("../src/", import.meta.url), {
+    recursive: true,
+    withFileTypes: true,
+  })
+    .filter(
+      (entry) =>
+        entry.isFile() &&
+        /\.(?:ts|tsx)$/.test(entry.name),
+    )
+    .map((entry) => {
+      const path = `${entry.parentPath}/${entry.name}`;
+      return {
+        path,
+        content: readFileSync(path, "utf8"),
+      };
+    });
+
+  const rawPalette =
+    /(?:text|bg|border|ring|outline|fill|stroke)-(?:white|black|slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)(?:-\d{2,3})?(?:\/\d+)?\b/;
+  const arbitraryShape = /(?:rounded|shadow)-\[[^\]]+\]/;
+
+  for (const file of files) {
+    assert.doesNotMatch(
+      file.content,
+      rawPalette,
+      `raw Tailwind color utility escaped semantic tokens: ${file.path}`,
+    );
+    assert.doesNotMatch(
+      file.content,
+      arbitraryShape,
+      `arbitrary radius/shadow escaped semantic tokens: ${file.path}`,
+    );
+    assert.doesNotMatch(
+      file.content,
+      /style=\{\{[^}]*fontFamily/s,
+      `inline font ownership escaped the root typography contract: ${file.path}`,
+    );
+    assert.doesNotMatch(
+      file.content,
+      /type="number"/,
+      `native number input bypasses localized Persian parsing: ${file.path}`,
+    );
+
+    if (!/shared\/ui\/primitives\/(?:Textarea|Select)\.tsx$/.test(file.path)) {
+      assert.doesNotMatch(
+        file.content,
+        /<(?:textarea|select)\b/,
+        `page-local textarea/select bypasses shared form primitives: ${file.path}`,
+      );
+    }
+  }
+});
+
+test("authored presentation defaults and live roles have one semantic owner", () => {
+  const theme = source("src/shared/styles/presentationTheme.ts");
+  const repository = source("src/modules/presentations/api/presentationRepository.ts");
+  const liveModel = source("src/modules/live/routes/useLivePresentationModel.ts");
+  const designDraft = source("src/modules/presentations/editor/model/designDraft.ts");
+  const participantJoin = source("src/modules/live/participant/ui/ParticipantJoinPage.tsx");
+  const stage = source("src/modules/live/routes/StageRoute.tsx");
+  const backstage = source("src/modules/live/manager/ui/ManagerBackstageDrawer.tsx");
+  const indexCss = source("src/index.css");
+
+  assert.match(theme, /DEFAULT_PRESENTATION_BACKGROUND/);
+  assert.match(theme, /DEFAULT_PRESENTATION_FOREGROUND/);
+  assert.match(repository, /background_color:\s*DEFAULT_PRESENTATION_BACKGROUND/);
+  assert.match(repository, /text_color:\s*DEFAULT_PRESENTATION_FOREGROUND/);
+  assert.match(liveModel, /DEFAULT_PRESENTATION_FOREGROUND/);
+  assert.match(designDraft, /DEFAULT_PRESENTATION_BACKGROUND/);
+  assert.match(indexCss, /\.live-panel/);
+  assert.match(indexCss, /\.live-theme-input/);
+  assert.match(indexCss, /\.live-primary-action/);
+  assert.match(participantJoin, /live-panel/);
+  assert.match(stage, /live-theme-(?:overlay|contrast)/);
+  assert.match(backstage, /bg-stage/);
+  assert.doesNotMatch(backstage, /bg-\[color:var\(--live-/);
+});
 
 test("Persian design-system boundaries normalize digits and mixed-direction content", () => {
   const accessCode = source("src/shared/forms/accessCode.ts");

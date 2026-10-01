@@ -79,6 +79,16 @@ explicit in `../design-system.md`: RTL/bidirectional ownership, Persian/Arabic
 digit normalization, form-control contrast, shared form primitives, focus
 visibility, 320px reflow and WCAG text-spacing behavior are part of the frontend
 acceptance boundary rather than page-local styling choices.
+A repository-wide consistency audit now applies that contract across marketing,
+identity, dashboard/editor, reports, participant, Stage/manager projection and
+private Backstage. Audience-facing live surfaces resolve authored presentation
+colors through the canonical `presentationTheme.ts` live roles; Backstage stays
+on product dark/Stage tokens by design. Shared Input/Textarea/Select/Button
+foundations own recurring control styling. The frontend foundation suite scans
+all production TS/TSX for raw Tailwind palette colors, arbitrary radius/shadow
+values, inline font-family ownership, native localized number inputs and
+page-local textarea/select primitives, making design-system drift a failing
+quality gate rather than a review-only convention.
 The media slice now has one owner-scoped immutable image library rather than a
 background-specific storage path. The Go media service owns master validation,
 same-owner digest reuse and server-generated thumbnail/medium/large renditions;
@@ -169,7 +179,9 @@ The authoritative frontend debt register is `../frontend-debt.md`.
 
 Important remaining items are non-blocking for the repository baseline:
 
-- some mature UI surfaces still carry older styling/direction details;
+- no known repository-wide raw color/radius/shadow/form-primitive drift remains
+  after the design-system audit; future violations are guarded automatically,
+  while concrete direction/localization defects should still be fixed when found;
 - component/API-state matrices remain selective outside high-risk behavior;
 - the live frontend still has a historical question-shaped internal projection
   over the canonical v2 protocol; it is an implementation refactor debt, not a

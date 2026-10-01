@@ -33,13 +33,13 @@ export function ParticipantQuestion({
         {!controller.isStreamConnected && controller.connectionError ? (
           <p
             role="alert"
-            className="mb-3 rounded-xl border border-amber-300/30 bg-amber-950/25 px-4 py-3 text-center text-sm"
+            className="mb-3 rounded-control border border-warning/40 bg-warning/15 px-4 py-3 text-center text-sm"
           >
             ارتباط زنده ناپایدار است؛ انتخاب شما روی این دستگاه حفظ می‌شود و ارسال پاسخ همچنان قابل تلاش است.
           </p>
         ) : null}
 
-        <div className="flex flex-1 flex-col rounded-[2rem] border border-[color:var(--live-border)] bg-[color:var(--live-surface)] p-4 shadow-2xl backdrop-blur-xl sm:p-7">
+        <div className="flex flex-1 flex-col live-panel rounded-showcase p-4 sm:p-7">
           <div className="flex items-center justify-between gap-3 text-sm font-bold text-[color:var(--live-muted)]">
             <span>
               {multiple
@@ -54,8 +54,8 @@ export function ParticipantQuestion({
               className={
                 "shrink-0 rounded-full border px-3 py-1 " +
                 (urgent
-                  ? "border-warning/50 bg-warning/15 text-white"
-                  : "border-transparent bg-white/10")
+                  ? "border-warning/50 bg-warning/15"
+                  : "border-transparent live-theme-overlay-soft")
               }
               role="timer"
               aria-live="off"
@@ -69,7 +69,7 @@ export function ParticipantQuestion({
           </div>
 
           <div
-            className="my-4 h-2 overflow-hidden rounded-full bg-black/20"
+            className="my-4 h-2 overflow-hidden rounded-full live-theme-contrast-soft"
             role="progressbar"
             aria-label="زمان باقی‌مانده"
             aria-valuemin={0}
@@ -77,7 +77,7 @@ export function ParticipantQuestion({
             aria-valuenow={Math.round(controller.progressPercent)}
           >
             <div
-              className="h-full rounded-full bg-white transition-[width] duration-150 motion-reduce:transition-none"
+              className="h-full rounded-full bg-[color:var(--live-fg)] transition-[width] duration-150 motion-reduce:transition-none"
               style={{ width: controller.progressPercent + "%" }}
             />
           </div>
@@ -95,7 +95,7 @@ export function ParticipantQuestion({
               image={question.image}
               preferred="medium"
               alt="تصویر سؤال"
-              className="mx-auto my-4 max-h-44 max-w-full rounded-2xl border border-[color:var(--live-border)] object-contain shadow-lg"
+              className="mx-auto my-4 max-h-44 max-w-full rounded-panel border border-[color:var(--live-border)] object-contain shadow-card"
             />
           ) : null}
 
@@ -109,10 +109,10 @@ export function ParticipantQuestion({
                   aria-pressed={selected}
                   disabled={controller.isLocked || timedOut}
                   className={
-                    "flex min-h-16 items-center gap-3 rounded-2xl border-2 p-3 text-start text-base font-bold transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30 disabled:cursor-default " +
+                    "flex min-h-16 items-center gap-3 rounded-panel border-2 p-3 text-start text-base font-bold transition-colors live-theme-focusable focus-visible:outline-none disabled:cursor-default " +
                     (selected
-                      ? "border-white bg-white/25 ring-2 ring-white/30"
-                      : "border-[color:var(--live-border)] bg-white/10 hover:bg-white/15")
+                      ? "border-[color:var(--live-fg)] live-theme-overlay-strong ring-2 ring-[color:var(--live-focus)]"
+                      : "border-[color:var(--live-border)] live-theme-overlay-soft hover:brightness-110")
                   }
                   onClick={() => controller.toggleOption(index)}
                 >
@@ -125,7 +125,7 @@ export function ParticipantQuestion({
                       image={option.image}
                       preferred="thumbnail"
                       alt=""
-                      className="h-12 w-12 shrink-0 rounded-xl object-cover"
+                      className="h-12 w-12 shrink-0 rounded-control object-cover"
                     />
                   ) : null}
                   <span dir="auto">{option.option_text}</span>
@@ -137,7 +137,7 @@ export function ParticipantQuestion({
           <div className="mt-auto pt-5">
             {controller.submitState === "sent" ? (
               <div
-                className="rounded-2xl border border-success/40 bg-success/15 px-5 py-4 text-center"
+                className="rounded-panel border border-success/40 bg-success/15 px-5 py-4 text-center"
                 role="status"
                 aria-live="polite"
               >
@@ -148,7 +148,7 @@ export function ParticipantQuestion({
               </div>
             ) : timedOut ? (
               <div
-                className="rounded-2xl border border-[color:var(--live-border)] bg-white/5 px-5 py-4 text-center"
+                className="rounded-panel border border-[color:var(--live-border)] live-theme-overlay-subtle px-5 py-4 text-center"
                 role="status"
                 aria-live="polite"
                 aria-atomic="true"
@@ -168,14 +168,14 @@ export function ParticipantQuestion({
               <button
                 type="button"
                 onClick={() => void controller.retry()}
-                className="min-h-14 w-full rounded-2xl bg-white px-5 text-base font-black text-slate-950 shadow-xl transition-transform hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40 motion-reduce:transform-none"
+                className="live-primary-action live-theme-focusable min-h-14 w-full rounded-card px-5 text-base font-black transition-transform hover:-translate-y-0.5 active:translate-y-0 motion-reduce:transform-none"
               >
                 تلاش دوباره برای ارسال
               </button>
             ) : (
               <button
                 type="button"
-                className="min-h-14 w-full rounded-2xl bg-white px-5 text-lg font-black text-slate-950 shadow-xl transition-transform hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40 motion-reduce:transform-none"
+                className="live-primary-action live-theme-focusable min-h-14 w-full rounded-card px-5 text-lg font-black transition-transform hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transform-none"
                 onClick={() => void controller.submit()}
                 disabled={!controller.canSubmit}
               >

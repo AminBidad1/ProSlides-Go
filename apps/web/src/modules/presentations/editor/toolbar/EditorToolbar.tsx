@@ -40,7 +40,7 @@ export default function RightToolbar({
 }: EditorToolbarProps) {
   const containerClass = isCompact
     ? "fixed inset-x-0 bottom-0 z-40 flex h-16 w-full flex-row items-center justify-around gap-2 border-t border-brand-border bg-surface/95 px-2 py-2 shadow-panel backdrop-blur"
-    : "flex h-full w-16 shrink-0 flex-col items-center gap-1.5 rounded-2xl border border-brand-border bg-surface px-1.5 py-3 shadow-sm";
+    : "flex h-full w-16 shrink-0 flex-col items-center gap-1.5 rounded-panel border border-brand-border bg-surface px-1.5 py-3 shadow-card";
 
   return (
     <div
@@ -67,7 +67,7 @@ export default function RightToolbar({
             key={item.id}
             type="button"
             onClick={() => setActiveTab(item.id)}
-            className={`flex h-12 min-w-12 flex-col items-center justify-center gap-1 rounded-xl px-2 transition-colors ${
+            className={`flex h-12 min-w-12 flex-col items-center justify-center gap-1 rounded-control px-2 transition-colors ${
               isActive
                 ? "bg-brand-muted text-brand-strong"
                 : "text-content-muted hover:bg-brand-soft hover:text-brand"

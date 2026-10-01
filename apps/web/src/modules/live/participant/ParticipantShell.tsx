@@ -34,7 +34,7 @@ export function ParticipantShell({
       <header className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 pb-2 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6">
         <div className="min-w-0">
           <p
-            className="font-outfit text-lg font-extrabold tracking-tight"
+            className="font-brand text-lg font-extrabold tracking-tight"
             dir="ltr"
           >
             ProSlides
@@ -54,8 +54,8 @@ export function ParticipantShell({
             className={
               "flex min-h-9 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold backdrop-blur-md " +
               (connected
-                ? "border-[color:var(--live-border)] bg-black/20"
-                : "border-warning/40 bg-black/35")
+                ? "border-[color:var(--live-border)] live-theme-overlay-soft"
+                : "border-warning/40 live-theme-overlay-medium")
             }
             role="status"
             aria-live="polite"

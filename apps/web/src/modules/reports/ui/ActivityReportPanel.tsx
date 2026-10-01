@@ -106,7 +106,7 @@ export function ActivityReportPanel({
 
   if (isLoading) {
     return (
-      <section className="rounded-panel border border-border-subtle bg-surface p-5 shadow-sm">
+      <section className="rounded-panel border border-border-subtle bg-surface p-5 shadow-card">
         <Notice pending>در حال بارگذاری نتیجه فعالیت…</Notice>
       </section>
     );
@@ -114,14 +114,14 @@ export function ActivityReportPanel({
 
   if (isError || !first) {
     return (
-      <section className="rounded-panel border border-border-subtle bg-surface p-5 shadow-sm">
+      <section className="rounded-panel border border-border-subtle bg-surface p-5 shadow-card">
         <Notice tone="error">بارگذاری نتیجه این فعالیت انجام نشد.</Notice>
       </section>
     );
   }
 
   return (
-    <section className="overflow-hidden rounded-panel border border-border-subtle bg-surface shadow-sm">
+    <section className="overflow-hidden rounded-panel border border-border-subtle bg-surface shadow-card">
       <div className="border-b border-border-subtle p-5">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-lg font-black" dir="auto">{activityTitle(activity)}</h2>

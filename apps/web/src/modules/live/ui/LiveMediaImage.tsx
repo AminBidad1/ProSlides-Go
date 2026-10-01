@@ -41,7 +41,7 @@ export function LiveMediaImage({
       <div
         role="img"
         aria-label={resolvedAlt ? `${resolvedAlt} بارگذاری نشد` : "تصویر بارگذاری نشد"}
-        className={`${className} grid place-items-center border border-[color:var(--live-border)] bg-black/20 p-3 text-center text-xs font-bold text-[color:var(--live-muted)]`}
+        className={`${className} grid place-items-center border border-[color:var(--live-border)] live-theme-contrast-soft p-3 text-center text-xs font-bold text-[color:var(--live-muted)]`}
       >
         تصویر بارگذاری نشد
       </div>

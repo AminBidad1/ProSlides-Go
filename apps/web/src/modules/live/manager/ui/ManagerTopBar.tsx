@@ -43,13 +43,13 @@ export function ManagerTopBar({
   return (
     <header
       dir="rtl"
-      className="fixed inset-x-0 top-0 z-50 flex min-h-14 items-center justify-between gap-3 border-b border-white/10 bg-black/25 px-3 py-2 text-[color:var(--live-fg)] backdrop-blur-md sm:px-5"
+      className="fixed inset-x-0 top-0 z-50 flex min-h-14 items-center justify-between gap-3 border-b border-[color:var(--live-border)] live-theme-contrast-soft px-3 py-2 text-[color:var(--live-fg)] backdrop-blur-md sm:px-5"
     >
       <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={() => navigate("/manager/panel")}
-          className="grid min-h-11 min-w-11 place-items-center rounded-full bg-black/20 text-lg transition hover:bg-black/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+          className="grid min-h-11 min-w-11 place-items-center rounded-full live-theme-contrast-soft text-lg transition hover:brightness-110 live-theme-focusable focus-visible:outline-none"
           aria-label="بازگشت به پنل مدیریت"
         >
           ←
@@ -58,7 +58,7 @@ export function ManagerTopBar({
           type="button"
           onClick={toggleMute}
           disabled={audioUnavailable}
-          className="grid min-h-11 min-w-11 place-items-center rounded-full bg-black/20 text-lg transition hover:bg-black/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-45"
+          className="grid min-h-11 min-w-11 place-items-center rounded-full live-theme-contrast-soft text-lg transition hover:brightness-110 live-theme-focusable focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-45"
           aria-label={
             audioUnavailable
               ? "برای این ارائه صدایی تنظیم نشده است"
@@ -78,7 +78,7 @@ export function ManagerTopBar({
         <button
           type="button"
           onClick={() => void copyJoinUrl()}
-          className="max-w-full truncate rounded-lg px-2 py-1 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:text-base"
+          className="max-w-full truncate rounded-control px-2 py-1 text-sm font-bold live-theme-focusable focus-visible:outline-none sm:text-base"
           dir="ltr"
           title="کپی لینک ورود"
         >
@@ -91,7 +91,7 @@ export function ManagerTopBar({
 
       <div className="flex items-center gap-2">
         <div
-          className="hidden items-center gap-2 rounded-full bg-black/20 px-3 py-2 text-xs sm:flex"
+          className="hidden items-center gap-2 rounded-full live-theme-contrast-soft px-3 py-2 text-xs sm:flex"
           role="status"
           aria-live="polite"
         >
@@ -106,7 +106,7 @@ export function ManagerTopBar({
         <button
           type="button"
           onClick={onQrToggle}
-          className="min-h-11 rounded-xl bg-white/90 px-3 text-sm font-bold text-slate-950 transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+          className="min-h-11 live-primary-action rounded-card px-3 text-sm font-bold transition live-theme-focusable focus-visible:outline-none"
           aria-expanded={qrOpen}
           aria-controls="manager-live-qr-panel"
         >

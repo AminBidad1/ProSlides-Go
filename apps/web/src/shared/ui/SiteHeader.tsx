@@ -8,7 +8,7 @@ function LogoMark() {
   return (
     <Link
       to="/"
-      className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-1 text-lg font-semibold text-content before:text-xl before:content-['✱'] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+      className="inline-flex min-h-11 items-center gap-1.5 rounded-control px-1 text-lg font-semibold text-content before:text-xl before:content-['✱'] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
       aria-label="صفحه اصلی ProSlides"
       dir="ltr"
     >
@@ -41,7 +41,7 @@ export default function SiteHeader({ className = "" }: SiteHeaderProps) {
             end
             className={({ isActive }) =>
               [
-                "rounded-lg px-2 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
+                "rounded-control px-2 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
                 isActive
                   ? "font-bold text-content"
                   : "text-content-muted hover:text-content",
@@ -55,13 +55,13 @@ export default function SiteHeader({ className = "" }: SiteHeaderProps) {
         <div className="flex items-center gap-2 text-xs font-semibold sm:gap-3 sm:text-sm md:justify-self-end">
           <Link
             to="/login"
-            className="min-h-11 rounded-xl border border-border-subtle bg-surface px-3 py-2.5 text-content transition-colors hover:border-brand-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus sm:px-4"
+            className="min-h-11 rounded-control border border-border-control bg-surface px-3 py-2.5 text-content transition-colors hover:border-brand-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus sm:px-4"
           >
             ورود
           </Link>
           <Link
             to="/signup"
-            className="min-h-11 rounded-xl bg-brand px-3 py-2.5 text-content-inverse shadow-sm transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus sm:px-4"
+            className="min-h-11 rounded-control bg-brand px-3 py-2.5 text-content-inverse shadow-sm transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus sm:px-4"
           >
             ثبت‌نام رایگان
           </Link>

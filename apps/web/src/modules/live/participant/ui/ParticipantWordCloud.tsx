@@ -6,6 +6,7 @@ import type { LegacyQuestionSlide } from "../../model/serverData.ts";
 import { resolveQuestionTimer } from "../../model/questionTimer.ts";
 import { useLiveSession } from "../../react/useLiveSession.ts";
 import { LiveMediaImage } from "../../ui/LiveMediaImage.tsx";
+import { Textarea } from "../../../../shared/ui/primitives/Textarea.tsx";
 import { ParticipantShell } from "../ParticipantShell.tsx";
 import {
   clearAnswerDraft,
@@ -395,13 +396,13 @@ export function ParticipantWordCloud({
         {connectionNotice ? (
           <p
             role="alert"
-            className="mb-3 rounded-xl border border-amber-300/30 bg-amber-950/25 px-4 py-3 text-center text-sm"
+            className="mb-3 rounded-control border border-warning/60 bg-warning/15 px-4 py-3 text-center text-sm"
           >
             {connectionNotice}
           </p>
         ) : null}
 
-        <div className="flex flex-1 flex-col rounded-[2rem] border border-[color:var(--live-border)] bg-[color:var(--live-surface)] p-4 shadow-2xl backdrop-blur-xl sm:p-7">
+        <div className="flex flex-1 flex-col live-panel rounded-showcase p-4  sm:p-7">
           <div className="flex items-center justify-between gap-3 text-sm font-bold text-[color:var(--live-muted)]">
             <span>
               {entryBased
@@ -412,8 +413,8 @@ export function ParticipantWordCloud({
               className={
                 "shrink-0 rounded-full border px-3 py-1 " +
                 (urgent
-                  ? "border-warning/50 bg-warning/15 text-white"
-                  : "border-transparent bg-white/10")
+                  ? "border-warning/50 bg-warning/15"
+                  : "border-transparent live-theme-overlay-soft")
               }
               role="timer"
               aria-live="off"
@@ -424,7 +425,7 @@ export function ParticipantWordCloud({
           </div>
 
           <div
-            className="my-4 h-2 overflow-hidden rounded-full bg-black/20"
+            className="my-4 h-2 overflow-hidden rounded-full live-theme-contrast-soft"
             role="progressbar"
             aria-label="زمان باقی‌مانده"
             aria-valuemin={0}
@@ -432,7 +433,7 @@ export function ParticipantWordCloud({
             aria-valuenow={Math.round(progressPercent)}
           >
             <div
-              className="h-full rounded-full bg-white transition-[width] duration-150 motion-reduce:transition-none"
+              className="h-full rounded-full bg-[color:var(--live-fg)] transition-[width] duration-150 motion-reduce:transition-none"
               style={{ width: progressPercent + "%" }}
             />
           </div>
@@ -457,7 +458,7 @@ export function ParticipantWordCloud({
               image={question.image}
               preferred="medium"
               alt="تصویر پرسش ابر واژه"
-              className="mx-auto mt-4 max-h-48 w-auto max-w-full rounded-2xl object-contain"
+              className="mx-auto mt-4 max-h-48 w-auto max-w-full rounded-panel object-contain"
             />
           ) : null}
 
@@ -469,7 +470,7 @@ export function ParticipantWordCloud({
                 return (
                   <label
                     key={index}
-                    className="flex items-center gap-3 rounded-2xl border-2 border-[color:var(--live-border)] bg-white/10 px-4 py-2.5 focus-within:border-white focus-within:ring-4 focus-within:ring-white/20"
+                    className="flex items-center gap-3 rounded-panel border-2 border-[color:var(--live-border)] live-theme-overlay-soft px-4 py-2.5 focus-within:border-[color:var(--live-control-border)] focus-within:ring-2 focus-within:ring-[color:var(--live-focus)]"
                   >
                     <span className="shrink-0 text-xs font-black text-[color:var(--live-muted)]">
                       {(index + 1).toLocaleString("fa-IR")}
@@ -501,14 +502,16 @@ export function ParticipantWordCloud({
           ) : (
             <label className="mt-6 block">
               <span className="sr-only">پاسخ متنی شما</span>
-              <textarea
+              <Textarea
+                tone="live"
+                resize="none"
                 dir="auto"
                 rows={4}
                 value={value}
                 disabled={locked || timeLeft <= 0}
                 onChange={(event) => updateDraftValue(event.target.value)}
                 placeholder="واژه‌های خود را بنویسید…"
-                className="min-h-32 w-full resize-none rounded-2xl border-2 border-[color:var(--live-border)] bg-white/10 px-4 py-3 text-lg font-bold outline-none placeholder:text-[color:var(--live-muted)] focus:border-white focus:ring-4 focus:ring-white/20 disabled:opacity-60"
+                className="min-h-32 rounded-panel border-2 px-4 py-3 text-lg font-bold disabled:opacity-60"
                 aria-invalid={tooLong || tooManyWords}
               />
             </label>
@@ -539,7 +542,7 @@ export function ParticipantWordCloud({
           <div className="mt-auto pt-5">
             {submitState === "sent" ? (
               <div
-                className="rounded-2xl border border-success/40 bg-success/15 px-5 py-4 text-center"
+                className="rounded-panel border border-success/40 bg-success/15 px-5 py-4 text-center"
                 role="status"
                 aria-live="polite"
               >
@@ -550,7 +553,7 @@ export function ParticipantWordCloud({
               </div>
             ) : submitState === "expired" || timeLeft <= 0 ? (
               <div
-                className="rounded-2xl border border-[color:var(--live-border)] bg-white/5 px-5 py-4 text-center"
+                className="rounded-panel border border-[color:var(--live-border)] live-theme-overlay-subtle px-5 py-4 text-center"
                 role="status"
                 aria-live="polite"
                 aria-atomic="true"
@@ -569,14 +572,14 @@ export function ParticipantWordCloud({
               <button
                 type="button"
                 onClick={() => void retry()}
-                className="min-h-14 w-full rounded-2xl bg-white px-5 text-base font-black text-slate-950 shadow-xl transition-transform hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40 motion-reduce:transform-none"
+                className="min-h-14 w-full rounded-panel live-primary-action live-theme-focusable px-5 text-base font-black transition-transform hover:-translate-y-0.5 active:translate-y-0 motion-reduce:transform-none"
               >
                 تلاش دوباره برای ارسال
               </button>
             ) : (
               <button
                 type="button"
-                className="min-h-14 w-full rounded-2xl bg-white px-5 text-lg font-black text-slate-950 shadow-xl transition-transform hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40 motion-reduce:transform-none"
+                className="min-h-14 w-full rounded-panel live-primary-action live-theme-focusable px-5 text-lg font-black transition-transform hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transform-none"
                 onClick={() => void submit()}
                 disabled={!canSubmit}
               >

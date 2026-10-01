@@ -13,6 +13,7 @@ import Notice, {
   type NoticeTone,
 } from "../../../../shared/ui/Notice.tsx";
 import { Button } from "../../../../shared/ui/primitives/Button.tsx";
+import { Input } from "../../../../shared/ui/primitives/Input.tsx";
 import { ConfirmDialog } from "../../../../shared/ui/primitives/ConfirmDialog.tsx";
 import { quizService } from "../../api/presentationRepository.ts";
 import type { EditorPresentation } from "../../model/editor.ts";
@@ -251,7 +252,7 @@ export default function AudioInspector({
                   {formatNumber(AUDIO_LIMITS.url)}
                 </span>
               </div>
-              <input
+              <Input
                 id="presentation-audio-url"
                 type="url"
                 inputMode="url"
@@ -267,7 +268,7 @@ export default function AudioInspector({
                 }
                 onChange={(event) => setMusicUrl(event.target.value)}
                 placeholder="https://example.com/audio.mp3"
-                className="mt-2 h-11 w-full rounded-control border border-border-control bg-surface px-3 text-start text-sm text-content outline-none transition placeholder:text-content-muted focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-2 text-start"
               />
               <p
                 id="presentation-audio-url-help"

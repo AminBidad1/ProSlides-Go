@@ -1,3 +1,5 @@
+import { readableForegroundColor } from "./color.ts";
+
 const PLAYER_COLORS = [
   "#ef4444",
   "#f97316",
@@ -39,3 +41,7 @@ export function getColorForUser(
   return PLAYER_COLORS[simpleHash(userId) % PLAYER_COLORS.length];
 }
 
+
+export function getTextColorForPlayerColor(color: string): string {
+  return readableForegroundColor(color);
+}

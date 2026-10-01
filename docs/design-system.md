@@ -111,6 +111,15 @@ Raw hex/RGB values are prohibited in new product chrome. Exceptions are authored
 presentation colors, generated/algorithmic data colors, media, and explicitly
 documented decorative artwork.
 
+Live presentation styling has a second semantic layer resolved at runtime by
+`presentationTheme.ts`: `--live-bg`, foreground/muted/border/focus roles,
+control/input roles, overlay/contrast roles, accent, and visualization-palette
+roles. Audience Stage, participant, and manager projection surfaces consume
+those authored roles instead of raw product-palette utilities. Private Backstage
+is intentionally different: it is operational product chrome, uses the product
+dark/Stage token vocabulary, and must not inherit authored presentation colors
+as its surface contract.
+
 ## Controls and forms
 
 Shared primitives own recurring interaction behavior. Prefer `Button`,
@@ -184,6 +193,13 @@ Material frontend changes must keep:
    user content;
 6. no new raw product-chrome colors, arbitrary visual values, or duplicate
    page-local primitives without a documented reason.
+
+The frontend foundation suite includes a repository-wide design-system drift
+guard over production TypeScript/TSX. It rejects raw Tailwind palette utilities,
+arbitrary radius/shadow values, inline font-family ownership, native
+`type="number"` localized inputs, and page-local native textarea/select
+primitives. Fix the semantic ownership when this guard fails; do not weaken the
+guard merely to admit a one-off visual value.
 
 Visual snapshots protect intentional composition, but they do not override WCAG,
 RTL correctness, or semantic-token requirements. When an accessibility fix

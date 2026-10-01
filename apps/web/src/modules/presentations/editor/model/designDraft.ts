@@ -1,5 +1,7 @@
 import {
   DEFAULT_PRESENTATION_ACCENT,
+  DEFAULT_PRESENTATION_BACKGROUND,
+  DEFAULT_PRESENTATION_FOREGROUND,
   DEFAULT_VISUALIZATION_PALETTE,
   findPresentationThemePreset,
   normalizeVisualizationPalette,
@@ -89,11 +91,11 @@ export const createDesignDraft = (
 ): DesignDraft => {
   const backgroundColor = normalizeHex(
     presentation.background_color,
-    "#f7f7fb",
+    DEFAULT_PRESENTATION_BACKGROUND,
   );
   const requestedText = normalizeHex(
     presentation.text_color,
-    "#111827",
+    DEFAULT_PRESENTATION_FOREGROUND,
   );
 
   return {

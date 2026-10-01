@@ -62,7 +62,7 @@ export function ManagerControls({
     <>
       <footer
         dir="rtl"
-        className="fixed inset-x-0 bottom-0 z-30 flex min-h-16 items-center justify-between gap-3 border-t border-white/10 bg-black/25 px-3 py-2 text-[color:var(--live-fg)] backdrop-blur-md sm:px-5"
+        className="fixed inset-x-0 bottom-0 z-30 flex min-h-16 items-center justify-between gap-3 border-t border-[color:var(--live-border)] live-theme-contrast-soft px-3 py-2 text-[color:var(--live-fg)] backdrop-blur-md sm:px-5"
         aria-label="کنترل ارائه"
         aria-busy={ending || primaryPending}
       >
@@ -71,7 +71,7 @@ export function ManagerControls({
           <p className="font-bold" dir="ltr">
             {safeCurrent.toLocaleString("fa-IR")} / {safeTotal.toLocaleString("fa-IR")}
           </p>
-          <div className="mt-1 h-1.5 w-28 overflow-hidden rounded-full bg-white/15">
+          <div className="mt-1 h-1.5 w-28 overflow-hidden rounded-full live-theme-overlay-medium">
             <div
               className="h-full rounded-full bg-success transition-[width]"
               style={{ width: `${progress}%` }}
@@ -85,7 +85,7 @@ export function ManagerControls({
               type="button"
               onClick={onShowLeaderboard}
               disabled={ending || primaryPending}
-              className="min-h-11 rounded-xl bg-white/10 px-3 text-sm font-bold hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+              className="live-secondary-action live-theme-focusable min-h-11 rounded-card px-3 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50"
             >
               جدول امتیازات
             </button>
@@ -94,7 +94,7 @@ export function ManagerControls({
             type="button"
             onClick={() => setConfirmEnd(true)}
             disabled={ending || primaryPending}
-            className="min-h-11 rounded-xl bg-danger/85 px-3 text-sm font-bold text-white hover:bg-danger disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            className="min-h-11 rounded-card bg-danger/85 px-3 text-sm font-bold text-content-inverse hover:bg-danger disabled:cursor-not-allowed disabled:opacity-50 live-theme-focusable"
           >
             پایان ارائه
           </button>
@@ -107,7 +107,7 @@ export function ManagerControls({
                 : primaryAriaLabel || primaryLabel || "آیتم بعدی"
             }
             disabled={ending || primaryPending || (!atEnd && !onNext)}
-            className="min-h-11 rounded-xl bg-brand px-5 text-sm font-black text-content-inverse hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            className="min-h-11 rounded-card bg-brand px-5 text-sm font-black text-content-inverse hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-50 live-theme-focusable"
           >
             {primaryPending
               ? "در حال اعمال…"

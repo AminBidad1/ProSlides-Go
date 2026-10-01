@@ -456,7 +456,7 @@ export default function LandingRoute() {
                 <h2 id="final-cta" className="mt-3 text-2xl font-bold md:text-3xl">
                   ارائه را بسازید؛ مخاطب را وارد جریان کنید.
                 </h2>
-                <p className="mt-3 max-w-2xl text-sm leading-7 text-white/75">
+                <p className="mt-3 max-w-2xl text-sm leading-7 text-stage-muted">
                   اولین ارائه را آماده کنید و وقتی زمان اجرا رسید، مخاطبان با یک کد وارد همان تجربه می‌شوند.
                 </p>
               </div>

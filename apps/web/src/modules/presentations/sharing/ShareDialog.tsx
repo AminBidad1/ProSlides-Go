@@ -204,7 +204,7 @@ export default function ShareMenu({
       }}
     >
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-[100] bg-black/40" />
+        <DialogPrimitive.Overlay className="fixed inset-0 z-[100] bg-overlay-soft" />
         <DialogPrimitive.Content
           ref={contentRef}
           dir="rtl"

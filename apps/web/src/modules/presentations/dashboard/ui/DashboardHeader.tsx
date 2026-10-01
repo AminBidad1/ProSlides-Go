@@ -2,6 +2,7 @@ import { Search, X } from "lucide-react";
 import { useState } from "react";
 
 import { ManagerAccountMenu } from "../../../identity/public.ts";
+import { Input } from "../../../../shared/ui/primitives/Input.tsx";
 
 type DashboardHeaderProps = {
   searchQuery: string;
@@ -26,7 +27,7 @@ function SearchField({
         }`}
         aria-hidden="true"
       />
-      <input
+      <Input
         type="search"
         dir="auto"
         placeholder="جست‌وجوی ارائه‌ها"
@@ -41,15 +42,15 @@ function SearchField({
         }}
         aria-label="جست‌وجوی ارائه‌ها"
         autoFocus={mobile}
-        className={`w-full rounded-control border border-border-control bg-canvas text-content transition-colors placeholder:text-content-muted focus:border-transparent focus:outline-none focus:ring-2 focus:ring-focus ${
-          mobile ? "py-2 pe-10 ps-10 text-sm" : "py-2.5 pe-10 ps-12"
+        className={`bg-canvas ${
+          mobile ? "h-10 pe-10 ps-10 text-sm" : "h-11 pe-10 ps-12"
         }`}
       />
       {value ? (
         <button
           type="button"
           onClick={() => onChange("")}
-          className="absolute end-2 top-1/2 inline-flex min-h-9 min-w-9 -translate-y-1/2 items-center justify-center rounded-lg text-content-muted transition-colors hover:bg-brand-soft hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+          className="absolute end-2 top-1/2 inline-flex min-h-9 min-w-9 -translate-y-1/2 items-center justify-center rounded-control text-content-muted transition-colors hover:bg-brand-soft hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
           aria-label="پاک کردن جست‌وجو"
           title="پاک کردن جست‌وجو"
         >

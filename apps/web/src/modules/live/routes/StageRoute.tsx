@@ -44,22 +44,22 @@ function StageHeader({
   connected: boolean;
 }) {
   return (
-    <header className="fixed inset-x-0 top-0 z-20 flex min-h-16 items-center justify-between gap-3 border-b border-white/10 bg-black/20 px-4 backdrop-blur sm:px-6">
+    <header className="fixed inset-x-0 top-0 z-20 flex min-h-16 items-center justify-between gap-3 border-b border-[color:var(--live-border)] live-theme-contrast-soft px-4 backdrop-blur sm:px-6">
       <div className="min-w-0">
-        <p className="font-outfit text-lg font-black" dir="ltr">ProSlides</p>
+        <p className="font-brand text-lg font-black" dir="ltr">ProSlides</p>
         <p className="truncate text-xs text-[color:var(--live-muted)]" dir="auto">
           {snapshot.presentation.title}
         </p>
       </div>
       <div className="flex items-center gap-2 text-xs sm:text-sm">
-        <span className="hidden rounded-full bg-white/10 px-3 py-1.5 sm:inline">
+        <span className="hidden rounded-full live-theme-overlay-soft px-3 py-1.5 sm:inline">
           {snapshot.participant_count.toLocaleString("fa-IR")} شرکت‌کننده
         </span>
-        <span className="rounded-full bg-white/10 px-3 py-1.5" dir="ltr">
+        <span className="rounded-full live-theme-overlay-soft px-3 py-1.5" dir="ltr">
           {snapshot.join_code}
         </span>
         <span
-          className="grid h-8 w-8 place-items-center rounded-full bg-white/10"
+          className="grid h-8 w-8 place-items-center rounded-full live-theme-overlay-soft"
           role="status"
           aria-label={connected ? "Stage متصل است" : "Stage در حال بازیابی اتصال است"}
           title={connected ? "متصل" : "در حال بازیابی اتصال"}
@@ -101,7 +101,7 @@ function StageLobby({ snapshot }: { snapshot: StageSnapshot }) {
   return (
     <main className="h-full min-h-0 overflow-hidden px-4 pb-3 pt-[4.5rem] sm:px-5 sm:pb-4">
       <div className="mx-auto grid h-full min-h-0 w-full max-w-[96rem] gap-4 md:grid-cols-[minmax(18rem,0.72fr)_minmax(0,1.28fr)]">
-        <section className="flex min-h-0 flex-col justify-center overflow-hidden rounded-[2rem] border border-white/10 bg-[color:var(--live-surface)] p-5 text-center shadow-2xl backdrop-blur sm:p-6 md:text-start">
+        <section className="flex min-h-0 flex-col justify-center overflow-hidden rounded-showcase border border-[color:var(--live-border)] bg-[color:var(--live-surface)] p-5 text-center shadow-projection backdrop-blur sm:p-6 md:text-start">
           <p className="text-sm font-bold text-[color:var(--live-muted)]">
             برای پیوستن به جلسه
           </p>
@@ -109,10 +109,10 @@ function StageLobby({ snapshot }: { snapshot: StageSnapshot }) {
             {snapshot.presentation.title}
           </h1>
 
-          <div className="mt-4 rounded-2xl border border-white/15 bg-black/20 p-4">
+          <div className="mt-4 rounded-panel border border-[color:var(--live-control-border)] live-theme-contrast-soft p-4">
             <p className="text-sm text-[color:var(--live-muted)]">کد ورود</p>
             <p
-              className="mt-1 font-outfit text-4xl font-black tracking-[0.14em] sm:text-5xl xl:text-6xl"
+              className="mt-1 font-brand text-4xl font-black tracking-[0.14em] sm:text-5xl xl:text-6xl"
               dir="ltr"
             >
               {snapshot.join_code}
@@ -125,7 +125,7 @@ function StageLobby({ snapshot }: { snapshot: StageSnapshot }) {
             </p>
           </div>
 
-          <div className="mx-auto mt-4 grid h-[min(10rem,22dvh)] w-[min(10rem,22dvh)] shrink-0 place-items-center rounded-2xl bg-white p-2.5 shadow-xl md:mx-0">
+          <div className="mx-auto mt-4 grid h-[min(10rem,22dvh)] w-[min(10rem,22dvh)] shrink-0 place-items-center rounded-panel bg-surface p-2.5 shadow-card md:mx-0">
             {qrDataUrl ? (
               <img
                 src={qrDataUrl}
@@ -133,17 +133,17 @@ function StageLobby({ snapshot }: { snapshot: StageSnapshot }) {
                 className="h-full w-full"
               />
             ) : (
-              <span className="text-xs text-slate-500" role="status">
+              <span className="text-xs text-content-muted" role="status">
                 در حال ساخت QR…
               </span>
             )}
           </div>
 
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs font-bold sm:text-sm md:justify-start">
-            <span className="rounded-full bg-white/10 px-3 py-2">
+            <span className="rounded-full live-theme-overlay-soft px-3 py-2">
               {snapshot.participant_count.toLocaleString("fa-IR")} نفر وارد شده‌اند
             </span>
-            <span className="rounded-full bg-white/10 px-3 py-2">
+            <span className="rounded-full live-theme-overlay-soft px-3 py-2">
               {(snapshot.active_participant_count ?? snapshot.participant_count).toLocaleString("fa-IR")} نفر آنلاین
             </span>
           </div>
@@ -197,7 +197,7 @@ function StageTimer({
 
   return (
     <div
-      className="mx-auto mt-3 grid h-16 w-16 place-items-center rounded-full border-4 border-white/15 bg-black/20 text-2xl font-black sm:h-20 sm:w-20 sm:text-3xl"
+      className="mx-auto mt-3 grid h-16 w-16 place-items-center rounded-full border-4 border-[color:var(--live-control-border)] live-theme-contrast-soft text-2xl font-black sm:h-20 sm:w-20 sm:text-3xl"
       role="timer"
       aria-label="زمان باقی‌مانده"
     >
@@ -292,14 +292,14 @@ function StageActivity({
         </div>
 
         {isWordCloud ? (
-          <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/5 p-4 shadow-2xl sm:p-5">
+          <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-projection border border-[color:var(--live-border)] live-theme-overlay-subtle p-4 shadow-projection sm:p-5">
             {question.image_url ? (
               <LiveMediaImage
                 src={question.image_url}
                 image={question.image}
                 preferred="large"
                 alt="تصویر سؤال"
-                className="mx-auto mb-3 max-h-[18dvh] max-w-full rounded-2xl object-contain"
+                className="mx-auto mb-3 max-h-[18dvh] max-w-full rounded-panel object-contain"
               />
             ) : null}
             {!revealed ? (
@@ -330,7 +330,7 @@ function StageActivity({
                   image={question.image}
                   preferred="large"
                   alt="تصویر سؤال"
-                  className="max-h-[42dvh] max-w-full rounded-2xl object-contain shadow-xl"
+                  className="max-h-[42dvh] max-w-full rounded-panel object-contain shadow-card"
                 />
               </div>
             ) : null}
@@ -346,10 +346,10 @@ function StageActivity({
                 <article
                   key={String(option.option_id ?? index)}
                   className={
-                    "flex min-h-0 flex-col overflow-hidden rounded-2xl border p-3 shadow-xl sm:p-4 " +
+                    "flex min-h-0 flex-col overflow-hidden rounded-panel border p-3 shadow-card sm:p-4 " +
                     (correct
                       ? "border-success/70 bg-success/15"
-                      : "border-white/10 bg-white/5")
+                      : "border-[color:var(--live-border)] live-theme-overlay-subtle")
                   }
                 >
                   {option.image_url ? (
@@ -358,7 +358,7 @@ function StageActivity({
                       image={option.image}
                       preferred="thumbnail"
                       alt=""
-                      className="mx-auto mb-2 max-h-[8dvh] max-w-full rounded-xl object-contain"
+                      className="mx-auto mb-2 max-h-[8dvh] max-w-full rounded-control object-contain"
                     />
                   ) : null}
                   <p
@@ -380,7 +380,7 @@ function StageActivity({
                           {count.toLocaleString("fa-IR")}
                         </strong>
                       </div>
-                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
+                      <div className="mt-2 h-2 overflow-hidden rounded-full live-theme-overlay-soft">
                         <div
                           className="h-full rounded-full bg-current transition-[width] duration-500"
                           style={{
@@ -429,7 +429,7 @@ function RankingList({
     const player = visibleRanking[0];
     return (
       <main className="grid h-full min-h-0 place-items-center overflow-hidden px-5 pb-4 pt-[4.5rem] text-center sm:px-8">
-        <section className="w-full max-w-xl rounded-[2.5rem] border border-white/10 bg-[color:var(--live-surface)] p-9 shadow-2xl backdrop-blur">
+        <section className="w-full max-w-xl rounded-projection border border-[color:var(--live-border)] bg-[color:var(--live-surface)] p-9 shadow-projection backdrop-blur">
           <p className="text-sm font-bold text-[color:var(--live-muted)]">امتیاز فعلی</p>
           <h1 className="mt-3 truncate text-4xl font-black sm:text-5xl" dir="auto">
             {player.display_name}
@@ -451,7 +451,7 @@ function RankingList({
           <p className="text-sm font-bold text-[color:var(--live-muted)]">رتبه‌بندی تجمعی جلسه</p>
           <h1 className="mt-1 text-3xl font-black sm:text-5xl">{title}</h1>
         </div>
-        <ol className="mt-4 grid min-h-0 flex-1 auto-rows-fr gap-3 overflow-hidden rounded-[2.5rem] border border-white/10 bg-[color:var(--live-surface)] p-4 shadow-2xl backdrop-blur sm:p-5">
+        <ol className="mt-4 grid min-h-0 flex-1 auto-rows-fr gap-3 overflow-hidden rounded-projection border border-[color:var(--live-border)] bg-[color:var(--live-surface)] p-4 shadow-projection backdrop-blur sm:p-5">
           {visibleRanking.length === 0 ? (
             <li className="grid min-h-48 place-items-center text-[color:var(--live-muted)]">
               هنوز امتیازی برای نمایش وجود ندارد.
@@ -460,12 +460,12 @@ function RankingList({
             const width = maxScore > 0 ? Math.max(4, (entry.score / maxScore) * 100) : 0;
             return (
               <li key={`${entry.rank}:${entry.display_name}:${index}`} className="grid grid-cols-[3.25rem_minmax(0,1fr)_auto] items-center gap-3">
-                <span className="grid h-11 w-11 place-items-center rounded-full bg-white/10 text-lg font-black">
+                <span className="grid h-11 w-11 place-items-center rounded-full live-theme-overlay-soft text-lg font-black">
                   {entry.rank.toLocaleString("fa-IR")}
                 </span>
-                <div className="relative min-h-14 overflow-hidden rounded-2xl bg-white/5">
+                <div className="relative min-h-14 overflow-hidden rounded-panel live-theme-overlay-subtle">
                   <span
-                    className="absolute inset-y-0 start-0 rounded-2xl bg-white/10"
+                    className="absolute inset-y-0 start-0 rounded-panel live-theme-overlay-soft"
                     style={{ width: `${width}%` }}
                     aria-hidden="true"
                   />
@@ -493,7 +493,7 @@ function StageFinal({ snapshot }: { snapshot: StageSnapshot }) {
   if (!snapshot.has_scoring) {
     return (
       <main className="grid h-full min-h-0 place-items-center overflow-hidden px-5 pb-4 pt-[4.5rem] text-center">
-        <section className="max-w-2xl rounded-[2.5rem] border border-white/10 bg-[color:var(--live-surface)] p-10 shadow-2xl backdrop-blur">
+        <section className="max-w-2xl rounded-projection border border-[color:var(--live-border)] bg-[color:var(--live-surface)] p-10 shadow-projection backdrop-blur">
           <p className="text-sm font-bold text-[color:var(--live-muted)]">جلسه پایان یافت</p>
           <h1 className="mt-3 text-4xl font-black sm:text-6xl">ممنون از مشارکت شما</h1>
           <p className="mt-5 leading-8 text-[color:var(--live-muted)]">
@@ -509,7 +509,7 @@ function StageFinal({ snapshot }: { snapshot: StageSnapshot }) {
   if (snapshot.participant_count === 0 || podium.length === 0) {
     return (
       <main className="grid h-full min-h-0 place-items-center overflow-hidden px-5 pb-4 pt-[4.5rem] text-center">
-        <section className="max-w-2xl rounded-[2.5rem] border border-white/10 bg-[color:var(--live-surface)] p-10 shadow-2xl backdrop-blur">
+        <section className="max-w-2xl rounded-projection border border-[color:var(--live-border)] bg-[color:var(--live-surface)] p-10 shadow-projection backdrop-blur">
           <p className="text-sm font-bold text-[color:var(--live-muted)]">جلسه پایان یافت</p>
           <h1 className="mt-3 text-4xl font-black sm:text-6xl">هنوز نتیجه‌ای ثبت نشده است</h1>
           <p className="mt-5 leading-8 text-[color:var(--live-muted)]">
@@ -525,7 +525,7 @@ function StageFinal({ snapshot }: { snapshot: StageSnapshot }) {
       <main className="flex h-full min-h-0 flex-col items-center justify-center overflow-hidden px-5 pb-4 pt-[4.5rem] text-center">
         <p className="text-sm font-bold text-[color:var(--live-muted)]">پایان جلسه</p>
         <h1 className="mt-1 text-3xl font-black sm:text-5xl xl:text-6xl">نتیجه انفرادی</h1>
-        <section className="mt-5 w-full max-w-xl rounded-[2.5rem] border border-white/15 bg-[color:var(--live-surface)] p-10 shadow-2xl backdrop-blur">
+        <section className="mt-5 w-full max-w-xl rounded-projection border border-[color:var(--live-control-border)] bg-[color:var(--live-surface)] p-10 shadow-projection backdrop-blur">
           <div className="text-5xl" aria-hidden="true">🎯</div>
           <h2 className="mt-5 truncate text-3xl font-black" dir="auto">{player.display_name}</h2>
           <p className="mt-5 text-5xl font-black">
@@ -547,7 +547,7 @@ function StageFinal({ snapshot }: { snapshot: StageSnapshot }) {
         {podium.map((entry, index) => (
           <article
             key={`${entry.rank}:${entry.display_name}:${index}`}
-            className="min-h-0 rounded-[2rem] border border-white/15 bg-[color:var(--live-surface)] p-4 shadow-2xl backdrop-blur sm:p-5"
+            className="min-h-0 rounded-showcase border border-[color:var(--live-control-border)] bg-[color:var(--live-surface)] p-4 shadow-projection backdrop-blur sm:p-5"
           >
             <div className="text-5xl" aria-hidden="true">{medalForRank(entry.rank)}</div>
             <p className="mt-4 text-4xl font-black">{entry.rank.toLocaleString("fa-IR")}</p>
@@ -619,7 +619,7 @@ export default function StageRoute() {
       <StageHeader snapshot={snapshot} connected={isConnected} />
       {error && snapshot ? (
         <div
-          className="fixed bottom-4 start-1/2 z-30 -translate-x-1/2 rounded-full border border-white/15 bg-black/70 px-4 py-2 text-xs text-white backdrop-blur"
+          className="fixed bottom-4 start-1/2 z-30 -translate-x-1/2 rounded-full border border-[color:var(--live-control-border)] live-theme-contrast-strong px-4 py-2 text-xs text-[color:var(--live-fg)] backdrop-blur"
           role="status"
         >
           ارتباط Stage در حال بازیابی است

@@ -285,7 +285,7 @@ export default function DesignInspector({
                       aria-pressed={selected}
                       disabled={saving || conflictPending}
                       onClick={() => applyPreset(preset)}
-                      className="overflow-hidden rounded-panel border border-border-subtle bg-surface text-start transition hover:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus aria-pressed:border-brand aria-pressed:ring-2 aria-pressed:ring-focus/30 disabled:opacity-60"
+                      className="overflow-hidden rounded-panel border border-border-control bg-surface text-start transition hover:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus aria-pressed:border-brand aria-pressed:ring-2 aria-pressed:ring-focus/30 disabled:opacity-60"
                     >
                       <span
                         className="block p-2.5"
@@ -372,7 +372,7 @@ export default function DesignInspector({
                       value={field.value}
                       disabled={saving || conflictPending}
                       onChange={(event) => field.onChange(event.target.value)}
-                      className="h-10 w-14 cursor-pointer rounded-control border border-border-subtle bg-surface p-1 disabled:cursor-not-allowed"
+                      className="h-10 w-14 cursor-pointer rounded-control border border-border-control bg-surface p-1 disabled:cursor-not-allowed"
                     />
                   </label>
                 ))}
@@ -430,7 +430,7 @@ export default function DesignInspector({
                         nextPalette[index] = event.target.value;
                         setVisualizationPalette(nextPalette);
                       }}
-                      className="h-9 w-full cursor-pointer rounded-control border border-border-subtle bg-surface p-1 disabled:cursor-not-allowed"
+                      className="h-9 w-full cursor-pointer rounded-control border border-border-control bg-surface p-1 disabled:cursor-not-allowed"
                     />
                     <span
                       dir="ltr"
@@ -542,8 +542,8 @@ export default function DesignInspector({
               <div
                 className={
                   previewSurface === "stage"
-                    ? "mt-3 aspect-video overflow-hidden rounded-panel border border-[color:var(--live-border)] bg-cover bg-center p-4 text-[color:var(--live-fg)] shadow-sm"
-                    : "mx-auto mt-3 min-h-72 w-full max-w-52 overflow-hidden rounded-[1.75rem] border border-[color:var(--live-border)] bg-cover bg-center p-4 text-[color:var(--live-fg)] shadow-sm"
+                    ? "live-panel mt-3 aspect-video overflow-hidden rounded-panel bg-cover bg-center p-4 text-[color:var(--live-fg)]"
+                    : "live-panel mx-auto mt-3 min-h-72 w-full max-w-52 overflow-hidden rounded-feature bg-cover bg-center p-4 text-[color:var(--live-fg)]"
                 }
                 style={previewTheme.style}
               >

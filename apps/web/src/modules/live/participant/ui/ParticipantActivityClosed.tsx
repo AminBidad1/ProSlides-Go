@@ -26,7 +26,7 @@ export function ParticipantActivityClosed({
   return (
     <ParticipantShell quiz={quiz} connected={isStreamConnected} showConnection>
       <section className="flex flex-1 items-center justify-center py-5 text-center">
-        <div className="w-full rounded-[2rem] border border-[color:var(--live-border)] bg-[color:var(--live-surface)] p-5 shadow-2xl backdrop-blur-xl sm:p-8">
+        <div className="w-full live-panel rounded-showcase p-5  sm:p-8">
           <p className="text-sm font-bold text-[color:var(--live-muted)]">
             پاسخ‌گویی پایان یافت
           </p>
@@ -43,16 +43,16 @@ export function ParticipantActivityClosed({
               image={question?.image}
               preferred="medium"
               alt={"تصویر " + activityLabel}
-              className="mx-auto mt-5 max-h-[28dvh] max-w-full rounded-2xl border border-[color:var(--live-border)] object-contain shadow-lg"
+              className="mx-auto mt-5 max-h-[28dvh] max-w-full rounded-card border border-[color:var(--live-border)] object-contain shadow-lg"
             />
           ) : null}
 
           <div
             className={
-              "mx-auto mt-6 max-w-xl rounded-3xl border px-5 py-5 " +
+              "mx-auto mt-6 max-w-xl rounded-feature border px-5 py-5 " +
               (hasResponded
                 ? "border-success/40 bg-success/15"
-                : "border-[color:var(--live-border)] bg-white/5")
+                : "border-[color:var(--live-border)] live-theme-overlay-subtle")
             }
             role="status"
             aria-live="polite"
@@ -63,7 +63,7 @@ export function ParticipantActivityClosed({
                 "mx-auto grid h-12 w-12 place-items-center rounded-full border text-xl font-black " +
                 (hasResponded
                   ? "border-success/50 bg-success/20"
-                  : "border-[color:var(--live-border)] bg-white/10")
+                  : "border-[color:var(--live-border)] live-theme-overlay-soft")
               }
               aria-hidden="true"
             >

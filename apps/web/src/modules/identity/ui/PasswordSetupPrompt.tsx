@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { LoaderCircle } from "lucide-react";
 
 import Notice from "../../../shared/ui/Notice.tsx";
+import { Button } from "../../../shared/ui/primitives/Button.tsx";
 import { identityApi } from "../api/identityApi.ts";
 import { identityErrorMessage } from "../api/identityErrors.ts";
 import { currentSessionQuery } from "../api/sessionQuery.ts";
@@ -66,7 +67,7 @@ export function PasswordSetupPrompt() {
   return (
     <div className="mb-6 space-y-2">
       {visible ? (
-        <section className="rounded-panel border border-brand-border bg-surface px-4 py-4 text-sm text-brand-ink shadow-sm">
+        <section className="rounded-panel border border-brand-border bg-surface px-4 py-4 text-sm text-brand-ink shadow-card">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="min-w-0">
               <h2 className="font-semibold">برای حساب خود رمز عبور تعیین کنید</h2>
@@ -76,11 +77,11 @@ export function PasswordSetupPrompt() {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <button
+              <Button
                 type="button"
+                size="sm"
                 onClick={() => void requestSetupLink()}
                 disabled={sending}
-                className="inline-flex min-h-10 items-center gap-2 rounded-control bg-brand px-3 py-2 text-xs font-semibold text-content-inverse transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-70"
                 aria-busy={sending || undefined}
               >
                 {sending ? (
@@ -90,15 +91,16 @@ export function PasswordSetupPrompt() {
                   />
                 ) : null}
                 {sending ? "در حال ارسال…" : "ارسال لینک"}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                size="sm"
+                variant="outline"
                 onClick={() => setVisible(false)}
                 disabled={sending}
-                className="min-h-10 rounded-control border border-brand-border px-3 py-2 text-xs font-semibold text-brand-strong transition-colors hover:bg-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-60"
               >
                 بعداً
-              </button>
+              </Button>
             </div>
           </div>
         </section>

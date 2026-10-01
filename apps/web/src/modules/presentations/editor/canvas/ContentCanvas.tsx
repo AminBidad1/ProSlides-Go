@@ -5,7 +5,11 @@ import {
   ImagePlacementImage,
 } from "../../../../shared/media/ImagePlacementImage.tsx";
 import type { ImagePlacement } from "../../../../shared/media/image.ts";
-import { presentationTheme } from "../../../../shared/styles/presentationTheme.ts";
+import {
+  DEFAULT_PRESENTATION_ACCENT,
+  DEFAULT_PRESENTATION_FOREGROUND,
+  presentationTheme,
+} from "../../../../shared/styles/presentationTheme.ts";
 import { useOptionalDesignDraft } from "../model/useDesignDraftContext.ts";
 import type { EditorSlide } from "../../model/editor.ts";
 import { createContentDraft } from "../model/contentDraft.ts";
@@ -41,7 +45,7 @@ function ContentPreviewImage({
       <div
         role="img"
         aria-label="تصویر قابل نمایش نیست"
-        className="mx-auto grid min-h-44 w-full max-w-3xl place-items-center rounded-2xl border border-[color:var(--live-border)] bg-black/20 text-[color:var(--live-muted)]"
+        className="mx-auto grid min-h-44 w-full max-w-3xl place-items-center rounded-card border border-[color:var(--live-border)] live-theme-contrast-soft text-[color:var(--live-muted)]"
       >
         <span className="flex flex-col items-center gap-2 px-4 text-center text-sm font-bold">
           <ImageOff className="size-6" aria-hidden="true" />
@@ -57,7 +61,7 @@ function ContentPreviewImage({
       preferred="medium"
       alt={alt}
       onError={() => setFailed(true)}
-      className="mx-auto max-h-[48vh] w-auto max-w-full rounded-2xl border border-[color:var(--live-border)] bg-black/10 object-contain shadow-xl"
+      className="mx-auto max-h-[48vh] w-auto max-w-full rounded-card border border-[color:var(--live-border)] live-theme-contrast-soft object-contain shadow-card"
     />
   );
 }
@@ -68,8 +72,8 @@ export default function ContentCanvas({
   quizBackgroundImage,
   quizBackgroundFocalX = 0.5,
   quizBackgroundFocalY = 0.5,
-  textColor = "#111827",
-  accentColor = "#8b5cf6",
+  textColor = DEFAULT_PRESENTATION_FOREGROUND,
+  accentColor = DEFAULT_PRESENTATION_ACCENT,
   visualizationPalette,
 }: ContentCanvasProps) {
   const designController = useOptionalDesignDraft();
@@ -134,12 +138,12 @@ export default function ContentCanvas({
   return (
     <section
       aria-label="پیش‌نمایش اسلاید محتوا"
-      className="relative flex h-full max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-[color:var(--live-border)] bg-cover bg-center text-[color:var(--live-fg)] shadow-lg"
+      className="relative flex h-full max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-card border border-[color:var(--live-border)] bg-cover bg-center text-[color:var(--live-fg)] shadow-card"
       style={theme.style}
     >
       <div className="flex min-h-0 flex-1 flex-col p-5 sm:p-7">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--live-border)] bg-black/25 px-3 py-1.5 text-xs font-bold backdrop-blur-md">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--live-border)] live-theme-contrast-medium px-3 py-1.5 text-xs font-bold backdrop-blur-md">
             <FileText className="size-3.5" aria-hidden="true" />
             پیش‌نمایش شرکت‌کننده
           </span>
@@ -199,12 +203,12 @@ export default function ContentCanvas({
           )}
 
           {!preview.hasTitle && !preview.hasText && !preview.hasImage && (
-            <div className="mx-auto mt-6 max-w-lg rounded-2xl border border-[color:var(--live-border)] bg-black/20 px-5 py-7 text-sm font-bold text-[color:var(--live-muted)]">
+            <div className="mx-auto mt-6 max-w-lg rounded-card border border-[color:var(--live-border)] live-theme-contrast-soft px-5 py-7 text-sm font-bold text-[color:var(--live-muted)]">
               عنوان، متن یا تصویر اضافه کنید تا پیش‌نمایش اینجا نمایش داده شود.
             </div>
           )}
 
-          <div className="mx-auto mt-7 inline-flex rounded-full border border-[color:var(--live-border)] bg-white/10 px-4 py-2 text-sm font-bold">
+          <div className="mx-auto mt-7 inline-flex rounded-full border border-[color:var(--live-border)] live-theme-overlay-soft px-4 py-2 text-sm font-bold">
             برای ادامه، نمایشگر ارائه‌دهنده را دنبال کنید
           </div>
         </article>

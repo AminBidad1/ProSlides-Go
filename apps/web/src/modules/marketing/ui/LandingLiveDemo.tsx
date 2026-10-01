@@ -142,7 +142,7 @@ export default function LandingLiveDemo() {
                         ].join(" ")}
                         aria-hidden={!revealed}
                       >
-                        <strong className="text-sm text-white">
+                        <strong className="text-sm text-content-inverse">
                           {count.toLocaleString("fa-IR")}
                         </strong>
                         <span className="font-brand text-stage-muted" dir="ltr">

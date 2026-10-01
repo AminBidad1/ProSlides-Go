@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Image as ImageIcon, LoaderCircle, X } from "lucide-react";
 
 import { Button } from "../../../../shared/ui/primitives/Button.tsx";
+import { Input } from "../../../../shared/ui/primitives/Input.tsx";
 import { useNativeDialogLifecycle } from "../../../../shared/ui/useNativeDialogLifecycle.ts";
 
 type ImageUrlDialogProps = {
@@ -168,7 +169,7 @@ export default function ImageUrlDialog({
           آدرس تصویر
         </label>
         <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-          <input
+          <Input
             ref={urlInputRef}
             id="editor-image-url"
             type="url"
@@ -185,7 +186,7 @@ export default function ImageUrlDialog({
               setError("");
             }}
             placeholder="https://example.com/image.jpg"
-            className="h-10 min-w-0 flex-1 rounded-control border border-border-control bg-surface px-3 text-sm text-content outline-none transition focus:border-brand focus:ring-2 focus:ring-focus/30"
+            className="h-10 min-w-0 flex-1"
           />
           <Button
             variant="outline"

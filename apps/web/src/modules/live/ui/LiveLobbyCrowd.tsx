@@ -99,7 +99,7 @@ export function LiveLobbyCrowd({
 
   return (
     <section
-      className={`${fillAvailable ? "min-h-0 flex-1" : "min-h-[26rem] sm:min-h-[34rem]"} relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/[0.045] shadow-2xl backdrop-blur ${className}`}
+      className={`${fillAvailable ? "min-h-0 flex-1" : "min-h-[26rem] sm:min-h-[34rem]"} relative overflow-hidden rounded-projection border border-[color:var(--live-border)] live-theme-overlay-subtle shadow-projection backdrop-blur ${className}`}
       aria-label="شرکت‌کنندگان حاضر در لابی"
     >
       <style>{`
@@ -120,11 +120,11 @@ export function LiveLobbyCrowd({
       `}</style>
 
       <div
-        className="absolute -start-20 top-[8%] h-64 w-64 rounded-full bg-white/[0.04] blur-3xl"
+        className="absolute -start-20 top-[8%] h-64 w-64 rounded-full live-theme-overlay-subtle blur-3xl"
         aria-hidden="true"
       />
       <div
-        className="absolute -end-24 bottom-[7%] h-72 w-72 rounded-full bg-white/[0.055] blur-3xl"
+        className="absolute -end-24 bottom-[7%] h-72 w-72 rounded-full live-theme-overlay-soft blur-3xl"
         aria-hidden="true"
       />
 
@@ -147,7 +147,7 @@ export function LiveLobbyCrowd({
             const cardContent = (
               <>
                 <span
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/10 text-xl sm:h-10 sm:w-10 sm:text-2xl"
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-control live-theme-overlay-soft text-xl sm:h-10 sm:w-10 sm:text-2xl"
                   aria-hidden="true"
                 >
                   {participant.avatar || "🙂"}
@@ -184,14 +184,14 @@ export function LiveLobbyCrowd({
                         ? `نمایش نام ${participant.name}`
                         : `پنهان کردن نام ${participant.name}`
                     }
-                    className="live-lobby-card flex items-center gap-2 rounded-2xl border border-white/15 bg-black/35 px-2.5 py-2 shadow-xl backdrop-blur-md transition-[background-color,border-color] hover:border-white/30 hover:bg-black/45 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/35"
+                    className="live-lobby-card flex items-center gap-2 rounded-panel border border-[color:var(--live-control-border)] live-theme-contrast-medium px-2.5 py-2 shadow-card backdrop-blur-md transition-[background-color,border-color] hover:border-[color:var(--live-focus)] hover:brightness-110 focus-visible:outline-none live-theme-focusable"
                     style={{ animationDelay: `${delay}ms` }}
                   >
                     {cardContent}
                   </button>
                 ) : (
                   <div
-                    className="live-lobby-card flex items-center gap-2 rounded-2xl border border-white/15 bg-black/35 px-2.5 py-2 shadow-xl backdrop-blur-md"
+                    className="live-lobby-card flex items-center gap-2 rounded-panel border border-[color:var(--live-control-border)] live-theme-contrast-medium px-2.5 py-2 shadow-card backdrop-blur-md"
                     style={{ animationDelay: `${delay}ms` }}
                   >
                     {cardContent}
@@ -204,7 +204,7 @@ export function LiveLobbyCrowd({
       )}
 
       <div className="pointer-events-none absolute inset-x-4 bottom-4 flex justify-center">
-        <p className="rounded-full border border-white/10 bg-black/40 px-4 py-2 text-xs font-bold text-white/75 shadow-lg backdrop-blur">
+        <p className="rounded-full border border-[color:var(--live-border)] live-theme-contrast-medium px-4 py-2 text-xs font-bold text-[color:var(--live-muted)] shadow-lg backdrop-blur">
           {Number(total).toLocaleString("fa-IR")} نفر وارد شده‌اند
         </p>
       </div>

@@ -27,7 +27,7 @@ export function SessionHistory({
 }: SessionHistoryProps) {
   return (
     <aside
-      className="rounded-panel border border-border-subtle bg-surface shadow-sm"
+      className="rounded-panel border border-border-subtle bg-surface shadow-card"
       aria-label="تاریخچه جلسات ارائه"
     >
       <div className="border-b border-border-subtle p-4">
@@ -53,8 +53,8 @@ export function SessionHistory({
                 "w-full rounded-control border p-3 text-start transition",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
                 selected
-                  ? "border-brand-border bg-brand-soft"
-                  : "border-border-subtle bg-surface-raised hover:border-brand-border",
+                  ? "border-brand bg-brand-soft"
+                  : "border-border-control bg-surface-raised hover:border-brand",
               ].join(" ")}
             >
               <div className="flex items-start justify-between gap-3">

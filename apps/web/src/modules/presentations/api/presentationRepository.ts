@@ -1,4 +1,10 @@
-import { DEFAULT_PRESENTATION_ACCENT, DEFAULT_VISUALIZATION_PALETTE, normalizeVisualizationPalette } from "../../../shared/styles/presentationTheme.ts";
+import {
+  DEFAULT_PRESENTATION_ACCENT,
+  DEFAULT_PRESENTATION_BACKGROUND,
+  DEFAULT_PRESENTATION_FOREGROUND,
+  DEFAULT_VISUALIZATION_PALETTE,
+  normalizeVisualizationPalette,
+} from "../../../shared/styles/presentationTheme.ts";
 import type {
   EditorPresentation,
   EditorSlide,
@@ -44,7 +50,7 @@ export const presentationToEditor = (presentation: PresentationDTO): EditorPrese
   const backgroundColor =
     typeof settings.background_color === "string"
       ? settings.background_color
-      : "#f7f7fb";
+      : DEFAULT_PRESENTATION_BACKGROUND;
   const backgroundImage =
     typeof settings.background_image_url === "string"
       ? settings.background_image_url
@@ -62,7 +68,7 @@ export const presentationToEditor = (presentation: PresentationDTO): EditorPrese
   const textColor =
     typeof settings.text_color === "string"
       ? settings.text_color
-      : "#111827";
+      : DEFAULT_PRESENTATION_FOREGROUND;
   const accentColor =
     typeof settings.accent_color === "string"
       ? settings.accent_color
@@ -166,7 +172,23 @@ const updatePresentation = async (quizID: string, data: PresentationUpdate): Pro
 
 export const quizService = {
   listPresentations: (options?: RequestOptions) => request<PresentationSummaryDTO[]>("/presentations", options),
-  createPresentation: (title = "Untitled Presentation") => request<PresentationDTO>("/presentations", { method: "POST", json: { title, settings: {} } }),
+  createPresentation: (title = "Untitled Presentation") =>
+    request<PresentationDTO>("/presentations", {
+      method: "POST",
+      json: {
+        title,
+        settings: {
+          background_color: DEFAULT_PRESENTATION_BACKGROUND,
+          background_image_url: "",
+          background_image_focal_x: 0.5,
+          background_image_focal_y: 0.5,
+          text_color: DEFAULT_PRESENTATION_FOREGROUND,
+          accent_color: DEFAULT_PRESENTATION_ACCENT,
+          visualization_palette: [...DEFAULT_VISUALIZATION_PALETTE],
+          music_url: "",
+        },
+      },
+    }),
   deletePresentation: (id: string) => request<void>(`/presentations/${id}`, { method: "DELETE" }),
   duplicatePresentation: (id: string, title: string) => request<PresentationDTO>(`/presentations/${id}/duplicate`, { method: "POST", json: { title } }),
   resetPresentationResults: (id: string) => request<void>(`/presentations/${id}/results`, { method: "DELETE" }),

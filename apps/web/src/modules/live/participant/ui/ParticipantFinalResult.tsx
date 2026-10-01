@@ -22,7 +22,7 @@ export function ParticipantFinalResult({
   return (
     <ParticipantShell quiz={quiz}>
       <section className="flex flex-1 flex-col justify-center py-5 text-center">
-        <div className="rounded-[2rem] border border-[color:var(--live-border)] bg-[color:var(--live-surface)] p-6 shadow-2xl backdrop-blur-xl sm:p-10">
+        <div className="live-panel rounded-showcase p-6  sm:p-10">
           <p className="text-sm font-bold text-[color:var(--live-muted)]">
             جلسه پایان یافت
           </p>
@@ -38,14 +38,14 @@ export function ParticipantFinalResult({
           {hasScoring ? (
             <>
               {isSolo ? (
-                <div className="mx-auto my-7 max-w-md rounded-3xl border border-[color:var(--live-border)] bg-white/10 p-5">
+                <div className="mx-auto my-7 max-w-md rounded-feature border border-[color:var(--live-border)] live-theme-overlay-soft p-5">
                   <p className="font-black">نتیجه انفرادی ثبت شد</p>
                   <p className="mt-2 text-sm leading-7 text-[color:var(--live-muted)]">
                     چون تنها شرکت‌کننده جلسه بودید، رتبه رقابتی نمایش داده نمی‌شود.
                   </p>
                 </div>
               ) : (
-                <div className="mx-auto my-7 grid h-36 w-36 place-items-center rounded-full border-4 border-white/25 bg-white/10 shadow-2xl">
+                <div className="mx-auto my-7 grid h-36 w-36 place-items-center rounded-full border-4 border-[color:var(--live-control-border)] live-theme-overlay-soft shadow-feature">
                   <div>
                     <p className="text-sm text-[color:var(--live-muted)]">
                       رتبه نهایی
@@ -58,7 +58,7 @@ export function ParticipantFinalResult({
               )}
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-2xl border border-[color:var(--live-border)] bg-white/10 p-4">
+                <div className="rounded-card border border-[color:var(--live-border)] live-theme-overlay-soft p-4">
                   <p className="text-xs text-[color:var(--live-muted)]">
                     امتیاز نهایی
                   </p>
@@ -66,7 +66,7 @@ export function ParticipantFinalResult({
                     {score.toLocaleString("fa-IR")}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-[color:var(--live-border)] bg-white/10 p-4">
+                <div className="rounded-card border border-[color:var(--live-border)] live-theme-overlay-soft p-4">
                   <p className="text-xs text-[color:var(--live-muted)]">
                     شرکت‌کنندگان
                   </p>
@@ -77,7 +77,7 @@ export function ParticipantFinalResult({
               </div>
             </>
           ) : (
-            <div className="mx-auto my-7 max-w-md rounded-3xl border border-[color:var(--live-border)] bg-white/10 p-6">
+            <div className="mx-auto my-7 max-w-md rounded-feature border border-[color:var(--live-border)] live-theme-overlay-soft p-6">
               <p className="text-sm text-[color:var(--live-muted)]">
                 شرکت‌کنندگان
               </p>

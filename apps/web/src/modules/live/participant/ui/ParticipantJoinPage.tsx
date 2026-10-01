@@ -34,9 +34,9 @@ export function ParticipantJoinPage({
         showConnection={!controller.isJoining}
       >
         <section className="flex flex-1 flex-col items-center justify-center py-5 text-center">
-          <div className="w-full rounded-[2rem] border border-[color:var(--live-border)] bg-[color:var(--live-surface)] p-6 shadow-2xl backdrop-blur-xl sm:p-10">
+          <div className="w-full live-panel rounded-showcase p-6  sm:p-10">
             <div
-              className="mx-auto mb-5 grid h-24 w-24 place-items-center rounded-3xl border border-[color:var(--live-border)] bg-white/10 text-6xl shadow-xl"
+              className="mx-auto mb-5 grid h-24 w-24 place-items-center rounded-feature border border-[color:var(--live-border)] live-theme-overlay-soft text-6xl shadow-card"
               aria-hidden="true"
             >
               {controller.avatar}
@@ -60,7 +60,7 @@ export function ParticipantJoinPage({
             {controller.connectionError ? (
               <p
                 role="alert"
-                className="mt-5 rounded-xl border border-amber-300/30 bg-amber-950/25 px-4 py-3 text-sm"
+                className="mt-5 rounded-control border border-warning/40 bg-warning/15 px-4 py-3 text-sm"
               >
                 اتصال برقرار نشد؛ تلاش مجدد با فاصلهٔ افزایشی انجام می‌شود.
               </p>
@@ -69,7 +69,7 @@ export function ParticipantJoinPage({
             {controller.joinError ? (
               <p
                 role="alert"
-                className="mt-5 rounded-xl border border-rose-300/30 bg-rose-950/25 px-4 py-3 text-sm"
+                className="mt-5 rounded-control border border-danger/40 bg-danger/15 px-4 py-3 text-sm"
               >
                 {controller.joinError}
               </p>
@@ -80,14 +80,14 @@ export function ParticipantJoinPage({
                 <button
                   type="button"
                   onClick={controller.retryNow}
-                  className="min-h-12 rounded-xl bg-white px-5 text-sm font-black text-slate-950 shadow-lg transition-transform hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40 motion-reduce:transform-none"
+                  className="live-primary-action live-theme-focusable min-h-12 rounded-panel px-5 text-sm font-black transition-transform hover:-translate-y-0.5 active:translate-y-0 motion-reduce:transform-none"
                 >
                   تلاش دوباره
                 </button>
                 <button
                   type="button"
                   onClick={controller.editProfile}
-                  className="min-h-12 rounded-xl border border-[color:var(--live-border)] bg-white/5 px-5 text-sm font-bold hover:bg-white/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
+                  className="live-secondary-action live-theme-focusable min-h-12 rounded-panel px-5 text-sm font-bold"
                 >
                   ویرایش نام و آواتار
                 </button>
@@ -104,7 +104,7 @@ export function ParticipantJoinPage({
       <section className="flex flex-1 items-center justify-center py-4 sm:py-6">
         <form
           onSubmit={submit}
-          className="w-full max-w-lg rounded-[2rem] border border-[color:var(--live-border)] bg-[color:var(--live-surface)] p-5 shadow-2xl backdrop-blur-xl sm:p-8"
+          className="w-full max-w-lg live-panel rounded-showcase p-5  sm:p-8"
         >
           <div className="mb-6 text-center">
             <p className="text-sm font-bold text-[color:var(--live-muted)]">
@@ -136,7 +136,7 @@ export function ParticipantJoinPage({
             aria-describedby={
               controller.validation ? "participant-name-error" : "participant-name-hint"
             }
-            className="min-h-14 w-full rounded-2xl border border-[color:var(--live-border)] bg-white/95 px-4 text-center text-lg font-bold text-slate-950 outline-none placeholder:text-slate-500 focus-visible:ring-4 focus-visible:ring-white/30"
+            className="live-theme-input min-h-14 w-full rounded-panel px-4 text-center text-lg font-bold outline-none"
           />
           {controller.validation ? (
             <p
@@ -155,7 +155,7 @@ export function ParticipantJoinPage({
             </p>
           )}
 
-          <div className="mt-5 flex items-center justify-between gap-4 rounded-2xl border border-[color:var(--live-border)] bg-white/5 p-3">
+          <div className="mt-5 flex items-center justify-between gap-4 rounded-panel border border-[color:var(--live-border)] live-theme-overlay-subtle p-3">
             <div className="min-w-0">
               <p className="text-sm font-bold">آواتار</p>
               <p className="mt-1 text-xs text-[color:var(--live-muted)]">
@@ -168,7 +168,7 @@ export function ParticipantJoinPage({
               aria-expanded={showPicker}
               aria-controls="participant-avatar-picker"
               aria-label="تغییر آواتار"
-              className="grid min-h-14 min-w-14 shrink-0 place-items-center rounded-2xl border border-[color:var(--live-border)] bg-white/10 text-3xl hover:bg-white/15 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
+              className="grid min-h-14 min-w-14 shrink-0 place-items-center live-secondary-action live-theme-focusable rounded-panel text-3xl"
             >
               <span aria-hidden="true">{controller.avatar}</span>
             </button>
@@ -177,13 +177,13 @@ export function ParticipantJoinPage({
           {showPicker ? (
             <div
               id="participant-avatar-picker"
-              className="mt-3 overflow-hidden rounded-2xl"
+              className="mt-3 overflow-hidden rounded-panel"
               dir="ltr"
             >
               <Suspense
                 fallback={
                   <div
-                    className="grid h-80 place-items-center bg-slate-950 text-sm text-white/70"
+                    className="grid h-80 place-items-center bg-stage text-sm text-stage-muted"
                     role="status"
                   >
                     در حال آماده‌سازی انتخاب آواتار…
@@ -203,7 +203,7 @@ export function ParticipantJoinPage({
           {controller.joinError ? (
             <p
               role="alert"
-              className="mt-4 rounded-xl border border-amber-300/25 bg-amber-950/20 px-3 py-2 text-sm font-medium leading-6"
+              className="mt-4 rounded-control border border-warning/40 bg-warning/15 px-3 py-2 text-sm font-medium leading-6"
             >
               {controller.joinError}
             </p>
@@ -211,7 +211,7 @@ export function ParticipantJoinPage({
 
           <button
             type="submit"
-            className="mt-6 min-h-14 w-full rounded-2xl bg-white px-6 text-lg font-black text-slate-950 shadow-xl transition-transform hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40 motion-reduce:transform-none"
+            className="live-primary-action live-theme-focusable mt-6 min-h-14 w-full rounded-panel px-6 text-lg font-black transition-transform hover:-translate-y-0.5 active:translate-y-0 motion-reduce:transform-none"
           >
             پیوستن به جلسه
           </button>

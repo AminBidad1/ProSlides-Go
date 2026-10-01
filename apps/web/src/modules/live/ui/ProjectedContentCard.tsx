@@ -22,7 +22,7 @@ export function ProjectedContentCard({
 
   return (
     <article
-      className={`mx-auto flex max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-[2.5rem] border border-white/10 bg-[color:var(--live-surface)] p-6 text-center shadow-2xl backdrop-blur sm:p-8 ${className}`}
+      className={`mx-auto flex max-h-full w-full max-w-6xl flex-col overflow-hidden live-panel rounded-projection p-6 text-center  sm:p-8 ${className}`}
     >
       {title ? (
         <h1
@@ -56,7 +56,7 @@ export function ProjectedContentCard({
             preferred="large"
             alt={title ? `تصویر ${title}` : "تصویر محتوای ارائه"}
             className={
-              "mx-auto min-h-0 max-w-full rounded-3xl object-contain shadow-2xl " +
+              "mx-auto min-h-0 max-w-full rounded-feature object-contain shadow-feature " +
               (split
                 ? "max-h-[46dvh] md:max-h-[52dvh]"
                 : "max-h-[56dvh]")

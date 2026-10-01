@@ -14,6 +14,7 @@ import { useMemo, useState, type CSSProperties } from "react";
 
 import { formatPersianNumber } from "../../../../shared/forms/numbers.ts";
 import { firstPartyImageDeliveryURL } from "../../../../shared/media/image.ts";
+import { DEFAULT_PRESENTATION_BACKGROUND } from "../../../../shared/styles/presentationTheme.ts";
 import { ConfirmDialog } from "../../../../shared/ui/primitives/ConfirmDialog.tsx";
 import type { EditorSlide } from "../../model/editor.ts";
 import { getEditorItemBehaviors } from "../../model/itemRegistry.ts";
@@ -49,7 +50,7 @@ export default function SlidesPanel({
   onSelectSlide,
   addNewSlide,
   deleteSlide,
-  quizBackground = "#ffffff",
+  quizBackground = DEFAULT_PRESENTATION_BACKGROUND,
   quizBackgroundImage = "",
   quizBackgroundFocalX = 0.5,
   quizBackgroundFocalY = 0.5,
@@ -85,9 +86,9 @@ export default function SlidesPanel({
         "thumbnail",
       );
       return {
-        backgroundColor: backgroundColor || "#f3f4f6",
+        backgroundColor: backgroundColor || DEFAULT_PRESENTATION_BACKGROUND,
         backgroundImage:
-          `linear-gradient(rgba(0,0,0,.12), rgba(0,0,0,.18)), url(${JSON.stringify(previewImage)})`,
+          `linear-gradient(var(--color-overlay-subtle), var(--color-overlay-soft)), url(${JSON.stringify(previewImage)})`,
         backgroundSize: "cover",
         backgroundPosition:
           `${Math.round(focalX * 100)}% ${Math.round(focalY * 100)}%`,
@@ -95,7 +96,7 @@ export default function SlidesPanel({
     }
 
     return {
-      backgroundColor: backgroundColor || "#f3f4f6",
+      backgroundColor: backgroundColor || DEFAULT_PRESENTATION_BACKGROUND,
     };
   };
 
@@ -121,7 +122,7 @@ export default function SlidesPanel({
   return (
     <div className="w-full" aria-label="فهرست آیتم‌های ارائه">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="font-bold text-slate-800">آیتم‌ها</h2>
+        <h2 className="font-bold text-content">آیتم‌ها</h2>
         {isReordering ? (
           <span
             className="animate-pulse text-xs text-brand motion-reduce:animate-none"
@@ -167,7 +168,7 @@ export default function SlidesPanel({
                           ? `${provided.draggableProps.style?.transform || ""} rotate(2deg)`
                           : provided.draggableProps.style?.transform,
                         boxShadow: snapshot.isDragging
-                          ? "0 10px 25px rgba(0, 0, 0, 0.2)"
+                          ? "var(--shadow-feature)"
                           : "none",
                       };
 
@@ -175,10 +176,10 @@ export default function SlidesPanel({
                         <div
                           {...provided.draggableProps}
                           ref={provided.innerRef}
-                          className={`group relative mx-auto aspect-[16/9] w-full max-w-[360px] overflow-hidden rounded-xl border bg-surface shadow-sm transition ${
+                          className={`group relative mx-auto aspect-[16/9] w-full max-w-[360px] overflow-hidden rounded-card border bg-surface shadow-card transition ${
                             isActive
                               ? "border-brand ring-2 ring-brand/20"
-                              : "border-border-subtle hover:border-brand-border hover:shadow-md"
+                              : "border-border-control hover:border-brand"
                           } ${dragDisabled ? "opacity-90" : ""} ${
                             snapshot.isDragging ? "z-50" : "z-0"
                           }`}
@@ -189,7 +190,7 @@ export default function SlidesPanel({
                             onClick={() => onSelectSlide(slide.slide_id)}
                             aria-label={`انتخاب آیتم ${slideTitle}`}
                             aria-pressed={isActive}
-                            className="absolute inset-0 z-10 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
+                            className="absolute inset-0 z-10 rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
                           >
                             <span className="sr-only">
                               انتخاب آیتم {slideTitle}
@@ -204,10 +205,10 @@ export default function SlidesPanel({
                               onMouseDown={(event) =>
                                 event.stopPropagation()
                               }
-                              className="absolute right-11 top-2 z-20 cursor-grab rounded-lg border border-border-subtle bg-surface/95 p-1.5 shadow-sm transition hover:bg-surface active:cursor-grabbing focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100"
+                              className="absolute end-11 top-2 z-20 cursor-grab rounded-control border border-border-control bg-surface/95 p-1.5 shadow-card transition hover:bg-surface active:cursor-grabbing focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100"
                             >
                               <GripVertical
-                                className="h-5 w-5 text-gray-700"
+                                className="h-5 w-5 text-content"
                                 aria-hidden="true"
                               />
                             </div>
@@ -226,7 +227,7 @@ export default function SlidesPanel({
                                 ? "ابتدا تغییرات ذخیره‌نشده را ذخیره یا رها کنید."
                                 : undefined
                             }
-                            className="absolute right-2 top-2 z-20 rounded-lg border border-border-subtle bg-surface/95 p-2 text-danger shadow-sm transition hover:bg-danger-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-50 xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100"
+                            className="absolute end-2 top-2 z-20 rounded-control border border-border-control bg-surface/95 p-2 text-danger shadow-card transition hover:bg-danger-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-50 xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100"
                           >
                             <Trash2
                               className="h-4 w-4"
@@ -234,16 +235,16 @@ export default function SlidesPanel({
                             />
                           </button>
 
-                          <span className="absolute left-2 top-2 z-20 inline-flex min-w-7 items-center justify-center rounded-lg border border-border-subtle bg-surface/95 px-1.5 py-1 text-[10px] font-black text-content-muted shadow-sm">
+                          <span className="absolute start-2 top-2 z-20 inline-flex min-w-7 items-center justify-center rounded-control border border-border-control bg-surface/95 px-1.5 py-1 text-[10px] font-black text-content-muted shadow-card">
                             {formatPersianNumber(index + 1)}
                           </span>
 
                           {behaviors.length > 0 && (
-                            <div className="absolute left-10 top-2 z-20 flex max-w-[52%] flex-wrap justify-end gap-1">
+                            <div className="absolute start-10 top-2 z-20 flex max-w-[52%] flex-wrap justify-end gap-1">
                               {behaviors.map((behavior) => (
                                 <span
                                   key={behavior.id}
-                                  className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-1 text-[9px] font-semibold ${
+                                  className={`inline-flex items-center gap-1 rounded-control border px-1.5 py-1 text-[9px] font-semibold ${
                                     behavior.tone === "warning"
                                       ? "border-warning-border bg-warning-soft text-warning-ink"
                                       : "border-info-border bg-info-soft text-info"
@@ -261,7 +262,7 @@ export default function SlidesPanel({
                           )}
 
                           <div
-                            className="absolute left-2 right-2 top-10 overflow-hidden rounded-lg bg-white/90 p-2 text-center text-xs font-semibold leading-5 text-black/90 backdrop-blur-sm"
+                            className="absolute start-2 end-2 top-10 overflow-hidden rounded-control bg-surface/90 p-2 text-center text-xs font-semibold leading-5 text-content backdrop-blur-sm"
                             style={{
                               maxHeight: "110px",
                               wordBreak: "break-word",
@@ -273,8 +274,8 @@ export default function SlidesPanel({
                             <bdi>{slideTitle}</bdi>
                           </div>
 
-                          <div className="absolute bottom-2 left-2 right-2 space-y-1 text-center text-xs">
-                            <div className="rounded-md bg-white/90 py-1 font-medium text-gray-700 backdrop-blur-sm">
+                          <div className="absolute bottom-2 start-2 end-2 space-y-1 text-center text-xs">
+                            <div className="rounded-control bg-surface/90 py-1 font-medium text-content backdrop-blur-sm">
                               {typeLabel}
                             </div>
                           </div>
@@ -300,7 +301,7 @@ export default function SlidesPanel({
             ? "ابتدا تغییرات ذخیره‌نشده را ذخیره یا رها کنید."
             : undefined
         }
-        className="mx-auto mt-3 flex min-h-11 w-full max-w-[360px] cursor-pointer items-center justify-center rounded-xl border border-dashed border-brand-border bg-brand-soft/50 px-3 py-2.5 text-center text-sm font-bold text-brand-strong transition hover:border-brand hover:bg-brand-muted disabled:cursor-not-allowed disabled:opacity-50"
+        className="mx-auto mt-3 flex min-h-11 w-full max-w-[360px] cursor-pointer items-center justify-center rounded-control border border-dashed border-brand-border bg-brand-soft/50 px-3 py-2.5 text-center text-sm font-bold text-brand-strong transition hover:border-brand hover:bg-brand-muted disabled:cursor-not-allowed disabled:opacity-50"
       >
         + افزودن آیتم
       </button>

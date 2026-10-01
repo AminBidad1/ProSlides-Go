@@ -328,7 +328,7 @@ export default function ImagePickerDialog({
               <span className="grid size-11 shrink-0 place-items-center rounded-full bg-surface text-content-muted">
                 <Upload className="size-5" aria-hidden="true" />
               </span>
-              <div className="mt-3 min-w-0 flex-1 sm:mr-3 sm:mt-0">
+              <div className="mt-3 min-w-0 flex-1 sm:ms-3 sm:mt-0">
                 <p className="text-sm font-bold">تصویر جدید</p>
                 <p className="mt-1 text-xs leading-5 text-content-muted">
                   JPEG یا PNG، حداکثر ۱۵ مگابایت. نسخه‌های مناسب نمایش به‌صورت خودکار در سرور ساخته می‌شوند.
@@ -336,7 +336,7 @@ export default function ImagePickerDialog({
               </div>
               <Button
                 ref={uploadButtonRef}
-                className="mt-3 shrink-0 sm:mr-4 sm:mt-0"
+                className="mt-3 shrink-0 sm:ms-4 sm:mt-0"
                 disabled={uploading}
                 onClick={() => fileInputRef.current?.click()}
               >
@@ -451,7 +451,7 @@ export default function ImagePickerDialog({
                       <div className="relative aspect-video overflow-hidden bg-canvas">
                         <AssetThumbnail asset={asset} />
                         {selected ? (
-                          <span className="absolute left-2 top-2 grid size-7 place-items-center rounded-full bg-brand text-white shadow-sm">
+                          <span className="absolute start-2 top-2 grid size-7 place-items-center rounded-full bg-brand text-content-inverse shadow-card">
                             <Check className="size-4" aria-hidden="true" />
                           </span>
                         ) : null}

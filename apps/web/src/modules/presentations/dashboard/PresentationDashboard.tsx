@@ -11,6 +11,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../../shared/ui/primitives/Button.tsx";
 import { ConfirmDialog } from "../../../shared/ui/primitives/ConfirmDialog.tsx";
+import { Input } from "../../../shared/ui/primitives/Input.tsx";
+import { Select } from "../../../shared/ui/primitives/Select.tsx";
 import { ApiError } from "../../../shared/api/http.ts";
 import { quizService } from "../api/presentationRepository.ts";
 import {
@@ -678,7 +680,7 @@ export default function PresentationDashboardRoute() {
         role="menu"
         aria-label={`عملیات ارائه ${quiz.name}`}
         onKeyDown={handleActionMenuKeyDown}
-        className={`absolute end-0 ${positionClass} z-[60] max-h-[70vh] w-56 overflow-y-auto rounded-xl border border-border-subtle bg-surface py-1 text-sm shadow-lg`}
+        className={`absolute end-0 ${positionClass} z-[60] max-h-[70vh] w-56 overflow-y-auto rounded-panel border border-border-subtle bg-surface py-1 text-sm shadow-panel`}
       >
         <button
           type="button"
@@ -786,7 +788,6 @@ export default function PresentationDashboardRoute() {
     <div
       className="min-h-screen bg-gradient-to-b from-brand-soft to-canvas pb-24 text-content md:pb-28"
       dir="rtl"
-      style={{ fontFamily: '"Vazirmatn", "Segoe UI", sans-serif' }}
     >
       {/* Header */}
       <div className="min-h-screen mx-auto mb-8">
@@ -812,10 +813,10 @@ export default function PresentationDashboardRoute() {
           <div className="mb-6">
             <div className="mb-7 max-w-2xl">
               <p className="mb-2 text-sm font-semibold text-brand">{fa.dashboard.eyebrow}</p>
-              <h1 className="text-2xl font-black tracking-tight text-slate-950 md:text-3xl">
+              <h1 className="text-2xl font-black tracking-tight text-content md:text-3xl">
                 {fa.dashboard.title}
               </h1>
-              <p className="mt-2 text-sm leading-7 text-slate-500">
+              <p className="mt-2 text-sm leading-7 text-content-muted">
                 ارائه تازه بسازید، اسلایدها را ویرایش کنید و برای اجرای زنده آماده شوید.
               </p>
             </div>
@@ -846,16 +847,16 @@ export default function PresentationDashboardRoute() {
               <div className="flex items-center justify-between w-full md:w-auto md:justify-end gap-3">
                 <span className="text-sm text-content-muted">مرتب‌سازی</span>
                 <div className="relative">
-                  <select
+                  <Select
                     value={sortBy}
                     onChange={(event) => setSortBy(event.target.value as SortBy)}
                     aria-label="مرتب‌سازی ارائه‌ها"
-                    className="cursor-pointer appearance-none rounded-control border border-border-subtle bg-surface py-2.5 pe-10 ps-4 text-sm text-content focus:outline-none focus:ring-2 focus:ring-focus"
+                    className="cursor-pointer appearance-none pe-10 ps-4"
                   >
                     <option value="updated">آخرین ویرایش</option>
                     <option value="name">نام</option>
                     <option value="created">تاریخ ساخت</option>
-                  </select>
+                  </Select>
                   <ChevronDown className="pointer-events-none absolute end-3 top-1/2 h-4 w-4 -translate-y-1/2 text-content-muted" aria-hidden="true" />
                 </div>
               </div>
@@ -871,22 +872,24 @@ export default function PresentationDashboardRoute() {
                 id="presentation-creation-error"
                 tone="error"
                 className="mb-6 flex-wrap"
-                action={<button
+                action={<Button
                   type="button"
+                  size="sm"
+                  variant="outline"
                   onClick={handleNewPresentation}
                   disabled={creatingQuiz}
-                  className="rounded-control bg-surface px-3 py-2 font-bold text-danger-ink shadow-sm ring-1 ring-danger-border hover:bg-danger-soft"
+                  className="border-danger-border text-danger-ink hover:bg-danger-soft"
                 >
                   تلاش دوباره
-                </button>}
+                </Button>}
               >
                 {creationError}
               </Notice>
             )}
 
             {showEmptyState && (
-              <div className="mb-6 rounded-3xl border border-dashed border-brand-border bg-surface px-6 py-14 text-center shadow-sm">
-                <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-muted text-brand">
+              <div className="mb-6 rounded-feature border border-dashed border-brand-border bg-surface px-6 py-14 text-center shadow-card">
+                <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-card bg-brand-muted text-brand">
                   <Plus className="h-7 w-7" aria-hidden="true" />
                 </div>
                 <h3 className="text-lg font-semibold text-content">
@@ -902,7 +905,7 @@ export default function PresentationDashboardRoute() {
                     <Button
                       variant="outline"
                       onClick={() => setSearchQuery("")}
-                      className="border-border bg-surface text-content-muted"
+                      className="bg-surface text-content-muted"
                     >
                       پاک کردن جست‌وجو
                     </Button>
@@ -922,7 +925,7 @@ export default function PresentationDashboardRoute() {
             {!loading && !loadError && !showEmptyState && (
               <>
                 {/* Desktop Table View */}
-                <div className="hidden md:block bg-surface rounded-lg shadow-sm border border-border-subtle overflow-visible">
+                <div className="hidden overflow-visible rounded-panel border border-border-subtle bg-surface shadow-card md:block">
                   <table className="w-full">
                     <caption className="sr-only">فهرست ارائه‌ها</caption>
                 <thead className="bg-canvas border-b border-border-subtle">
@@ -988,7 +991,7 @@ export default function PresentationDashboardRoute() {
                           </div>
                           <div>
                             {renamingQuiz === quiz.id ? (
-                              <input
+                              <Input
                                 type="text"
                                 value={newQuizName}
                                 onChange={(e) => setNewQuizName(e.target.value)}
@@ -1004,7 +1007,8 @@ export default function PresentationDashboardRoute() {
                                 autoFocus
                                 aria-label={`نام ارائه ${quiz.name}`}
                                 dir="auto"
-                                className="rounded border border-brand px-2 py-1 font-semibold text-content focus:outline-none focus:ring-2 focus:ring-focus"
+                                size="sm"
+                                className="h-9 font-semibold"
                               />
                             ) : (
                               <div className="font-semibold text-content" dir="auto">
@@ -1038,7 +1042,7 @@ export default function PresentationDashboardRoute() {
                           <button
                             type="button"
                             onClick={() => setShowShareModal(quiz.id)}
-                            className="p-1 hover:bg-border-subtle rounded transition opacity-0 group-hover/access:opacity-100 focus:opacity-100"
+                            className="rounded-control p-1 opacity-0 transition hover:bg-brand-soft group-hover/access:opacity-100 focus:opacity-100"
                             aria-label={`ویرایش یا اشتراک کد ورود ${quiz.name}`}
                           >
                             <Share2 className="h-4 w-4 text-content-muted" aria-hidden="true" />
@@ -1085,7 +1089,7 @@ export default function PresentationDashboardRoute() {
                             <button
                               type="button"
                               onClick={(e) => handleMenuToggle(quiz.id, e)}
-                              className="p-2 hover:bg-border-subtle rounded transition"
+                              className="rounded-control p-2 transition hover:bg-brand-soft"
                               aria-label={`باز کردن منوی عملیات ${quiz.name}`}
                               aria-haspopup="menu"
                               aria-expanded={showMenu === quiz.id}
@@ -1107,7 +1111,7 @@ export default function PresentationDashboardRoute() {
               {filteredQuizzes.map((quiz) => (
                 <div
                   key={quiz.id}
-                  className={`bg-surface rounded-lg p-5 shadow-sm border border-border-subtle relative transition-all ${
+                  className={`relative rounded-panel border border-border-subtle bg-surface p-5 shadow-card transition-all ${
                     selectedQuizzes.includes(quiz.id)
                       ? "bg-brand-soft ring-2 ring-brand"
                       : ""
@@ -1117,17 +1121,17 @@ export default function PresentationDashboardRoute() {
                     <div className="flex items-center gap-3.5 overflow-hidden">
                       <input
                         type="checkbox"
-                        className="h-5 w-5 rounded border-border-subtle text-brand focus:ring-focus"
+                        className="h-5 w-5 rounded border-border-control text-brand focus:ring-focus"
                         checked={selectedQuizzes.includes(quiz.id)}
                         onChange={() => handleQuizSelect(quiz.id)}
                         aria-label={`انتخاب ارائه ${quiz.name}`}
                       />
-                      <div className="flex h-12 min-w-12 items-center justify-center rounded-lg bg-brand-soft text-brand shadow-sm" aria-hidden="true">
+                      <div className="flex h-12 min-w-12 items-center justify-center rounded-card bg-brand-soft text-brand shadow-card" aria-hidden="true">
                         <Presentation className="h-6 w-6" />
                       </div>
                       <div className="truncate min-w-0 flex-1">
                         {renamingQuiz === quiz.id ? (
-                          <input
+                          <Input
                             type="text"
                             value={newQuizName}
                             onChange={(e) => setNewQuizName(e.target.value)}
@@ -1171,7 +1175,7 @@ export default function PresentationDashboardRoute() {
                       <button
                         type="button"
                         onClick={(e) => handleMenuToggle(quiz.id, e)}
-                        className="p-1.5 hover:bg-canvas rounded-full transition-colors"
+                        className="rounded-full p-1.5 transition-colors hover:bg-canvas"
                         aria-label={`باز کردن منوی عملیات ${quiz.name}`}
                         aria-haspopup="menu"
                         aria-expanded={showMenu === quiz.id}
@@ -1183,15 +1187,15 @@ export default function PresentationDashboardRoute() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 text-sm mb-5 bg-canvas/50 p-3 rounded-lg border border-border-subtle">
+                  <div className="grid grid-cols-2 gap-4 text-sm mb-5 rounded-card border border-border-subtle bg-canvas/50 p-3">
                     <div>
-                      <span className="mb-1 block text-[10px] font-medium text-content-subtle">
+                      <span className="mb-1 block text-[10px] font-medium text-content-muted">
                         کد ورود
                       </span>
                       <button
                         type="button"
                         onClick={() => setShowShareModal(quiz.id)}
-                        className="inline-block rounded border border-brand-border bg-brand-soft px-2 py-1 font-mono font-bold text-brand"
+                        className="inline-block rounded-control border border-brand-border bg-brand-soft px-2 py-1 font-mono font-bold text-brand"
                         dir="ltr"
                         aria-label={`مدیریت کد ورود ${quiz.accessCode || "بدون کد"}`}
                       >
@@ -1199,7 +1203,7 @@ export default function PresentationDashboardRoute() {
                       </button>
                     </div>
                     <div className="text-start">
-                      <span className="mb-1 block text-[10px] font-medium text-content-subtle">
+                      <span className="mb-1 block text-[10px] font-medium text-content-muted">
                         آخرین ویرایش
                       </span>
                       <span className="text-xs font-medium text-content-muted">
@@ -1212,14 +1216,14 @@ export default function PresentationDashboardRoute() {
                     <Button
                       onClick={() => navigate(`/manager/panel/${quiz.id}/report`)}
                       variant="outline"
-                      className="flex-1 h-10 text-sm border-border-subtle text-content-muted hover:bg-canvas hover:text-content font-medium tracking-wide"
+                      className="h-10 flex-1 text-sm font-medium tracking-wide text-content-muted hover:bg-canvas hover:text-content"
                     >
                       گزارش
                     </Button>
                     <Button
                       onClick={() => handleEdit(quiz.id)}
                       variant="outline"
-                      className="flex-1 h-10 text-sm border-border-subtle text-content-muted hover:bg-canvas hover:text-content font-medium tracking-wide"
+                      className="h-10 flex-1 text-sm font-medium tracking-wide text-content-muted hover:bg-canvas hover:text-content"
                     >
                       ویرایش
                     </Button>
@@ -1239,7 +1243,7 @@ export default function PresentationDashboardRoute() {
             {loading && (
               <div className="grid gap-4 py-4 md:grid-cols-2 xl:grid-cols-3" aria-label="در حال بارگذاری ارائه‌ها" aria-busy="true">
                 {[0, 1, 2].map((item) => (
-                  <div key={item} className="h-44 animate-pulse rounded-2xl border border-brand-border bg-surface motion-reduce:animate-none" />
+                  <div key={item} className="h-44 animate-pulse rounded-panel border border-brand-border bg-surface motion-reduce:animate-none" />
                 ))}
               </div>
             )}
@@ -1281,7 +1285,7 @@ export default function PresentationDashboardRoute() {
       {/* Bottom Action Bar */}
       {selectedQuizzes.length > 0 && (
         <div className="fixed inset-x-4 bottom-4 z-50 flex justify-center md:inset-x-auto md:left-1/2 md:-translate-x-1/2">
-          <div className="flex max-w-full flex-wrap items-center gap-x-6 gap-y-3 rounded-lg bg-content px-5 py-3 text-content-inverse shadow-2xl">
+          <div className="flex max-w-full flex-wrap items-center gap-x-6 gap-y-3 rounded-panel bg-content px-5 py-3 text-content-inverse shadow-feature">
             <div className="flex items-center gap-4">
               <span className="text-sm font-medium">
                 {formatNumber(selectedQuizzes.length)} انتخاب‌شده
@@ -1293,7 +1297,7 @@ export default function PresentationDashboardRoute() {
                 <button
                   type="button"
                   onClick={handleBottomBarSelectAll}
-                  className="flex items-center gap-2 text-sm transition hover:text-content-subtle"
+                  className="flex items-center gap-2 text-sm transition hover:text-content-inverse"
                 >
                   <span className="text-lg" aria-hidden="true">⚡</span>
                   انتخاب همه نتایج فعلی
@@ -1311,7 +1315,7 @@ export default function PresentationDashboardRoute() {
             <button
               type="button"
               onClick={() => setSelectedQuizzes([])}
-              className="ms-4 rounded p-1 transition hover:bg-content-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+              className="ms-4 rounded-control p-1 transition hover:bg-content-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
               aria-label="لغو انتخاب ارائه‌ها"
             >
               <X className="w-5 h-5" aria-hidden="true" />

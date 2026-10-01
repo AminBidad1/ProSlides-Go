@@ -12,6 +12,8 @@ import { useNavigate } from "react-router-dom";
 import { ApiError } from "../../../../shared/api/http.ts";
 import { fa } from "../../../../shared/i18n/fa";
 import type { NoticeTone } from "../../../../shared/ui/Notice.tsx";
+import { Button } from "../../../../shared/ui/primitives/Button.tsx";
+import { Input } from "../../../../shared/ui/primitives/Input.tsx";
 import { quizService } from "../../api/presentationRepository.ts";
 import type { EditorPresentation } from "../../model/editor.ts";
 import ShareMenu from "../../sharing/ShareDialog.tsx";
@@ -145,14 +147,13 @@ export default function QuizHeader({
       <header
         className="fixed inset-x-0 top-0 z-50 h-16 w-full border-b border-brand-border bg-surface/95 px-3 shadow-sm backdrop-blur md:px-4"
         dir="rtl"
-        style={{ fontFamily: '"Vazirmatn", "Segoe UI", sans-serif' }}
       >
         <div className="grid h-full w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 sm:gap-3">
           <div className="flex min-w-0 items-center gap-1.5">
             <button
               type="button"
               onClick={() => (onBack ? onBack() : navigate("/manager/panel"))}
-              className="grid size-10 shrink-0 place-items-center rounded-xl text-content-muted transition hover:bg-brand-soft hover:text-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+              className="grid size-10 shrink-0 place-items-center rounded-control text-content-muted transition hover:bg-brand-soft hover:text-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
               title="بازگشت به ارائه‌ها"
               aria-label="بازگشت به ارائه‌ها"
             >
@@ -171,15 +172,15 @@ export default function QuizHeader({
               <button
                 type="button"
                 onClick={() => setIsEditing(true)}
-                className="block max-w-[38vw] truncate rounded-lg px-3 py-2 text-sm font-bold text-content transition hover:bg-brand-soft hover:text-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus sm:max-w-sm lg:max-w-md"
+                className="block max-w-[38vw] truncate rounded-control px-3 py-2 text-sm font-bold text-content transition hover:bg-brand-soft hover:text-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus sm:max-w-sm lg:max-w-md"
                 title="تغییر نام ارائه"
                 dir="auto"
               >
                 {quizTitle || fa.editor.untitledPresentation}
               </button>
             ) : (
-              <div className="flex min-w-0 items-center gap-1 rounded-xl border border-brand-border bg-surface p-1 shadow-sm">
-                <input
+              <div className="flex min-w-0 items-center gap-1 rounded-control border border-brand-border bg-surface p-1 shadow-sm">
+                <Input
                   type="text"
                   value={newQuizTitle || ""}
                   onChange={handleInputChange}
@@ -190,14 +191,15 @@ export default function QuizHeader({
                   autoFocus
                   disabled={isUpdating}
                   dir="auto"
-                  className="h-9 w-32 min-w-0 rounded-lg border border-border-subtle bg-white px-3 text-sm text-content focus:border-transparent focus:outline-none focus:ring-2 focus:ring-focus sm:w-56 lg:w-72"
+                  size="sm"
+                  className="w-32 min-w-0 sm:w-56 lg:w-72"
                   placeholder="نام ارائه"
                 />
                 <button
                   type="button"
                   onClick={() => void handleUpdateQuizName()}
                   disabled={isUpdating || !newQuizTitle.trim()}
-                  className="grid size-9 shrink-0 place-items-center rounded-lg bg-success text-content-inverse transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-50"
+                  className="grid size-9 shrink-0 place-items-center rounded-control bg-success text-content-inverse transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-50"
                   title="ذخیره نام"
                   aria-label="ذخیره نام"
                 >
@@ -214,7 +216,7 @@ export default function QuizHeader({
                   type="button"
                   onClick={handleCancelEdit}
                   disabled={isUpdating}
-                  className="grid size-9 shrink-0 place-items-center rounded-lg text-content-muted transition hover:bg-slate-100 hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50"
+                  className="grid size-9 shrink-0 place-items-center rounded-control text-content-muted transition hover:bg-brand-soft hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50"
                   title="انصراف"
                   aria-label="انصراف از تغییر نام"
                 >
@@ -240,29 +242,30 @@ export default function QuizHeader({
               {saveStateLabel}
             </span>
 
-            <button
+            <Button
               ref={shareButtonRef}
               type="button"
+              variant="outline"
               onClick={() => setShowShareModal(true)}
               title={fa.editor.openShare}
               aria-label={fa.editor.share}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-brand-border bg-surface px-3 text-sm font-bold text-content transition hover:bg-brand-soft hover:text-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+              className="px-3 font-bold sm:px-4"
             >
-              <Share2 className="size-4" aria-hidden="true" />
+              <Share2 aria-hidden="true" />
               <span className="hidden sm:inline">{fa.editor.share}</span>
-            </button>
+            </Button>
 
-            <button
+            <Button
               type="button"
               onClick={onPresent}
               disabled={!onPresent}
               aria-disabled={presentDisabled || undefined}
               title={presentReason || "شروع ارائه"}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-brand px-3.5 text-sm font-bold text-content-inverse shadow-sm transition hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 aria-disabled:opacity-70 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4"
+              className="px-3.5 font-bold aria-disabled:opacity-70 sm:px-4"
             >
-              <Play className="size-4 fill-current" aria-hidden="true" />
+              <Play className="fill-current" aria-hidden="true" />
               اجرا
-            </button>
+            </Button>
           </div>
         </div>
       </header>

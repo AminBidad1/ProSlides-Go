@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 
 import { useNativeDialogLifecycle } from "../../../../shared/ui/useNativeDialogLifecycle.ts";
+import { Button } from "../../../../shared/ui/primitives/Button.tsx";
 
 type ManagerQrPanelProps = {
   accessCode: string;
@@ -69,27 +70,29 @@ export function ManagerQrPanel({
       aria-labelledby="manager-live-qr-title"
       onCancel={handleCancel}
       onClose={handleClose}
-      className="fixed inset-y-0 start-0 m-0 h-dvh w-full max-w-sm border-0 border-e border-white/10 bg-slate-950/95 p-0 text-white shadow-2xl backdrop:bg-black/45 backdrop:backdrop-blur-[2px] sm:inset-y-14 sm:h-[calc(100dvh-3.5rem)] sm:w-80 sm:backdrop:bg-black/25"
+      className="fixed inset-y-0 start-0 m-0 h-dvh w-full max-w-sm border-0 border-e border-stage-border bg-stage/95 p-0 text-content-inverse shadow-feature backdrop:bg-overlay backdrop:backdrop-blur-[2px] sm:inset-y-14 sm:h-[calc(100dvh-3.5rem)] sm:w-80 sm:backdrop:bg-overlay-soft"
     >
       <div className="relative flex min-h-full flex-col items-center justify-center gap-5 p-6">
-        <button
+        <Button
           type="button"
+          variant="inverseGhost"
+          size="icon"
           autoFocus
           onClick={onClose}
-          className="absolute end-4 top-4 grid min-h-11 min-w-11 place-items-center rounded-full bg-white/10 text-2xl hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+          className="absolute end-4 top-4 rounded-full"
           aria-label="بستن کد QR"
         >
           ×
-        </button>
+        </Button>
 
         <div className="text-center">
-          <p className="text-sm text-white/65">ورود شرکت‌کنندگان</p>
+          <p className="text-sm text-stage-muted">ورود شرکت‌کنندگان</p>
           <h2 id="manager-live-qr-title" className="mt-1 text-2xl font-black">
             اسکن کنید و وارد شوید
           </h2>
         </div>
 
-        <div className="grid min-h-72 min-w-72 place-items-center rounded-3xl bg-white p-4 shadow-xl">
+        <div className="grid min-h-72 min-w-72 place-items-center rounded-feature bg-surface p-4 shadow-card">
           {qrDataUrl ? (
             <img
               src={qrDataUrl}
@@ -97,23 +100,24 @@ export function ManagerQrPanel({
               className="h-64 w-64"
             />
           ) : (
-            <span className="text-sm text-slate-500" role="status">
+            <span className="text-sm text-content-muted" role="status">
               در حال ساخت کد QR…
             </span>
           )}
         </div>
 
-        <button
+        <Button
           type="button"
+          variant="inverseOutline"
           onClick={() => void copyJoinUrl()}
-          className="max-w-full rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-center hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+          className="max-w-full rounded-card px-4 py-3 text-center"
           dir="ltr"
           title="کپی لینک ورود"
         >
           <span className="block truncate text-sm font-bold">
             {joinUrl.replace(/^https?:\/\//, "")}
           </span>
-        </button>
+        </Button>
         <span
           className="min-h-5 text-xs text-success-soft"
           role="status"

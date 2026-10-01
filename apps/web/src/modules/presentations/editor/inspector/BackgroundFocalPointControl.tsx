@@ -121,7 +121,7 @@ export default function BackgroundFocalPointControl({
         disabled={disabled || failed}
         aria-describedby="background-focal-help background-focal-position"
         aria-label="تنظیم نقطه تمرکز تصویر پس‌زمینه؛ کلیک یا جابه‌جا کنید و برای تنظیم دقیق از کلیدهای جهت استفاده کنید"
-        className="relative mt-3 block aspect-video w-full touch-none overflow-hidden rounded-panel border border-border-subtle bg-surface text-start outline-none transition focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed"
+        className="relative mt-3 block aspect-video w-full touch-none overflow-hidden rounded-panel border border-border-control bg-surface text-start outline-none transition focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed"
         style={{ backgroundColor }}
         onPointerDown={(event) => {
           if (disabled || failed) return;
@@ -179,17 +179,17 @@ export default function BackgroundFocalPointControl({
           <>
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0 bg-black/10"
+              className="pointer-events-none absolute inset-0 bg-overlay-subtle"
             />
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute grid size-8 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-white bg-black/55 text-white shadow-lg ring-2 ring-black/30"
+              className="pointer-events-none absolute grid size-8 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-content-inverse bg-overlay text-content-inverse shadow-card ring-2 ring-overlay-soft"
               style={{
                 left: `${clamp(focalX) * 100}%`,
                 top: `${clamp(focalY) * 100}%`,
               }}
             >
-              <span className="size-2 rounded-full bg-white" />
+              <span className="size-2 rounded-full bg-content-inverse" />
             </span>
           </>
         ) : null}

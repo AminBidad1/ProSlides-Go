@@ -27,7 +27,6 @@ export default function EditorShell({
     <div
       className="relative flex h-dvh min-h-dvh flex-col overflow-hidden bg-gradient-to-b from-brand-soft to-canvas pb-20 pt-16 text-content xl:pb-0"
       dir="rtl"
-      style={{ fontFamily: '"Vazirmatn", "Segoe UI", sans-serif' }}
       data-editor-shell="v2"
     >
       {header}
@@ -37,7 +36,7 @@ export default function EditorShell({
           <aside
             aria-label="فهرست آیتم‌ها"
             data-editor-region="item-rail"
-            className="h-full w-56 shrink-0 overflow-y-auto rounded-2xl border border-brand-border bg-surface p-3 shadow-sm 2xl:w-60"
+            className="h-full w-56 shrink-0 overflow-y-auto rounded-panel border border-brand-border bg-surface p-3 shadow-card 2xl:w-60"
           >
             {itemRail}
           </aside>
@@ -48,7 +47,7 @@ export default function EditorShell({
           data-editor-region="canvas"
           aria-label="بوم ویرایش"
         >
-          <div className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-brand-border bg-surface p-3 shadow-sm">
+          <div className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-panel border border-brand-border bg-surface p-3 shadow-card">
             {topActions && (
               <div
                 className="flex shrink-0 items-center justify-end gap-2 pb-3"
@@ -57,7 +56,7 @@ export default function EditorShell({
                 {topActions}
               </div>
             )}
-            <div className="relative flex min-h-0 min-w-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-brand-soft/40">
+            <div className="relative flex min-h-0 min-w-0 flex-1 items-center justify-center overflow-hidden rounded-control bg-brand-soft/40">
               {canvas}
             </div>
           </div>
@@ -67,7 +66,7 @@ export default function EditorShell({
           <section
             aria-label="بازرس آیتم"
             data-editor-region="inspector"
-            className="fixed inset-x-0 bottom-0 top-16 z-50 w-full overflow-y-auto border border-border-subtle bg-surface p-4 shadow-panel xl:static xl:h-full xl:w-72 xl:shrink-0 xl:rounded-2xl xl:p-3 2xl:w-80"
+            className="fixed inset-x-0 bottom-0 top-16 z-50 w-full overflow-y-auto border border-border-subtle bg-surface p-4 shadow-panel xl:static xl:h-full xl:w-72 xl:shrink-0 xl:rounded-panel xl:p-3 2xl:w-80"
             style={
               isMobile
                 ? {

@@ -1,7 +1,11 @@
 import { useMemo } from "react";
 
 import type { LegacyLiveUser } from "../../model/serverData.ts";
-import { getColorForUser } from "../../../../shared/lib/playerColor.ts";
+import {
+  getColorForUser,
+  getTextColorForPlayerColor,
+} from "../../../../shared/lib/playerColor.ts";
+import { Button } from "../../../../shared/ui/primitives/Button.tsx";
 import { useNativeDialogLifecycle } from "../../../../shared/ui/useNativeDialogLifecycle.ts";
 
 type ManagerLeaderboardDialogProps = {
@@ -43,12 +47,12 @@ export function ManagerLeaderboardDialog({
       dir="rtl"
       onCancel={handleCancel}
       onClose={handleClose}
-      className="m-auto max-h-[80dvh] w-[min(54rem,calc(100vw-2rem))] overflow-y-auto rounded-3xl border border-white/10 bg-slate-950 p-0 text-white shadow-2xl backdrop:bg-black/65"
+      className="m-auto max-h-[80dvh] w-[min(54rem,calc(100vw-2rem))] overflow-y-auto rounded-feature border border-stage-border bg-stage p-0 text-content-inverse shadow-feature backdrop:bg-overlay"
       aria-labelledby="manager-leaderboard-dialog-title"
     >
       {isOpen ? (
         <>
-          <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-white/10 bg-slate-950/95 px-5 py-4 backdrop-blur">
+          <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-stage-border bg-stage/95 px-5 py-4 backdrop-blur">
             <div>
               <h2
                 id="manager-leaderboard-dialog-title"
@@ -56,24 +60,26 @@ export function ManagerLeaderboardDialog({
               >
                 جدول امتیازات
               </h2>
-              <p className="mt-1 text-sm text-white/60">
+              <p className="mt-1 text-sm text-stage-muted">
                 {players.length.toLocaleString("fa-IR")} شرکت‌کننده
               </p>
             </div>
-            <button
+            <Button
               type="button"
+              variant="inverseGhost"
+              size="icon"
               autoFocus
               onClick={onClose}
-              className="grid min-h-11 min-w-11 place-items-center rounded-full bg-white/10 text-2xl hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+              className="rounded-full text-2xl"
               aria-label="بستن جدول امتیازات"
             >
               ×
-            </button>
+            </Button>
           </div>
 
           <ol className="space-y-3 p-5">
             {players.length === 0 ? (
-              <li className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-white/65">
+              <li className="rounded-card border border-stage-border bg-stage-soft/50 p-6 text-center text-stage-muted">
                 هنوز امتیازی برای نمایش وجود ندارد.
               </li>
             ) : (
@@ -89,15 +95,18 @@ export function ManagerLeaderboardDialog({
                     className="grid grid-cols-[3rem_minmax(0,1fr)_auto] items-center gap-3"
                   >
                     <span
-                      className="grid h-10 w-10 place-items-center rounded-full font-black text-white"
-                      style={{ backgroundColor: color }}
+                      className="grid h-10 w-10 place-items-center rounded-full font-black"
+                      style={{
+                        backgroundColor: color,
+                        color: getTextColorForPlayerColor(color),
+                      }}
                     >
                       {(player.rank ?? index + 1).toLocaleString("fa-IR")}
                     </span>
-                    <div className="relative min-h-14 overflow-hidden rounded-xl bg-white/10">
+                    <div className="relative min-h-14 overflow-hidden rounded-card bg-stage-soft">
                       {width > 0 ? (
                         <div
-                          className="absolute inset-y-0 start-0 rounded-xl opacity-80"
+                          className="absolute inset-y-0 start-0 rounded-card opacity-80"
                           style={{ width: `${width}%`, backgroundColor: color }}
                         />
                       ) : null}
@@ -120,15 +129,15 @@ export function ManagerLeaderboardDialog({
           </ol>
 
           {hasMore && onLoadMore ? (
-            <div className="sticky bottom-0 flex justify-center border-t border-white/10 bg-slate-950/95 p-4 backdrop-blur">
-              <button
+            <div className="sticky bottom-0 flex justify-center border-t border-stage-border bg-stage/95 p-4 backdrop-blur">
+              <Button
                 type="button"
+                variant="inverseOutline"
                 onClick={onLoadMore}
                 disabled={isLoading}
-                className="min-h-11 rounded-xl border border-white/20 bg-white/5 px-5 text-sm font-bold hover:bg-white/10 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
               >
                 {isLoading ? "در حال بارگذاری…" : "نمایش رتبه‌های بیشتر"}
-              </button>
+              </Button>
             </div>
           ) : null}
         </>

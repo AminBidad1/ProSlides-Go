@@ -26,7 +26,7 @@ export function RankingPanel({
   const items = pages.flatMap((page) => page.items);
 
   return (
-    <section className="rounded-panel border border-border-subtle bg-surface shadow-sm">
+    <section className="rounded-panel border border-border-subtle bg-surface shadow-card">
       <div className="border-b border-border-subtle p-5">
         <div className="flex items-center gap-2">
           <Trophy className="size-5 text-brand" aria-hidden="true" />

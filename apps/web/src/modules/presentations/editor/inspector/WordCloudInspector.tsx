@@ -23,6 +23,7 @@ import Notice, {
 } from "../../../../shared/ui/Notice.tsx";
 import { Button } from "../../../../shared/ui/primitives/Button.tsx";
 import { Input } from "../../../../shared/ui/primitives/Input.tsx";
+import { Textarea } from "../../../../shared/ui/primitives/Textarea.tsx";
 import { ConfirmDialog } from "../../../../shared/ui/primitives/ConfirmDialog.tsx";
 import { quizService } from "../../api/presentationRepository.ts";
 import {
@@ -237,7 +238,7 @@ export default function WordCloudInspector({
               >
                 عنوان کوتاه <span className="text-content-muted">(اختیاری)</span>
               </label>
-              <input
+              <Input
                 id="word-cloud-title"
                 dir="auto"
                 value={draft.title}
@@ -245,7 +246,7 @@ export default function WordCloudInspector({
                 disabled={saving || conflictPending}
                 onChange={(event) => controller.setTitle(event.target.value)}
                 placeholder="مثلاً: نظر جمع"
-                className="mt-2 h-11 w-full rounded-control border border-border-control bg-surface px-3 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-2"
               />
             </section>
 
@@ -263,7 +264,7 @@ export default function WordCloudInspector({
                   {formatPersianNumber(TEXT_ACTIVITY_LIMITS.promptText)}
                 </span>
               </div>
-              <textarea
+              <Textarea
                 ref={promptRef}
                 id="word-cloud-prompt"
                 dir="auto"
@@ -274,7 +275,7 @@ export default function WordCloudInspector({
                 aria-invalid={Boolean(promptError)}
                 onChange={(event) => controller.setPrompt(event.target.value)}
                 placeholder="مثلاً: این جلسه را با چه واژه‌هایی توصیف می‌کنید؟"
-                className="mt-2 min-h-28 w-full resize-y rounded-control border border-border-control bg-surface px-3 py-2.5 text-sm leading-6 outline-none focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-2 min-h-28"
               />
               {promptError && (
                 <p role="alert" className="mt-1.5 text-xs text-danger-ink">
@@ -418,7 +419,7 @@ export default function WordCloudInspector({
                   </div>
                   <label className="mt-3 block text-xs font-semibold">
                     متن جایگزین تصویر <span className="font-normal text-content-muted">(اختیاری)</span>
-                    <input
+                    <Input
                       type="text"
                       dir="auto"
                       value={draft.image.altText}
@@ -431,7 +432,7 @@ export default function WordCloudInspector({
                         })
                       }
                       placeholder="توضیح کوتاه تصویر"
-                      className="mt-1.5 h-10 w-full rounded-control border border-border-control bg-surface px-3 text-sm text-content outline-none transition placeholder:text-content-muted focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="mt-1.5 h-10"
                     />
                   </label>
                 </>

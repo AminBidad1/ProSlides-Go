@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { Button } from "../../../shared/ui/primitives/Button.tsx";
 
 type PresentationErrorBoundaryProps = {
   children: ReactNode;
@@ -32,19 +33,20 @@ export class PresentationErrorBoundary extends Component<
     }
 
     return (
-      <div className="flex min-h-screen w-full items-center justify-center bg-slate-950 px-4 text-white">
-        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
+      <div className="flex min-h-screen w-full items-center justify-center bg-stage px-4 text-content-inverse">
+        <div className="w-full max-w-md rounded-feature border border-stage-border bg-stage-soft/50 p-6 text-center shadow-panel">
           <h2 className="text-xl font-bold">خطا در اجرای ارائه</h2>
-          <p className="mt-2 text-sm text-white/70">
+          <p className="mt-2 text-sm text-stage-muted">
             خطایی هنگام اجرا رخ داد. برای بازیابی جلسه، لطفاً صفحه را دوباره بارگذاری کنید.
           </p>
-          <button
+          <Button
             type="button"
+            variant="inverse"
             onClick={() => window.location.reload()}
-            className="mt-5 rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400"
+            className="mt-5"
           >
             بارگذاری مجدد
-          </button>
+          </Button>
         </div>
       </div>
     );

@@ -1,4 +1,5 @@
 import infiniteMark from "../../../assets/infinite.svg";
+import { Button } from "../../../shared/ui/primitives/Button.tsx";
 
 type WaitingScreenProps = {
   message?: string | null;
@@ -15,7 +16,7 @@ export default function WaitingScreen({
 }: WaitingScreenProps) {
   return (
     <main
-      className="flex min-h-screen flex-col bg-content text-content-inverse"
+      className="flex min-h-screen flex-col bg-stage text-content-inverse"
       dir="rtl"
       aria-busy={busy}
     >
@@ -48,13 +49,9 @@ export default function WaitingScreen({
           <span className="sr-only">در حال آماده‌سازی جلسه…</span>
         )}
         {actionLabel && onAction ? (
-          <button
-            type="button"
-            onClick={onAction}
-            className="min-h-12 rounded-xl bg-white px-6 font-bold text-slate-950 shadow-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40"
-          >
+          <Button type="button" size="lg" onClick={onAction}>
             {actionLabel}
-          </button>
+          </Button>
         ) : null}
       </section>
     </main>

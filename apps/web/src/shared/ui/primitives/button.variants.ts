@@ -15,6 +15,12 @@ export const buttonVariants = cva(
           "bg-brand-soft text-brand-ink shadow-sm hover:bg-brand-muted",
         ghost:
           "text-content hover:bg-brand-soft hover:text-brand-ink",
+        inverse:
+          "bg-content-inverse text-stage shadow-sm hover:bg-canvas",
+        inverseOutline:
+          "border border-stage-border bg-stage-soft text-content-inverse shadow-sm hover:border-stage-muted hover:bg-stage-border",
+        inverseGhost:
+          "text-content-inverse hover:bg-stage-soft",
         link:
           "text-brand underline-offset-4 hover:text-brand-strong hover:underline",
       },

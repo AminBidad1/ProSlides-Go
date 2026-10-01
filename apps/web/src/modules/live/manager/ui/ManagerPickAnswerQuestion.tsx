@@ -273,7 +273,7 @@ export function ManagerPickAnswerQuestion({
       >
         {!currentQuestion ? (
           <div
-            className="m-auto rounded-2xl border border-white/10 bg-[color:var(--live-surface)] px-6 py-5 text-center text-lg font-bold"
+            className="m-auto rounded-card border border-[color:var(--live-border)] bg-[color:var(--live-surface)] px-6 py-5 text-center text-lg font-bold"
             role="status"
           >
             در حال آماده‌سازی سؤال…
@@ -303,7 +303,7 @@ export function ManagerPickAnswerQuestion({
 
             {awaitingResults ? (
               <div
-                className="mx-auto mt-4 rounded-full border border-white/10 bg-black/25 px-4 py-2 text-sm"
+                className="mx-auto mt-4 rounded-full border border-[color:var(--live-border)] live-theme-contrast-medium px-4 py-2 text-sm"
                 role="status"
                 aria-live="polite"
               >
@@ -311,7 +311,7 @@ export function ManagerPickAnswerQuestion({
               </div>
             ) : !showResults && timerState.remaining > 0 ? (
               <div
-                className="mx-auto mt-3 grid h-16 w-16 place-items-center rounded-full border-4 border-white/15 bg-black/20 text-2xl font-black sm:h-20 sm:w-20 sm:text-3xl"
+                className="mx-auto mt-3 grid h-16 w-16 place-items-center rounded-full border-4 border-[color:var(--live-control-border)] live-theme-contrast-soft text-2xl font-black sm:h-20 sm:w-20 sm:text-3xl"
                 role="timer"
                 aria-label="زمان باقی‌مانده"
               >
@@ -326,14 +326,14 @@ export function ManagerPickAnswerQuestion({
                     {responseCount.toLocaleString("fa-IR")} پاسخ ثبت‌شده
                   </p>
                 ) : null}
-                <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/5 p-4 shadow-2xl sm:p-5">
+                <div className="flex min-h-0 flex-1 flex-col overflow-hidden live-panel rounded-projection p-4 sm:p-5">
                   {currentQuestion.image_url ? (
                     <LiveMediaImage
                       src={currentQuestion.image_url}
                       image={currentQuestion.image}
                       preferred="large"
                       alt="تصویر سؤال"
-                      className="mx-auto mb-3 max-h-40 max-w-full rounded-2xl object-contain"
+                      className="mx-auto mb-3 max-h-40 max-w-full rounded-panel object-contain"
                     />
                   ) : null}
                   {!showResults ? (
@@ -366,7 +366,7 @@ export function ManagerPickAnswerQuestion({
                       image={currentQuestion.image}
                       preferred="large"
                       alt="تصویر سؤال"
-                      className="max-h-[48dvh] max-w-full rounded-2xl object-contain shadow-xl"
+                      className="max-h-[48dvh] max-w-full rounded-panel object-contain shadow-card"
                     />
                   </div>
                 ) : null}
@@ -397,7 +397,7 @@ export function ManagerPickAnswerQuestion({
                             image={option.image}
                             preferred="thumbnail"
                             alt={option.option_text}
-                            className="mb-2 max-h-[10dvh] max-w-full rounded-xl object-contain"
+                            className="mb-2 max-h-[10dvh] max-w-full rounded-control object-contain"
                           />
                         ) : null}
                         <div className="flex min-h-0 w-full flex-1 items-end">
@@ -407,7 +407,7 @@ export function ManagerPickAnswerQuestion({
                                 ? correct
                                   ? "bg-success"
                                   : "bg-danger/80"
-                                : "bg-white/10"
+                                : "live-theme-overlay-soft"
                             }`}
                             style={{
                               height: showResults ? `${height}%` : "8%",

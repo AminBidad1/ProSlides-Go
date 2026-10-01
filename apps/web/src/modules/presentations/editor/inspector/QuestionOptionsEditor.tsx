@@ -22,6 +22,7 @@ import { formatPersianNumber } from "../../../../shared/forms/numbers.ts";
 import { ImagePlacementImage } from "../../../../shared/media/ImagePlacementImage.tsx";
 import { IMAGE_ALT_TEXT_MAX_LENGTH } from "../../../../shared/media/image.ts";
 import { Button } from "../../../../shared/ui/primitives/Button.tsx";
+import { Input } from "../../../../shared/ui/primitives/Input.tsx";
 import {
   QUESTION_LIMITS,
   type EvaluationMode,
@@ -217,7 +218,7 @@ export default function QuestionOptionsEditor({
                             <label htmlFor={textId} className="sr-only">
                               متن گزینه {formatPersianNumber(index + 1)}
                             </label>
-                            <input
+                            <Input
                               id={textId}
                               type="text"
                               dir="auto"
@@ -230,7 +231,7 @@ export default function QuestionOptionsEditor({
                                 onTextChange(option.id, event.target.value)
                               }
                               placeholder={`متن گزینه ${formatPersianNumber(index + 1)}`}
-                              className="h-9 w-full rounded-control border border-border-control bg-surface px-3 text-sm text-content outline-none transition placeholder:text-content-muted focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
+                              size="sm"
                             />
 
                             {error && (
@@ -264,7 +265,7 @@ export default function QuestionOptionsEditor({
                                 </div>
                                 <label className="mt-2 block text-[11px] font-semibold text-content-muted">
                                   متن جایگزین تصویر
-                                  <input
+                                  <Input
                                     type="text"
                                     dir="auto"
                                     value={option.image.altText}
@@ -273,7 +274,8 @@ export default function QuestionOptionsEditor({
                                     onChange={(event) =>
                                       onImageAltText(option.id, event.target.value)
                                     }
-                                    className="mt-1 h-9 w-full rounded-control border border-border-control bg-surface px-2.5 text-xs text-content outline-none transition focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
+                                    size="sm"
+                                    className="mt-1"
                                   />
                                 </label>
                               </>

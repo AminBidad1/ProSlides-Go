@@ -1,5 +1,12 @@
 import type { CSSProperties } from "react";
 
+import {
+  contrastRatio,
+  isHexColor,
+  normalizeHexColor,
+  readableForegroundColor,
+  relativeLuminance,
+} from "../lib/color.ts";
 import { firstPartyImageDeliveryURL } from "../media/image.ts";
 
 export interface PresentationThemeInput {
@@ -36,6 +43,8 @@ export type PresentationThemePreset = {
   palette: readonly string[];
 };
 
+export const DEFAULT_PRESENTATION_BACKGROUND = "#f7f7fb";
+export const DEFAULT_PRESENTATION_FOREGROUND = "#111827";
 export const DEFAULT_PRESENTATION_ACCENT = "#8b5cf6";
 
 export const DEFAULT_VISUALIZATION_PALETTE = [
@@ -104,13 +113,6 @@ export const PRESENTATION_THEME_PRESETS: readonly PresentationThemePreset[] = [
   },
 ] as const;
 
-const HEX = /^#[0-9a-f]{6}$/i;
-
-const normalizeHex = (value: unknown, fallback: string): string => {
-  const candidate = String(value ?? "").trim();
-  return HEX.test(candidate) ? candidate.toLowerCase() : fallback;
-};
-
 export const normalizeVisualizationPalette = (
   value: unknown,
   fallback: readonly string[] = DEFAULT_VISUALIZATION_PALETTE,
@@ -119,43 +121,17 @@ export const normalizeVisualizationPalette = (
 
   const colors = value
     .map((item) => String(item ?? "").trim().toLowerCase())
-    .filter((item) => HEX.test(item))
+    .filter((item) => isHexColor(item))
     .slice(0, 8);
 
   return colors.length >= 3 ? colors : [...fallback];
-};
-
-const luminance = (hex: string) => {
-  const channels = [1, 3, 5]
-    .map(
-      (start) =>
-        Number.parseInt(hex.slice(start, start + 2), 16) / 255,
-    )
-    .map((value) =>
-      value <= 0.03928
-        ? value / 12.92
-        : ((value + 0.055) / 1.055) ** 2.4,
-    );
-
-  return (
-    channels[0] * 0.2126 +
-    channels[1] * 0.7152 +
-    channels[2] * 0.0722
-  );
 };
 
 export const presentationContrastRatio = (
   first: string,
   second: string,
 ): number => {
-  const safeFirst = normalizeHex(first, "#000000");
-  const safeSecond = normalizeHex(second, "#ffffff");
-  const [light, dark] = [
-    luminance(safeFirst),
-    luminance(safeSecond),
-  ].sort((a, b) => b - a);
-
-  return (light + 0.05) / (dark + 0.05);
+  return contrastRatio(first, second);
 };
 
 const readableForeground = (
@@ -166,10 +142,7 @@ const readableForeground = (
     return requestedForeground;
   }
 
-  return presentationContrastRatio(background, "#ffffff") >=
-    presentationContrastRatio(background, "#0f172a")
-    ? "#ffffff"
-    : "#0f172a";
+  return readableForegroundColor(background);
 };
 
 const normalizeFocalPoint = (value: unknown): number =>
@@ -225,19 +198,19 @@ export const presentationTheme = (
   options: PresentationThemeOptions = {},
 ) => {
   const surface = options.surface ?? "stage";
-  const background = normalizeHex(
+  const background = normalizeHexColor(
     input?.background?.color,
-    "#312e81",
+    DEFAULT_PRESENTATION_BACKGROUND,
   );
-  const requestedForeground = normalizeHex(
+  const requestedForeground = normalizeHexColor(
     input?.text_color ?? input?.background?.text_color,
-    "#ffffff",
+    DEFAULT_PRESENTATION_FOREGROUND,
   );
   const foreground = readableForeground(
     background,
     requestedForeground,
   );
-  const accent = normalizeHex(
+  const accent = normalizeHexColor(
     input?.accent_color,
     DEFAULT_PRESENTATION_ACCENT,
   );
@@ -253,7 +226,7 @@ export const presentationTheme = (
   const focalY = normalizeFocalPoint(input?.background?.focal_y);
   const showsBackgroundImage =
     image.length > 0 && surface !== "participant";
-  const foregroundIsLight = luminance(foreground) > 0.45;
+  const foregroundIsLight = relativeLuminance(foreground) > 0.45;
   const contrastTarget = foregroundIsLight ? "#000000" : "#ffffff";
   const imageOverlay =
     surface === "manager"
@@ -283,7 +256,22 @@ export const presentationTheme = (
       "--live-fg": foreground,
       "--live-muted": `color-mix(in srgb, ${foreground} 78%, transparent)`,
       "--live-border": `color-mix(in srgb, ${foreground} 20%, transparent)`,
+      "--live-control-border": `color-mix(in srgb, ${foreground} 50%, transparent)`,
+      "--live-focus": `color-mix(in srgb, ${foreground} 78%, transparent)`,
+      "--live-focus-soft": `color-mix(in srgb, ${foreground} 30%, transparent)`,
       "--live-surface": `color-mix(in srgb, ${background} 78%, ${contrastTarget} 22%)`,
+      "--live-overlay-subtle": `color-mix(in srgb, ${foreground} 5%, transparent)`,
+      "--live-overlay-soft": `color-mix(in srgb, ${foreground} 10%, transparent)`,
+      "--live-overlay-medium": `color-mix(in srgb, ${foreground} 18%, transparent)`,
+      "--live-overlay-strong": `color-mix(in srgb, ${foreground} 28%, transparent)`,
+      "--live-contrast-soft": `color-mix(in srgb, ${contrastTarget} 20%, transparent)`,
+      "--live-contrast-medium": `color-mix(in srgb, ${contrastTarget} 35%, transparent)`,
+      "--live-contrast-strong": `color-mix(in srgb, ${contrastTarget} 55%, transparent)`,
+      "--live-control-bg": foreground,
+      "--live-control-fg": contrastTarget,
+      "--live-input-bg": `color-mix(in srgb, ${foreground} 95%, transparent)`,
+      "--live-input-border": `color-mix(in srgb, ${foreground} 20%, transparent)`,
+      "--live-input-placeholder": `color-mix(in srgb, ${contrastTarget} 58%, transparent)`,
       "--live-accent": accent,
       "--live-accent-soft": `color-mix(in srgb, ${accent} 22%, transparent)`,
       "--live-palette-1": palette[0 % palette.length],

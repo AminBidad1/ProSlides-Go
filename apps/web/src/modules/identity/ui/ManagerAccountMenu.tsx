@@ -141,7 +141,7 @@ export function ManagerAccountMenu({
           ref={menuRef}
           role="menu"
           onKeyDown={handleMenuKeyDown}
-          className="absolute end-0 top-full z-[70] mt-2 w-52 overflow-hidden rounded-xl border border-border-subtle bg-surface-raised py-1 text-sm shadow-panel"
+          className="absolute end-0 top-full z-[70] mt-2 w-52 overflow-hidden rounded-panel border border-border-subtle bg-surface-raised py-1 text-sm shadow-panel"
         >
           <div className="border-b border-border-subtle px-4 py-3">
             <p className="truncate font-semibold text-content" dir="auto">

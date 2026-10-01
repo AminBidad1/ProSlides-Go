@@ -22,7 +22,7 @@ export function ParticipantContentSlide({
   return (
     <ParticipantShell quiz={quiz}>
       <article className="flex flex-1 flex-col justify-center py-5 text-center">
-        <div className="rounded-[2rem] border border-[color:var(--live-border)] bg-[color:var(--live-surface)] p-5 shadow-2xl backdrop-blur-xl sm:p-9">
+        <div className="live-panel rounded-showcase p-5  sm:p-9">
           <p className="mb-3 text-sm font-bold text-[color:var(--live-muted)]">
             اسلاید توضیحی
           </p>
@@ -39,7 +39,7 @@ export function ParticipantContentSlide({
               image={image}
               preferred="medium"
               alt={title ? "تصویر " + title : "تصویر اسلاید توضیحی"}
-              className="mx-auto mt-6 max-h-[42dvh] w-auto max-w-full rounded-2xl border border-[color:var(--live-border)] object-contain shadow-xl"
+              className="mx-auto mt-6 max-h-[42dvh] w-auto max-w-full rounded-card border border-[color:var(--live-border)] object-contain shadow-card"
             />
           ) : null}
 
@@ -53,7 +53,7 @@ export function ParticipantContentSlide({
           ) : null}
 
           <div
-            className="mx-auto mt-7 inline-flex max-w-xl rounded-2xl border border-[color:var(--live-border)] bg-white/10 px-4 py-2 text-sm font-bold leading-6"
+            className="mx-auto mt-7 inline-flex max-w-xl rounded-card border border-[color:var(--live-border)] live-theme-overlay-soft px-4 py-2 text-sm font-bold leading-6"
             role="status"
           >
             منتظر مرحله بعدی ارائه‌دهنده بمانید
@@ -61,7 +61,7 @@ export function ParticipantContentSlide({
 
           {!isStreamConnected && connectionError ? (
             <p
-              className="mx-auto mt-3 max-w-xl rounded-xl border border-warning/30 bg-warning/10 px-4 py-2 text-sm leading-6 text-[color:var(--live-muted)]"
+              className="mx-auto mt-3 max-w-xl rounded-control border border-warning/30 bg-warning/10 px-4 py-2 text-sm leading-6 text-[color:var(--live-muted)]"
               role="status"
               aria-live="polite"
             >

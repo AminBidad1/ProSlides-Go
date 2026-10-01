@@ -19,6 +19,8 @@ import Notice, {
   type NoticeTone,
 } from "../../../../shared/ui/Notice.tsx";
 import { Button } from "../../../../shared/ui/primitives/Button.tsx";
+import { Input } from "../../../../shared/ui/primitives/Input.tsx";
+import { Textarea } from "../../../../shared/ui/primitives/Textarea.tsx";
 import { ConfirmDialog } from "../../../../shared/ui/primitives/ConfirmDialog.tsx";
 import { quizService } from "../../api/presentationRepository.ts";
 import {
@@ -283,7 +285,7 @@ export default function ContentInspector({
                   {formatPersianNumber(CONTENT_LIMITS.title)}
                 </span>
               </div>
-              <input
+              <Input
                 ref={titleRef}
                 id="content-editor-title"
                 type="text"
@@ -297,7 +299,7 @@ export default function ContentInspector({
                 }
                 onChange={(event) => setTitle(event.target.value)}
                 placeholder="مثلاً: نکته مهم"
-                className="mt-2 h-11 w-full rounded-control border border-border-control bg-surface px-3 text-sm text-content outline-none transition placeholder:text-content-muted focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-2"
               />
               {titleError && (
                 <p
@@ -324,7 +326,7 @@ export default function ContentInspector({
                   {formatPersianNumber(CONTENT_LIMITS.text)}
                 </span>
               </div>
-              <textarea
+              <Textarea
                 id="content-editor-text"
                 dir="auto"
                 rows={8}
@@ -337,7 +339,7 @@ export default function ContentInspector({
                 }
                 onChange={(event) => setText(event.target.value)}
                 placeholder="توضیح، زمینه یا نکته‌ای که می‌خواهید شرکت‌کنندگان ببینند…"
-                className="mt-2 min-h-40 w-full resize-y rounded-control border border-border-control bg-surface px-3 py-2.5 text-sm leading-6 text-content outline-none transition placeholder:text-content-muted focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-2 min-h-40"
               />
               {textError && (
                 <p
@@ -404,7 +406,7 @@ export default function ContentInspector({
               {draft.image.url && (
                 <label className="mt-3 block text-xs font-semibold">
                   متن جایگزین تصویر <span className="font-normal text-content-muted">(اختیاری)</span>
-                  <input
+                  <Input
                     type="text"
                     dir="auto"
                     value={draft.image.altText}
@@ -417,7 +419,7 @@ export default function ContentInspector({
                       })
                     }
                     placeholder="توضیح کوتاه تصویر"
-                    className="mt-1.5 h-10 w-full rounded-control border border-border-control bg-surface px-3 text-sm text-content outline-none transition placeholder:text-content-muted focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="mt-1.5 h-10"
                   />
                 </label>
               )}

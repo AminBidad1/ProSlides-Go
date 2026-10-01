@@ -3,7 +3,11 @@ import { Cloud, Clock3, MessageCircleMore } from "lucide-react";
 
 import { formatPersianNumber } from "../../../../shared/forms/numbers.ts";
 import { ImagePlacementImage } from "../../../../shared/media/ImagePlacementImage.tsx";
-import { presentationTheme } from "../../../../shared/styles/presentationTheme.ts";
+import {
+  DEFAULT_PRESENTATION_ACCENT,
+  DEFAULT_PRESENTATION_FOREGROUND,
+  presentationTheme,
+} from "../../../../shared/styles/presentationTheme.ts";
 import { WordCloudView } from "../../../../shared/ui/WordCloudView.tsx";
 import type { EditorSlide } from "../../model/editor.ts";
 import { createWordCloudDraft } from "../model/wordCloudDraft.ts";
@@ -41,8 +45,8 @@ export default function WordCloudCanvas({
   quizBackgroundImage,
   quizBackgroundFocalX = 0.5,
   quizBackgroundFocalY = 0.5,
-  textColor = "#111827",
-  accentColor = "#8b5cf6",
+  textColor = DEFAULT_PRESENTATION_FOREGROUND,
+  accentColor = DEFAULT_PRESENTATION_ACCENT,
   visualizationPalette,
 }: WordCloudCanvasProps) {
   const designController = useOptionalDesignDraft();
@@ -96,21 +100,21 @@ export default function WordCloudCanvas({
   return (
     <section
       aria-label="پیش‌نمایش ابر واژه"
-      className="relative flex h-full max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-[color:var(--live-border)] bg-cover bg-center text-[color:var(--live-fg)] shadow-lg"
+      className="relative flex h-full max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-card border border-[color:var(--live-border)] bg-cover bg-center text-[color:var(--live-fg)] shadow-card"
       style={theme.style}
     >
       <div className="flex min-h-0 flex-1 flex-col p-5 sm:p-7">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--live-border)] bg-black/25 px-3 py-1.5 backdrop-blur-md">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--live-border)] live-theme-contrast-medium px-3 py-1.5 backdrop-blur-md">
             <Cloud className="size-3.5" aria-hidden="true" />
             ابر واژه
           </span>
           <div className="flex flex-wrap gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-black/20 px-3 py-1.5">
+            <span className="inline-flex items-center gap-1.5 rounded-full live-theme-contrast-soft px-3 py-1.5">
               <MessageCircleMore className="size-3.5" aria-hidden="true" />
               تا {formatPersianNumber(draft.maxWords)} عبارت
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-black/20 px-3 py-1.5">
+            <span className="inline-flex items-center gap-1.5 rounded-full live-theme-contrast-soft px-3 py-1.5">
               <Clock3 className="size-3.5" aria-hidden="true" />
               {formatPersianNumber(draft.durationSeconds)} ثانیه
             </span>
@@ -141,13 +145,13 @@ export default function WordCloudCanvas({
               image={draft.image}
               preferred="medium"
               alt={draft.image.altText || "تصویر پرسش ابر واژه"}
-              className="mt-4 max-h-32 max-w-full rounded-2xl object-contain"
+              className="mt-4 max-h-32 max-w-full rounded-card object-contain"
             />
           ) : null}
 
           <WordCloudView
             terms={previewTerms}
-            className="mt-6 min-h-48 w-full rounded-3xl border border-[color:var(--live-border)] bg-black/15 p-3"
+            className="mt-6 min-h-48 w-full rounded-feature border border-[color:var(--live-border)] live-theme-contrast-soft p-3"
             emptyLabel="پیش‌نمایشی برای نمایش وجود ندارد."
             displayMode="projection"
           />

@@ -14,12 +14,12 @@ export function ParticipantWaiting({
   return (
     <ParticipantShell quiz={quiz} connected={isStreamConnected} showConnection>
       <section className="flex flex-1 items-center justify-center py-8 text-center">
-        <div className="w-full rounded-[2rem] border border-[color:var(--live-border)] bg-[color:var(--live-surface)] px-6 py-10 shadow-2xl backdrop-blur-xl">
+        <div className="w-full live-panel rounded-showcase px-6 py-10 ">
           <div
-            className="mx-auto grid h-16 w-16 place-items-center rounded-2xl border border-[color:var(--live-border)] bg-white/10"
+            className="mx-auto grid h-16 w-16 place-items-center rounded-card border border-[color:var(--live-border)] live-theme-overlay-soft"
             aria-hidden="true"
           >
-            <span className="h-3 w-3 animate-pulse rounded-full bg-white shadow-[0_0_0_8px_rgba(255,255,255,0.08)] motion-reduce:animate-none" />
+            <span className="h-3 w-3 animate-pulse rounded-full bg-[color:var(--live-fg)] ring-8 ring-[color:var(--live-border)] motion-reduce:animate-none" />
           </div>
           <p
             className="mt-5 text-xl font-black"

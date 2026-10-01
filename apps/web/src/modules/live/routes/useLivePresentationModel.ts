@@ -1,4 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import {
+  DEFAULT_PRESENTATION_ACCENT,
+  DEFAULT_PRESENTATION_FOREGROUND,
+  DEFAULT_VISUALIZATION_PALETTE,
+  normalizeVisualizationPalette,
+} from "../../../shared/styles/presentationTheme.ts";
 
 import type { LiveSnapshot } from "../api/types.ts";
 import { getPresentationForLive } from "../api/presentationApi.ts";
@@ -37,13 +43,12 @@ export const toLivePresentationModel = (
   presentation: Awaited<ReturnType<typeof getPresentationForLive>>,
 ): LivePresentationModel => {
   const settings = presentation.settings ?? {};
-  const textColor = stringValue(settings.text_color, "#111827");
-  const accentColor = stringValue(settings.accent_color, "#8b5cf6");
-  const visualizationPalette = Array.isArray(settings.visualization_palette)
-    ? settings.visualization_palette.filter(
-        (color): color is string => typeof color === "string",
-      )
-    : ["#8b5cf6", "#06b6d4", "#10b981", "#f59e0b", "#ec4899", "#3b82f6"];
+  const textColor = stringValue(settings.text_color, DEFAULT_PRESENTATION_FOREGROUND);
+  const accentColor = stringValue(settings.accent_color, DEFAULT_PRESENTATION_ACCENT);
+  const visualizationPalette = normalizeVisualizationPalette(
+    settings.visualization_palette,
+    DEFAULT_VISUALIZATION_PALETTE,
+  );
 
   return {
     quiz_id: presentation.id,

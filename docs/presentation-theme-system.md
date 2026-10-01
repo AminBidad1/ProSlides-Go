@@ -1,7 +1,7 @@
 # Presentation theme and color system
 
-Status: active implementation plan  
-Last reviewed: 2026-09-30
+Status: active implementation contract  
+Last reviewed: 2026-10-01
 
 ## Purpose
 
@@ -29,6 +29,23 @@ without introducing a second visual contract.
 8. Theme rendering is surface-aware. Stage, manager and participant surfaces share
    one visual contract but may intentionally use different background treatment when
    projection readability, control clarity, mobile performance or data usage require it.
+
+## Implementation ownership
+
+`src/shared/styles/presentationTheme.ts` is the canonical owner of presentation
+defaults, readable foreground resolution, palette normalization, and runtime
+`--live-*` roles. Presentation creation persists those canonical defaults, so a
+new presentation does not depend on an implicit UI-only fallback.
+
+Stage and manager projection render the authored presentation contract, including
+background imagery when present. Participant uses the same authored colors,
+accent and visualization palette but intentionally omits decorative background
+imagery. Selection, focus, controls and overlays on these surfaces use semantic
+live roles such as `--live-focus` rather than fixed light/dark utility colors.
+
+Private Backstage is not a presentation-theme surface. It deliberately uses the
+product dark/Stage token vocabulary so presenter-only controls and privacy
+boundaries remain stable regardless of the audience theme.
 
 ## Persisted contract
 
@@ -162,16 +179,16 @@ The persisted contract now supports immutable first-party Media Assets while ret
 legacy remote URLs for compatibility. Background uploads are normalized and delivered
 through a stable first-party URL; the immutable asset id is persisted alongside it.
 
-The next background/media evolution should:
+The implemented background/media foundation now includes immutable first-party
+assets, non-destructive focal-point placement, bounded delivery variants, a
+mandatory base color, and frozen live-Session references.
 
-1. store a non-destructive focal point with the background asset reference;
-2. keep background rendering as cover/fill only, with focal positioning instead of a
-   generic fit/stretch/tile control set;
-3. add persisted Solid / Gradient / Image background kinds through the existing theme
+The next background/theme evolution should:
+
+1. add persisted Solid / Gradient / Image background kinds through the existing theme
    contract rather than component-local styling;
-4. retain a mandatory base color for image fallback and participant rendering;
-5. add responsive delivery variants where measurements justify them;
-6. preserve immutable image/background references in frozen live Session definitions.
+2. add further responsive delivery variants only where measurements justify them;
+3. preserve the same immutable/frozen ownership rules for any future background kind.
 
 Do not add per-slide background overrides, animated backgrounds or freeform image
 editing until a measured product need justifies that complexity.

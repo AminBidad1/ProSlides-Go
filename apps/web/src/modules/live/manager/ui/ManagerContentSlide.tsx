@@ -72,7 +72,7 @@ export function ManagerContentSlide({
       >
         {!source ? (
           <div
-            className="mx-auto rounded-2xl border border-white/10 bg-[color:var(--live-surface)] px-6 py-5 text-center text-[color:var(--live-muted)]"
+            className="mx-auto rounded-card border border-[color:var(--live-border)] bg-[color:var(--live-surface)] px-6 py-5 text-center text-[color:var(--live-muted)]"
             role="status"
           >
             در حال همگام‌سازی محتوای اسلاید…

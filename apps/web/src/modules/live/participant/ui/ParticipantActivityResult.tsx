@@ -74,7 +74,7 @@ export function ParticipantActivityResult({
   return (
     <ParticipantShell quiz={quiz} connected={isStreamConnected} showConnection>
       <section className="flex flex-1 flex-col py-3">
-        <div className="flex flex-1 flex-col rounded-[2rem] border border-[color:var(--live-border)] bg-[color:var(--live-surface)] p-4 shadow-2xl backdrop-blur-xl sm:p-7">
+        <div className="flex flex-1 flex-col live-panel rounded-showcase p-4  sm:p-7">
           <div className="text-center">
             <p className="text-sm font-bold text-[color:var(--live-muted)]">
               {isWordCloud
@@ -103,7 +103,7 @@ export function ParticipantActivityResult({
                 image={question.image}
                 preferred="medium"
                 alt=""
-                className="mx-auto mt-4 max-h-40 max-w-full rounded-2xl object-contain"
+                className="mx-auto mt-4 max-h-40 max-w-full rounded-card object-contain"
               />
             ) : null}
             <p className="mt-2 text-sm text-[color:var(--live-muted)]">
@@ -119,7 +119,7 @@ export function ParticipantActivityResult({
               }
               aria-label="نتیجه شخصی شما"
             >
-              <div className="rounded-2xl border border-[color:var(--live-border)] bg-white/10 p-3 text-center">
+              <div className="rounded-card border border-[color:var(--live-border)] live-theme-overlay-soft p-3 text-center">
                 <p className="text-xs text-[color:var(--live-muted)]">
                   {isWordCloud
                     ? "پاسخ شما"
@@ -136,7 +136,7 @@ export function ParticipantActivityResult({
                 </p>
               </div>
               {hasScoring ? (
-                <div className="rounded-2xl border border-[color:var(--live-border)] bg-white/10 p-3 text-center">
+                <div className="rounded-card border border-[color:var(--live-border)] live-theme-overlay-soft p-3 text-center">
                   <p className="text-xs text-[color:var(--live-muted)]">
                     امتیاز کل
                   </p>
@@ -148,7 +148,7 @@ export function ParticipantActivityResult({
             </div>
           ) : (
             <p
-              className="mx-auto mt-5 rounded-full border border-[color:var(--live-border)] bg-white/5 px-4 py-2 text-sm text-[color:var(--live-muted)]"
+              className="mx-auto mt-5 rounded-full border border-[color:var(--live-border)] live-theme-overlay-subtle px-4 py-2 text-sm text-[color:var(--live-muted)]"
               role="status"
             >
               {isWordCloud
@@ -162,7 +162,7 @@ export function ParticipantActivityResult({
           {isWordCloud ? (
             <WordCloudView
               terms={wordTerms}
-              className="mt-6 min-h-52 rounded-3xl border border-[color:var(--live-border)] bg-white/5 p-3"
+              className="mt-6 min-h-52 rounded-feature border border-[color:var(--live-border)] live-theme-overlay-subtle p-3"
               emptyLabel="هنوز عبارتی برای نمایش وجود ندارد."
             />
           ) : (
@@ -180,15 +180,15 @@ export function ParticipantActivityResult({
                   <article
                     key={String(option.option_id) + ":" + index}
                     className={
-                      "rounded-2xl border-2 p-4 " +
+                      "rounded-card border-2 p-4 " +
                       (selected
-                        ? "ring-2 ring-white/50 ring-offset-2 ring-offset-transparent "
+                        ? "ring-2 ring-[color:var(--live-focus)] ring-offset-2 ring-offset-transparent "
                         : "") +
                       (hasCorrectAnswer
                         ? correct
                           ? "border-success/70 bg-success/15"
-                          : "border-[color:var(--live-border)] bg-white/5"
-                        : "border-[color:var(--live-border)] bg-white/5")
+                          : "border-[color:var(--live-border)] live-theme-overlay-subtle"
+                        : "border-[color:var(--live-border)] live-theme-overlay-subtle")
                     }
                   >
                     <div className="flex items-center gap-3">
@@ -198,7 +198,7 @@ export function ParticipantActivityResult({
                           image={option.image}
                           preferred="thumbnail"
                           alt=""
-                          className="h-12 w-12 shrink-0 rounded-xl object-cover"
+                          className="h-12 w-12 shrink-0 rounded-control object-cover"
                         />
                       ) : null}
                       <span className="min-w-0 flex-1 font-bold" dir="auto">
@@ -208,9 +208,9 @@ export function ParticipantActivityResult({
                         {count.toLocaleString("fa-IR")}
                       </strong>
                     </div>
-                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/20">
+                    <div className="mt-3 h-2 overflow-hidden rounded-full live-theme-contrast-soft">
                       <div
-                        className="h-full rounded-full bg-white/70"
+                        className="h-full rounded-full bg-[color:var(--live-fg)]"
                         style={{ width: percentage + "%" }}
                         aria-hidden="true"
                       />
@@ -218,7 +218,7 @@ export function ParticipantActivityResult({
                     <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-sm font-bold">
                       <div className="flex flex-wrap items-center gap-2">
                         {selected ? (
-                          <span className="rounded-full bg-white/10 px-2 py-1">
+                          <span className="rounded-full live-theme-overlay-soft px-2 py-1">
                             انتخاب شما
                           </span>
                         ) : null}

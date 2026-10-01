@@ -18,6 +18,8 @@ import {
 import { ImagePlacementImage } from "../../../../shared/media/ImagePlacementImage.tsx";
 import Notice from "../../../../shared/ui/Notice.tsx";
 import { Button } from "../../../../shared/ui/primitives/Button.tsx";
+import { Input } from "../../../../shared/ui/primitives/Input.tsx";
+import { Textarea } from "../../../../shared/ui/primitives/Textarea.tsx";
 import { ConfirmDialog } from "../../../../shared/ui/primitives/ConfirmDialog.tsx";
 import { quizService } from "../../api/presentationRepository.ts";
 import {
@@ -347,7 +349,7 @@ function QuestionInspectorInner({
 
               <div className="mt-2 flex items-start gap-2">
                 <div className="min-w-0 flex-1">
-                  <textarea
+                  <Textarea
                     ref={questionInputRef}
                     id="question-editor-text"
                     dir="auto"
@@ -361,7 +363,7 @@ function QuestionInspectorInner({
                     }
                     onChange={(event) => setQuestionText(event.target.value)}
                     placeholder={isPoll ? "پرسش نظرسنجی را بنویسید…" : "سؤال خود را بنویسید…"}
-                    className="min-h-24 w-full resize-y rounded-control border border-border-control bg-surface px-3 py-2.5 text-sm leading-6 text-content outline-none transition placeholder:text-content-muted focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="min-h-24"
                   />
                   {questionTextError && (
                     <p
@@ -416,7 +418,7 @@ function QuestionInspectorInner({
               {draft.image.url && (
                 <label className="mt-3 block text-xs font-semibold">
                   متن جایگزین تصویر <span className="font-normal text-content-muted">(اختیاری)</span>
-                  <input
+                  <Input
                     type="text"
                     dir="auto"
                     value={draft.image.altText}
@@ -429,7 +431,7 @@ function QuestionInspectorInner({
                       })
                     }
                     placeholder="توضیح کوتاه تصویر"
-                    className="mt-1.5 h-10 w-full rounded-control border border-border-control bg-surface px-3 text-sm text-content outline-none transition placeholder:text-content-muted focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="mt-1.5 h-10"
                   />
                 </label>
               )}
@@ -486,7 +488,7 @@ function QuestionInspectorInner({
                   <label htmlFor="question-editor-time" className="sr-only">
                     زمان پاسخ به ثانیه
                   </label>
-                  <input
+                  <Input
                     id="question-editor-time"
                     type="text"
                     inputMode="numeric"
@@ -500,7 +502,7 @@ function QuestionInspectorInner({
                         : "question-editor-time-help"
                     }
                     onChange={(event) => setTimeInput(event.target.value)}
-                    className="h-10 w-20 rounded-control border border-border-control bg-surface px-2 text-center text-sm font-semibold outline-none transition focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="h-10 w-20 text-center font-semibold"
                   />
                   <span className="text-xs font-medium text-content-muted">ثانیه</span>
                 </div>
@@ -551,7 +553,7 @@ function QuestionInspectorInner({
                         امتیاز پاسخ صحیح
                       </label>
                       <div className="flex items-center gap-2">
-                        <input
+                        <Input
                           id="question-editor-max-points"
                           type="text"
                           inputMode="numeric"
@@ -565,7 +567,7 @@ function QuestionInspectorInner({
                               : "question-editor-points-help"
                           }
                           onChange={(event) => setMaxPointsInput(event.target.value)}
-                          className="h-10 w-24 rounded-control border border-border-control bg-surface px-3 text-center text-sm font-semibold outline-none transition focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="h-10 w-24 text-center font-semibold"
                         />
                         <span className="text-xs font-medium text-content-muted">
                           امتیاز
@@ -620,7 +622,7 @@ function QuestionInspectorInner({
                                 : "question-editor-min-points-help"
                             }
                             onChange={(event) => setMinPointsInput(event.target.value)}
-                            className="h-10 w-24 rounded-control border border-brand-border bg-surface px-3 text-center text-sm font-semibold outline-none transition focus:border-brand focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="h-10 w-24 text-center font-semibold"
                           />
                           <span className="text-xs font-medium text-brand-ink">
                             امتیاز
