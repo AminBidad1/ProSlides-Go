@@ -55,7 +55,7 @@ export default function SiteHeader({ className = "" }: SiteHeaderProps) {
         <div className="flex items-center gap-2 text-xs font-semibold sm:gap-3 sm:text-sm md:justify-self-end">
           <Link
             to="/login"
-            className="min-h-11 rounded-control border border-border-control bg-surface px-3 py-2.5 text-content transition-colors hover:border-brand-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus sm:px-4"
+            className="min-h-11 rounded-control border border-border-action bg-surface px-3 py-2.5 text-content transition-colors hover:border-brand-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus sm:px-4"
           >
             ورود
           </Link>

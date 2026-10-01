@@ -8,6 +8,11 @@ import { createZodResolver } from "../../../shared/forms/zodResolver.ts";
 import Notice from "../../../shared/ui/Notice.tsx";
 import Seo from "../../../shared/ui/Seo.tsx";
 import { Button } from "../../../shared/ui/primitives/Button.tsx";
+import {
+  FieldAction,
+  FieldAdornment,
+  FieldFrame,
+} from "../../../shared/ui/primitives/FieldFrame.tsx";
 import { identityApi } from "../api/identityApi.ts";
 import {
   resetPasswordSchema,
@@ -66,13 +71,6 @@ function EyeIcon({ open }: { open: boolean }) {
     </svg>
   );
 }
-
-const fieldShell = (hasError: boolean) =>
-  [
-    "flex min-h-12 items-stretch overflow-hidden rounded-control border bg-surface",
-    "transition focus-within:border-focus focus-within:ring-2 focus-within:ring-focus/25",
-    hasError ? "border-danger" : "border-border-control hover:border-border-control-strong",
-  ].join(" ");
 
 const passwordStrength = (value: string) => {
   if (!value) return { score: 0, label: "ضعیف" };
@@ -203,10 +201,10 @@ export default function ResetPasswordRoute() {
             >
               رمز عبور جدید
             </label>
-            <div className={fieldShell(Boolean(passwordError))}>
-              <span className="flex w-12 shrink-0 items-center justify-center border-e border-border-subtle text-content-muted">
+            <FieldFrame invalid={Boolean(passwordError)}>
+              <FieldAdornment>
                 <LockIcon />
-              </span>
+              </FieldAdornment>
               <input
                 id="new-password"
                 className="min-w-0 flex-1 border-none bg-transparent px-3 text-sm text-content outline-none placeholder:text-content-muted"
@@ -220,15 +218,13 @@ export default function ResetPasswordRoute() {
                 }
                 {...register("password")}
               />
-              <button
-                type="button"
-                className="flex w-12 shrink-0 items-center justify-center text-content-muted transition hover:bg-canvas hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+              <FieldAction
                 onClick={() => setShowPassword((value) => !value)}
                 aria-label={showPassword ? "پنهان کردن رمز" : "نمایش رمز"}
               >
                 <EyeIcon open={showPassword} />
-              </button>
-            </div>
+              </FieldAction>
+            </FieldFrame>
             {passwordError ? (
               <p
                 id="new-password-error"
@@ -252,10 +248,10 @@ export default function ResetPasswordRoute() {
             >
               تکرار رمز عبور
             </label>
-            <div className={fieldShell(Boolean(confirmError))}>
-              <span className="flex w-12 shrink-0 items-center justify-center border-e border-border-subtle text-content-muted">
+            <FieldFrame invalid={Boolean(confirmError)}>
+              <FieldAdornment>
                 <LockIcon />
-              </span>
+              </FieldAdornment>
               <input
                 id="confirm-password"
                 className="min-w-0 flex-1 border-none bg-transparent px-3 text-sm text-content outline-none placeholder:text-content-muted"
@@ -269,17 +265,15 @@ export default function ResetPasswordRoute() {
                 }
                 {...register("confirmPassword")}
               />
-              <button
-                type="button"
-                className="flex w-12 shrink-0 items-center justify-center text-content-muted transition hover:bg-canvas hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+              <FieldAction
                 onClick={() => setShowConfirm((value) => !value)}
                 aria-label={
                   showConfirm ? "پنهان کردن تکرار رمز" : "نمایش تکرار رمز"
                 }
               >
                 <EyeIcon open={showConfirm} />
-              </button>
-            </div>
+              </FieldAction>
+            </FieldFrame>
             {confirmError ? (
               <p
                 id="confirm-password-error"

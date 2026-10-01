@@ -166,7 +166,7 @@ export default function ReportRoute() {
       dir="rtl"
     >
       <div className="mx-auto max-w-7xl">
-        <header className="mb-6 flex flex-col gap-4 rounded-panel border border-border-subtle bg-surface-raised p-5 shadow-card sm:flex-row sm:items-center sm:justify-between">
+        <header className="mb-6 flex flex-col gap-4 rounded-panel border border-border-subtle bg-surface p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <Link
               to="/manager/panel"
@@ -216,14 +216,14 @@ export default function ReportRoute() {
 
         {isInitialLoading && !hasInitialError ? (
           <section
-            className="rounded-panel border border-border-subtle bg-surface p-6 shadow-card"
+            className="rounded-panel border border-border-subtle bg-surface p-6"
             aria-busy="true"
           >
             <Notice pending>در حال بارگذاری تاریخچه گزارش…</Notice>
             <div className="mt-5 h-56 animate-pulse rounded-panel bg-brand-soft motion-reduce:animate-none" />
           </section>
         ) : !hasInitialError && sessions.length === 0 ? (
-          <section className="rounded-panel border border-border-subtle bg-surface p-8 text-center shadow-card">
+          <section className="rounded-panel border border-border-subtle bg-surface p-8 text-center">
             <BarChart3
               className="mx-auto size-10 text-content-muted"
               aria-hidden="true"
@@ -247,7 +247,7 @@ export default function ReportRoute() {
             />
 
             <div className="min-w-0 space-y-5">
-              <section className="rounded-panel border border-border-subtle bg-surface p-5 shadow-card">
+              <section className="rounded-panel border border-border-subtle bg-surface p-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <p className="text-xs font-semibold text-content-muted">
@@ -263,7 +263,7 @@ export default function ReportRoute() {
                         : ""}
                     </p>
                   </div>
-                  <span className="self-start rounded-full border border-border-subtle bg-surface-raised px-3 py-1 text-xs font-bold">
+                  <span className="self-start rounded-full border border-border-subtle bg-surface-inset px-3 py-1 text-xs font-bold">
                     {summary.has_scoring
                       ? "دارای امتیازدهی"
                       : "بدون امتیازدهی"}
@@ -271,7 +271,7 @@ export default function ReportRoute() {
                 </div>
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-control bg-surface-raised p-4">
+                  <div className="rounded-control bg-surface-inset p-4">
                     <Users
                       className="size-5 text-brand"
                       aria-hidden="true"
@@ -283,7 +283,7 @@ export default function ReportRoute() {
                       شرکت‌کننده
                     </p>
                   </div>
-                  <div className="rounded-control bg-surface-raised p-4">
+                  <div className="rounded-control bg-surface-inset p-4">
                     <Activity
                       className="size-5 text-brand"
                       aria-hidden="true"
@@ -293,7 +293,7 @@ export default function ReportRoute() {
                     </p>
                     <p className="text-sm text-content-muted">فعالیت</p>
                   </div>
-                  <div className="rounded-control bg-surface-raised p-4">
+                  <div className="rounded-control bg-surface-inset p-4">
                     <MessageSquareText
                       className="size-5 text-brand"
                       aria-hidden="true"
@@ -309,7 +309,7 @@ export default function ReportRoute() {
               </section>
 
               {activities.length > 0 ? (
-                <section className="rounded-panel border border-border-subtle bg-surface p-4 shadow-card">
+                <section className="rounded-panel border border-border-subtle bg-surface p-4">
                   <h2 className="px-1 text-sm font-bold text-content-muted">
                     فعالیت‌های جلسه
                   </h2>
@@ -334,7 +334,7 @@ export default function ReportRoute() {
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
                             selected
                               ? "border-brand bg-brand-soft"
-                              : "border-border-control bg-surface-raised hover:border-brand",
+                              : "border-border-action bg-surface-inset hover:border-border-action-strong hover:bg-surface",
                           ].join(" ")}
                         >
                           <span className="block truncate text-sm font-bold" dir="auto">

@@ -36,7 +36,7 @@ export default function EditorShell({
           <aside
             aria-label="فهرست آیتم‌ها"
             data-editor-region="item-rail"
-            className="h-full w-56 shrink-0 overflow-y-auto rounded-panel border border-brand-border bg-surface p-3 shadow-card 2xl:w-60"
+            className="h-full w-56 shrink-0 overflow-y-auto rounded-panel border border-border-subtle bg-surface p-3 2xl:w-60"
           >
             {itemRail}
           </aside>
@@ -47,7 +47,7 @@ export default function EditorShell({
           data-editor-region="canvas"
           aria-label="بوم ویرایش"
         >
-          <div className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-panel border border-brand-border bg-surface p-3 shadow-card">
+          <div className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-panel border border-border-subtle bg-surface p-3">
             {topActions && (
               <div
                 className="flex shrink-0 items-center justify-end gap-2 pb-3"
@@ -66,7 +66,7 @@ export default function EditorShell({
           <section
             aria-label="بازرس آیتم"
             data-editor-region="inspector"
-            className="fixed inset-x-0 bottom-0 top-16 z-50 w-full overflow-y-auto border border-border-subtle bg-surface p-4 shadow-panel xl:static xl:h-full xl:w-72 xl:shrink-0 xl:rounded-panel xl:p-3 2xl:w-80"
+            className="fixed inset-x-0 bottom-0 top-16 z-50 w-full overflow-y-auto border border-border-subtle bg-surface p-4 shadow-panel xl:static xl:shadow-none xl:h-full xl:w-72 xl:shrink-0 xl:rounded-panel xl:p-3 2xl:w-80"
             style={
               isMobile
                 ? {

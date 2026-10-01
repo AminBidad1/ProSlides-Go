@@ -7,6 +7,11 @@ import type {
 import { normalizeDigits } from "../../../shared/forms/numbers.ts";
 import Notice from "../../../shared/ui/Notice.tsx";
 import { Button } from "../../../shared/ui/primitives/Button.tsx";
+import {
+  FieldAction,
+  FieldAdornment,
+  FieldFrame,
+} from "../../../shared/ui/primitives/FieldFrame.tsx";
 import type {
   AuthMode,
   AuthStatus,
@@ -88,16 +93,7 @@ function EyeIcon({ open }: { open: boolean }) {
   );
 }
 
-const fieldShell = (hasError: boolean) =>
-  [
-    "flex min-h-12 items-stretch overflow-hidden rounded-control border bg-surface",
-    "transition focus-within:border-focus focus-within:ring-2 focus-within:ring-focus/25",
-    hasError
-      ? "border-danger"
-      : "border-border-control hover:border-border-control-strong",
-  ].join(" ");
-
-const fieldLabel = "mb-1.5 block text-start text-xs font-semibold text-content";
+const fieldLabel = "mb-1.5 block text-start text-xs font-medium text-content-muted";
 const errorText = "mt-1.5 text-start text-xs text-danger-ink";
 
 export default function AuthCard({
@@ -197,13 +193,13 @@ export default function AuthCard({
       <form className="flex flex-col gap-3" onSubmit={(event) => { event.preventDefault(); onSubmit(); }} noValidate>
         <div>
           <label htmlFor="auth-email" className={fieldLabel}>ایمیل</label>
-          <div className={fieldShell(Boolean(errors.email))}>
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center border-e border-border-subtle text-content-muted">
+          <FieldFrame invalid={Boolean(errors.email)}>
+            <FieldAdornment>
               <MailIcon />
-            </span>
+            </FieldAdornment>
             <input
               id="auth-email"
-              className="min-w-0 flex-1 border-none bg-transparent px-3 text-sm text-content outline-none placeholder:text-content-muted read-only:bg-canvas read-only:text-content-muted"
+              className="min-w-0 flex-1 border-none bg-transparent px-3 text-sm text-content outline-none placeholder:text-content-muted read-only:bg-surface-inset read-only:text-content-muted"
               type="email"
               autoComplete="email"
               placeholder="ایمیل شما"
@@ -214,17 +210,17 @@ export default function AuthCard({
               dir="ltr"
               {...register("email")}
             />
-          </div>
+          </FieldFrame>
           {errors.email?.message && <div id="auth-email-error" className={errorText}>{errors.email.message}</div>}
         </div>
 
         {!isVerify && (
           <div>
             <label htmlFor="auth-password" className={fieldLabel}>رمز عبور</label>
-            <div className={fieldShell(Boolean(errors.password))}>
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center border-e border-border-subtle text-content-muted">
+            <FieldFrame invalid={Boolean(errors.password)}>
+              <FieldAdornment>
                 <LockIcon />
-              </span>
+              </FieldAdornment>
               <input
                 id="auth-password"
                 className="min-w-0 flex-1 border-none bg-transparent px-3 text-sm text-content outline-none placeholder:text-content-muted"
@@ -236,15 +232,13 @@ export default function AuthCard({
                 dir="ltr"
                 {...register("password")}
               />
-              <button
-                type="button"
-                className="flex h-12 w-12 shrink-0 items-center justify-center text-content-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+              <FieldAction
                 onClick={() => setShowPassword((value) => !value)}
                 aria-label={showPassword ? "مخفی کردن رمز عبور" : "نمایش رمز عبور"}
               >
                 <EyeIcon open={showPassword} />
-              </button>
-            </div>
+              </FieldAction>
+            </FieldFrame>
             {errors.password?.message && <div id="auth-password-error" className={errorText}>{errors.password.message}</div>}
           </div>
         )}
@@ -272,10 +266,10 @@ export default function AuthCard({
         {isVerify ? (
           <div>
             <label htmlFor="auth-verification-code" className={fieldLabel}>کد تأیید</label>
-            <div className={fieldShell(Boolean(errors.verificationCode))}>
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center border-e border-border-subtle text-content-muted">
+            <FieldFrame invalid={Boolean(errors.verificationCode)}>
+              <FieldAdornment>
                 <LockIcon />
-              </span>
+              </FieldAdornment>
               <input
                 id="auth-verification-code"
                 className="min-w-0 flex-1 border-none bg-transparent px-3 text-sm text-content outline-none placeholder:text-content-muted"
@@ -292,16 +286,16 @@ export default function AuthCard({
                     normalizeDigits(String(value)).replace(/\D/g, "").slice(0, 6),
                 })}
               />
-            </div>
+            </FieldFrame>
             {errors.verificationCode?.message && <div id="auth-code-error" className={errorText}>{errors.verificationCode.message}</div>}
           </div>
         ) : isSignup ? (
           <div>
             <label htmlFor="auth-full-name" className={fieldLabel}>نام و نام خانوادگی</label>
-            <div className={fieldShell(Boolean(errors.fullName))}>
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center border-e border-border-subtle text-content-muted">
+            <FieldFrame invalid={Boolean(errors.fullName)}>
+              <FieldAdornment>
                 <UserIcon />
-              </span>
+              </FieldAdornment>
               <input
                 id="auth-full-name"
                 dir="auto"
@@ -313,7 +307,7 @@ export default function AuthCard({
                 aria-describedby={errors.fullName ? "auth-name-error" : undefined}
                 {...register("fullName")}
               />
-            </div>
+            </FieldFrame>
             {errors.fullName?.message && <div id="auth-name-error" className={errorText}>{errors.fullName.message}</div>}
           </div>
         ) : (

@@ -143,7 +143,7 @@ export default function ImageUrlDialog({
       aria-labelledby="editor-image-dialog-title"
       onCancel={handleCancel}
       onClose={handleClose}
-      className="m-auto w-[min(calc(100vw-2rem),34rem)] rounded-panel border border-border-control bg-surface-raised p-0 text-content shadow-panel backdrop:bg-content/35 backdrop:backdrop-blur-[2px]"
+      className="m-auto w-[min(calc(100vw-2rem),34rem)] rounded-panel border border-border-subtle bg-surface-raised p-0 text-content shadow-panel backdrop:bg-content/35 backdrop:backdrop-blur-[2px]"
     >
       <div className="p-5 sm:p-6">
         <div className="flex items-start justify-between gap-4">

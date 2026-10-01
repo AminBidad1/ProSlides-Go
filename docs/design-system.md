@@ -83,9 +83,9 @@ overlap, or loss of controls.
 
 The design system separates meaning from values:
 
-- canvas / surface / raised surface / inverse surface / overlay
+- canvas / surface / inset surface / raised surface / inverse surface / overlay
 - content / muted content / inverse content / inverse-muted content
-- subtle separator border / control border / focus
+- subtle separator / action boundary / field boundary / strong control boundary / focus
 - brand / success / warning / danger / info
 - neutral Stage baseline and authored presentation theme
 - data-visualization fills and contrast-safe on-Stage variants
@@ -93,15 +93,27 @@ The design system separates meaning from values:
 - card / panel / feature elevation
 - interface motion/easing
 
-`border-subtle` is for separators and low-emphasis containment. Interactive
-form boundaries use `border-control` or an equivalent boundary that reaches at
-least 3:1 against its adjacent background. A separator token must never be
-promoted into an input border merely because both happen to be gray.
+`border-subtle` is for separators and low-emphasis containment. `brand-border` belongs to selected or intentionally brand-tinted surfaces, not ordinary structural panel chrome.
+`border-field` belongs to labeled text fields; `border-action` belongs to
+text-bearing buttons, selectable cards, and similar actions whose visible content
+already identifies the control. `border-control` is intentionally stronger and
+is reserved for cases where the boundary itself is necessary to identify the
+component, such as a compact standalone checkbox or another control without an
+equally clear text/icon affordance. A separator token must never be promoted into
+an interactive boundary merely because both happen to be gray.
+
+WCAG 2.2 non-text contrast does not require the complete hit-area boundary of a
+text-bearing control to reach 3:1 when visible content already identifies the
+control. When a boundary is the visual information required to identify the
+component, that boundary targets at least 3:1. Focus, selection, error, and other
+necessary state indicators still target at least 3:1. This distinction keeps the
+interface legible without turning every action and field into high-contrast
+chrome.
 
 Normal text targets at least 4.5:1 contrast; large text may use the WCAG large
 text threshold. Placeholder text is still text and does not receive opacity that
-pushes it below the required contrast. Meaningful control boundaries, focus/state
-indicators, and graphical objects target at least 3:1.
+pushes it below the required contrast. Meaningful graphical objects target at
+least 3:1 when they are required to understand or operate the interface.
 
 Color is never the only signal for correctness, errors, selection, score,
 connection state, or disclosure. Pair it with text, iconography, shape, or
@@ -126,6 +138,37 @@ those authored roles instead of raw product-palette utilities. Private Backstage
 is intentionally different: it is operational product chrome, uses the product
 dark/Stage token vocabulary, and must not inherit authored presentation colors
 as its surface contract.
+
+## Product surface hierarchy
+
+Product workspaces are flat by default. The page canvas establishes the base
+layer; ordinary sections use `surface`, and nested summaries, compact rows, or
+secondary groups use `surface-inset` to create hierarchy without another
+shadowed card.
+
+A surface should normally use the least expensive containment cue that makes its
+relationship clear: whitespace first, then a tonal layer or subtle border.
+Combining a border, large radius, and shadow at every nesting level is not a
+default recipe. `shadow-card` is restrained local emphasis, not a synonym for
+"this is a box." Do not weaken the shared elevation token merely to compensate
+for overusing it; remove elevation from structural surfaces and keep the token
+strong enough for the places where depth is actually meaningful.
+
+`surface-raised` plus panel-level elevation is reserved for floating or
+temporarily superimposed UI such as menus, dialogs, popovers, and operational
+tooling that genuinely sits above the document. Feature-level elevation belongs
+to one signature or high-priority surface, not to a row of peer sections.
+
+Inside a bordered `surface`, prefer `surface-inset` for statistics, rows, and
+secondary summaries rather than adding another bordered-and-shadowed card. When
+several peer sections already have clear spacing and headings, keep them flat.
+Persistent workspace regions such as an editor rail, canvas frame, and desktop
+toolbar are structural layers, not floating cards, so borders and spacing should
+normally carry their separation without elevation. A mobile drawer, menu,
+popover, drag preview, dialog, or other layer that genuinely overlaps content
+may use elevation because depth is part of its interaction meaning. This
+preserves scanability in reports, dashboards, and editors while leaving
+elevation available to communicate actual depth.
 
 ## Marketing composition and visual hierarchy
 
@@ -184,8 +227,9 @@ same contrast and semantic-token rules.
 ## Controls and forms
 
 Shared primitives own recurring interaction behavior. Prefer `Button`,
-`Input`, `Notice`, `ConfirmDialog`, and the established dialog lifecycle
-over page-local reinventions.
+`Input`, `FieldFrame` with its shared adornment/action slots, `Notice`,
+`ConfirmDialog`, and the established dialog lifecycle over page-local
+reinventions.
 
 Every input has a persistent programmatic label. Important or non-obvious fields
 also have a visible label or instruction; placeholder text is a hint, not the

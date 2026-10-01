@@ -11,7 +11,7 @@ export const inputVariants = cva(
     variants: {
       tone: {
         default:
-          "border-border-control bg-surface text-content placeholder:text-content-muted hover:border-border-control-strong disabled:bg-canvas disabled:text-content-muted",
+          "border-border-field bg-surface text-content placeholder:text-content-muted hover:border-border-field-strong disabled:bg-surface-inset disabled:text-content-muted",
         dark:
           "border-stage-border bg-stage text-content-inverse placeholder:text-stage-muted hover:border-stage-muted disabled:bg-stage-soft disabled:text-stage-muted",
       },

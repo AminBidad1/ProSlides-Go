@@ -39,8 +39,8 @@ export default function RightToolbar({
   isCompact = false,
 }: EditorToolbarProps) {
   const containerClass = isCompact
-    ? "fixed inset-x-0 bottom-0 z-40 flex h-16 w-full flex-row items-center justify-around gap-2 border-t border-brand-border bg-surface/95 px-2 py-2 shadow-panel backdrop-blur"
-    : "flex h-full w-16 shrink-0 flex-col items-center gap-1.5 rounded-panel border border-brand-border bg-surface px-1.5 py-3 shadow-card";
+    ? "fixed inset-x-0 bottom-0 z-40 flex h-16 w-full flex-row items-center justify-around gap-2 border-t border-border-subtle bg-surface/95 px-2 py-2 shadow-panel backdrop-blur"
+    : "flex h-full w-16 shrink-0 flex-col items-center gap-1.5 rounded-panel border border-border-subtle bg-surface px-1.5 py-3";
 
   return (
     <div

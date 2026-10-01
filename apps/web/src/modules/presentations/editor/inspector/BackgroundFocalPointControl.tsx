@@ -121,7 +121,7 @@ export default function BackgroundFocalPointControl({
         disabled={disabled || failed}
         aria-describedby="background-focal-help background-focal-position"
         aria-label="تنظیم نقطه تمرکز تصویر پس‌زمینه؛ کلیک یا جابه‌جا کنید و برای تنظیم دقیق از کلیدهای جهت استفاده کنید"
-        className="relative mt-3 block aspect-video w-full touch-none overflow-hidden rounded-panel border border-border-control bg-surface text-start outline-none transition focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed"
+        className="relative mt-3 block aspect-video w-full touch-none overflow-hidden rounded-panel border border-border-action bg-surface text-start outline-none transition focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed"
         style={{ backgroundColor }}
         onPointerDown={(event) => {
           if (disabled || failed) return;

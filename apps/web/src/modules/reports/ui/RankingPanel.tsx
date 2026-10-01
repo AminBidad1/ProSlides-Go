@@ -26,7 +26,7 @@ export function RankingPanel({
   const items = pages.flatMap((page) => page.items);
 
   return (
-    <section className="rounded-panel border border-border-subtle bg-surface shadow-card">
+    <section className="rounded-panel border border-border-subtle bg-surface">
       <div className="border-b border-border-subtle p-5">
         <div className="flex items-center gap-2">
           <Trophy className="size-5 text-brand" aria-hidden="true" />
@@ -61,7 +61,7 @@ export function RankingPanel({
               {items.map((entry) => (
                 <div
                   key={entry.participant_id}
-                  className="flex items-center justify-between gap-4 rounded-control border border-border-subtle bg-surface-raised px-4 py-3"
+                  className="flex items-center justify-between gap-4 rounded-control bg-surface-inset px-4 py-3"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-soft font-black text-brand-ink">

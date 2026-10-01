@@ -10,9 +10,9 @@ export const textareaVariants = cva(
     variants: {
       tone: {
         default: [
-          "border-border-control bg-surface text-content placeholder:text-content-muted",
-          "hover:border-border-control-strong focus-visible:border-focus focus-visible:ring-focus/25",
-          "aria-[invalid=true]:border-danger disabled:bg-canvas disabled:text-content-muted",
+          "border-border-field bg-surface text-content placeholder:text-content-muted",
+          "hover:border-border-field-strong focus-visible:border-focus focus-visible:ring-focus/25",
+          "aria-[invalid=true]:border-danger disabled:bg-surface-inset disabled:text-content-muted",
         ].join(" "),
         dark: [
           "border-stage-border bg-stage text-content-inverse placeholder:text-stage-muted",

@@ -581,7 +581,7 @@ function QuestionInspectorInner({
                       </p>
                     </div>
 
-                    <label className="mt-3 flex min-h-12 cursor-pointer items-start justify-between gap-4 rounded-panel border border-border-control bg-surface p-3">
+                    <label className="mt-3 flex min-h-12 cursor-pointer items-start justify-between gap-4 rounded-panel border border-border-action bg-surface p-3">
                       <span>
                         <span className="block text-sm font-medium">
                           پاسخ سریع‌تر، امتیاز بیشتر
@@ -648,7 +648,7 @@ function QuestionInspectorInner({
                     )}
 
                     {showPartialScoring && (
-                      <label className="mt-3 flex min-h-12 cursor-pointer items-start justify-between gap-4 rounded-panel border border-border-control bg-surface p-3">
+                      <label className="mt-3 flex min-h-12 cursor-pointer items-start justify-between gap-4 rounded-panel border border-border-action bg-surface p-3">
                         <span>
                           <span className="block text-sm font-medium">
                             امتیازدهی جزئی
@@ -690,7 +690,7 @@ function QuestionInspectorInner({
               </p>
 
               {!isPoll && isScored && (
-                <label className="mt-3 flex min-h-12 cursor-pointer items-start justify-between gap-4 rounded-panel border border-border-control bg-surface p-3">
+                <label className="mt-3 flex min-h-12 cursor-pointer items-start justify-between gap-4 rounded-panel border border-border-action bg-surface p-3">
                   <span>
                     <span className="block text-sm font-medium">
                       سپس رتبه‌بندی کلی را نمایش بده
@@ -718,7 +718,7 @@ function QuestionInspectorInner({
           </div>
         </div>
 
-        <footer className="sticky bottom-0 z-10 border-t border-border-control bg-surface/95 px-1 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur">
+        <footer className="sticky bottom-0 z-10 border-t border-border-subtle bg-surface/95 px-1 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur">
           <div
             className="mb-2 min-h-5 text-xs"
             role="status"

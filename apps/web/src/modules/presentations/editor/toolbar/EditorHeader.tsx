@@ -145,7 +145,7 @@ export default function QuizHeader({
   return (
     <>
       <header
-        className="fixed inset-x-0 top-0 z-50 h-16 w-full border-b border-brand-border bg-surface/95 px-3 shadow-sm backdrop-blur md:px-4"
+        className="fixed inset-x-0 top-0 z-50 h-16 w-full border-b border-border-subtle bg-surface/95 px-3 shadow-sm backdrop-blur md:px-4"
         dir="rtl"
       >
         <div className="grid h-full w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 sm:gap-3">
@@ -179,7 +179,7 @@ export default function QuizHeader({
                 {quizTitle || fa.editor.untitledPresentation}
               </button>
             ) : (
-              <div className="flex min-w-0 items-center gap-1 rounded-control border border-brand-border bg-surface p-1 shadow-sm">
+              <div className="flex min-w-0 items-center gap-1 rounded-control border border-border-action bg-surface p-1">
                 <Input
                   type="text"
                   value={newQuizTitle || ""}

@@ -828,7 +828,7 @@ export default function PresentationDashboardRoute() {
                   onClick={handleNewPresentation}
                   disabled={creatingQuiz}
                   aria-describedby={creationError ? "presentation-creation-error" : undefined}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-control bg-brand px-6 text-content-inverse shadow-lg transition hover:bg-brand-strong focus-visible:ring-focus md:w-auto"
+                  className="h-12 w-full px-6 md:w-auto"
                 >
                   {creatingQuiz ? (
                     <>
@@ -888,7 +888,7 @@ export default function PresentationDashboardRoute() {
             )}
 
             {showEmptyState && (
-              <div className="mb-6 rounded-feature border border-dashed border-brand-border bg-surface px-6 py-14 text-center shadow-card">
+              <div className="mb-6 rounded-feature border border-dashed border-brand-border bg-surface px-6 py-14 text-center">
                 <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-card bg-brand-muted text-brand">
                   <Plus className="h-7 w-7" aria-hidden="true" />
                 </div>
@@ -925,7 +925,7 @@ export default function PresentationDashboardRoute() {
             {!loading && !loadError && !showEmptyState && (
               <>
                 {/* Desktop Table View */}
-                <div className="hidden overflow-visible rounded-panel border border-border-subtle bg-surface shadow-card md:block">
+                <div className="hidden overflow-visible rounded-panel border border-border-subtle bg-surface md:block">
                   <table className="w-full">
                     <caption className="sr-only">فهرست ارائه‌ها</caption>
                 <thead className="bg-canvas border-b border-border-subtle">
@@ -1111,7 +1111,7 @@ export default function PresentationDashboardRoute() {
               {filteredQuizzes.map((quiz) => (
                 <div
                   key={quiz.id}
-                  className={`relative rounded-panel border border-border-subtle bg-surface p-5 shadow-card transition-all ${
+                  className={`relative rounded-panel border border-border-subtle bg-surface p-5 transition-all ${
                     selectedQuizzes.includes(quiz.id)
                       ? "bg-brand-soft ring-2 ring-brand"
                       : ""
@@ -1126,7 +1126,7 @@ export default function PresentationDashboardRoute() {
                         onChange={() => handleQuizSelect(quiz.id)}
                         aria-label={`انتخاب ارائه ${quiz.name}`}
                       />
-                      <div className="flex h-12 min-w-12 items-center justify-center rounded-card bg-brand-soft text-brand shadow-card" aria-hidden="true">
+                      <div className="flex h-12 min-w-12 items-center justify-center rounded-card bg-brand-soft text-brand" aria-hidden="true">
                         <Presentation className="h-6 w-6" />
                       </div>
                       <div className="truncate min-w-0 flex-1">
@@ -1187,7 +1187,7 @@ export default function PresentationDashboardRoute() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 text-sm mb-5 rounded-card border border-border-subtle bg-canvas/50 p-3">
+                  <div className="mb-5 grid grid-cols-2 gap-4 rounded-card bg-surface-inset p-3 text-sm">
                     <div>
                       <span className="mb-1 block text-[10px] font-medium text-content-muted">
                         کد ورود

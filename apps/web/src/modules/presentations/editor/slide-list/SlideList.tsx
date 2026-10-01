@@ -176,10 +176,10 @@ export default function SlidesPanel({
                         <div
                           {...provided.draggableProps}
                           ref={provided.innerRef}
-                          className={`group relative mx-auto aspect-[16/9] w-full max-w-[360px] overflow-hidden rounded-card border bg-surface shadow-card transition ${
+                          className={`group relative mx-auto aspect-[16/9] w-full max-w-[360px] overflow-hidden rounded-card border bg-surface transition ${
                             isActive
                               ? "border-brand ring-2 ring-brand/20"
-                              : "border-border-control hover:border-brand"
+                              : "border-border-action hover:border-brand"
                           } ${dragDisabled ? "opacity-90" : ""} ${
                             snapshot.isDragging ? "z-50" : "z-0"
                           }`}
@@ -205,7 +205,7 @@ export default function SlidesPanel({
                               onMouseDown={(event) =>
                                 event.stopPropagation()
                               }
-                              className="absolute end-11 top-2 z-20 cursor-grab rounded-control border border-border-control bg-surface/95 p-1.5 shadow-card transition hover:bg-surface active:cursor-grabbing focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100"
+                              className="absolute end-11 top-2 z-20 cursor-grab rounded-control border border-border-action bg-surface/95 p-1.5 shadow-card transition hover:bg-surface active:cursor-grabbing focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100"
                             >
                               <GripVertical
                                 className="h-5 w-5 text-content"
@@ -227,7 +227,7 @@ export default function SlidesPanel({
                                 ? "ابتدا تغییرات ذخیره‌نشده را ذخیره یا رها کنید."
                                 : undefined
                             }
-                            className="absolute end-2 top-2 z-20 rounded-control border border-border-control bg-surface/95 p-2 text-danger shadow-card transition hover:bg-danger-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-50 xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100"
+                            className="absolute end-2 top-2 z-20 rounded-control border border-border-action bg-surface/95 p-2 text-danger shadow-card transition hover:bg-danger-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-50 xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100"
                           >
                             <Trash2
                               className="h-4 w-4"
@@ -235,7 +235,7 @@ export default function SlidesPanel({
                             />
                           </button>
 
-                          <span className="absolute start-2 top-2 z-20 inline-flex min-w-7 items-center justify-center rounded-control border border-border-control bg-surface/95 px-1.5 py-1 text-[10px] font-black text-content-muted shadow-card">
+                          <span className="absolute start-2 top-2 z-20 inline-flex min-w-7 items-center justify-center rounded-control border border-border-subtle bg-surface/95 px-1.5 py-1 text-[10px] font-black text-content-muted shadow-card">
                             {formatPersianNumber(index + 1)}
                           </span>
 

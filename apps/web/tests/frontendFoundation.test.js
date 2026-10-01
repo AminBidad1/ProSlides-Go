@@ -79,7 +79,7 @@ test("F2 dashboard editor and share slice has no native alerts and owns directio
   assert.doesNotMatch(share, /error\?*\.response|error\.response/);
   assert.match(header, /error instanceof ApiError/);
   assert.match(share, /error instanceof ApiError/);
-  assert.match(toolbar, /border border-brand-border/);
+  assert.match(toolbar, /border border-border-subtle/);
   assert.doesNotMatch(toolbar, /violet-|border-r|border-l/);
   assert.match(source("src/modules/presentations/dashboard/PresentationDashboard.tsx"), /dir="auto"/);
 });
@@ -416,6 +416,7 @@ test("shared design primitives use the ProSlides token vocabulary and accessible
   const variants = source("src/shared/ui/primitives/button.variants.ts");
   const input = source("src/shared/ui/primitives/Input.tsx");
   const inputVariants = source("src/shared/ui/primitives/input.variants.ts");
+  const fieldFrame = source("src/shared/ui/primitives/FieldFrame.tsx");
   const textarea = source("src/shared/ui/primitives/Textarea.tsx");
   const select = source("src/shared/ui/primitives/Select.tsx");
   const confirm = source("src/shared/ui/primitives/ConfirmDialog.tsx");
@@ -425,16 +426,27 @@ test("shared design primitives use the ProSlides token vocabulary and accessible
   assert.match(variants, /bg-brand/);
   assert.match(variants, /bg-danger/);
   assert.match(variants, /ring-focus/);
-  assert.match(variants, /border-border-control/);
+  assert.match(variants, /border-border-action/);
+  assert.doesNotMatch(variants, /outline:[\s\S]*border-border-control/);
   assert.doesNotMatch(variants, /bg-primary|text-primary-foreground|ring-ring|border-input/);
 
   assert.match(input, /inputVariants/);
-  assert.match(inputVariants, /border-border-control/);
+  assert.match(inputVariants, /border-border-field/);
   assert.match(inputVariants, /aria-\[invalid=true\]:border-danger/);
   assert.match(inputVariants, /focus-visible:border-focus/);
+  assert.match(fieldFrame, /border-border-field/);
+  assert.match(fieldFrame, /focus-within:ring-focus/);
+  assert.match(fieldFrame, /FieldAdornment/);
+  assert.match(fieldFrame, /border-e border-border-subtle/);
+  assert.match(fieldFrame, /FieldAction/);
+  assert.match(fieldFrame, /hover:bg-surface-inset/);
   assert.match(textarea, /textareaVariants/);
-  assert.match(select, /border-border-control/);
+  assert.match(select, /border-border-field/);
+  assert.match(indexCss, /--color-surface-inset:/);
+  assert.match(indexCss, /--color-border-action:/);
+  assert.match(indexCss, /--color-border-field:/);
   assert.match(indexCss, /--color-border-control:\s*#7b899d/);
+  assert.match(indexCss, /--shadow-card:\s*0 1px 2px rgb\(15 23 42 \/ 0\.06\), 0 8px 24px rgb\(15 23 42 \/ 0\.05\)/);
   assert.match(indexCss, /font-synthesis:\s*none/);
   assert.match(indexCss, /scroll-padding-block-start:\s*5rem/);
   assert.match(indexCss, /input::placeholder,[\s\S]*opacity:\s*1/);
@@ -444,6 +456,43 @@ test("shared design primitives use the ProSlides token vocabulary and accessible
   assert.match(confirm, /AlertDialogPrimitive\.Description/);
   assert.match(confirm, /AlertDialogPrimitive\.Cancel/);
   assert.match(confirm, /aria-busy/);
+});
+
+
+test("product surfaces keep ordinary grouping flat and reserve elevation for depth", () => {
+  const report = source("src/modules/reports/routes/ReportRoute.tsx");
+  const activity = source("src/modules/reports/ui/ActivityReportPanel.tsx");
+  const ranking = source("src/modules/reports/ui/RankingPanel.tsx");
+  const sessions = source("src/modules/reports/ui/SessionHistory.tsx");
+  const dashboard = source("src/modules/presentations/dashboard/PresentationDashboard.tsx");
+  const auth = source("src/modules/identity/ui/AuthCard.tsx");
+  const reset = source("src/modules/identity/routes/ResetPasswordRoute.tsx");
+  const editorShell = source("src/modules/presentations/editor/shell/EditorShell.tsx");
+  const editorToolbar = source("src/modules/presentations/editor/toolbar/EditorToolbar.tsx");
+  const editorSkeleton = source("src/modules/presentations/editor/routes/EditorRouteSkeleton.tsx");
+  const passwordSetup = source("src/modules/identity/ui/PasswordSetupPrompt.tsx");
+
+  for (const surface of [report, activity, ranking, sessions]) {
+    assert.doesNotMatch(surface, /shadow-card/);
+  }
+  assert.match(report, /bg-surface-inset/);
+  assert.match(activity, /bg-surface-inset/);
+  assert.match(sessions, /border-border-action/);
+  assert.doesNotMatch(dashboard, /shadow-lg/);
+  assert.match(dashboard, /bg-surface-inset/);
+  assert.match(auth, /<FieldFrame/);
+  assert.match(auth, /<FieldAdornment/);
+  assert.match(auth, /<FieldAction/);
+  assert.match(reset, /<FieldFrame/);
+  assert.match(reset, /<FieldAdornment/);
+  assert.match(reset, /<FieldAction/);
+  assert.doesNotMatch(editorShell, /shadow-card/);
+  assert.doesNotMatch(editorShell, /border-brand-border/);
+  assert.match(editorShell, /xl:shadow-none/);
+  assert.doesNotMatch(editorToolbar, /shadow-card/);
+  assert.doesNotMatch(editorToolbar, /border-brand-border/);
+  assert.doesNotMatch(editorSkeleton, /shadow-card/);
+  assert.doesNotMatch(passwordSetup, /shadow-card/);
 });
 
 

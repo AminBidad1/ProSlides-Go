@@ -428,7 +428,7 @@ function InviteAudienceUI({
           <img
             src={qr}
             alt="کد QR لینک ورود به ارائه"
-            className="size-44 rounded-card border border-border-control bg-surface shadow-card"
+            className="size-44 rounded-card border border-border-subtle bg-surface"
           />
 
           <Button asChild size="sm" className="mt-3">

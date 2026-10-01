@@ -67,7 +67,7 @@ export function PasswordSetupPrompt() {
   return (
     <div className="mb-6 space-y-2">
       {visible ? (
-        <section className="rounded-panel border border-brand-border bg-surface px-4 py-4 text-sm text-brand-ink shadow-card">
+        <section className="rounded-panel border border-brand-border bg-brand-soft px-4 py-4 text-sm text-brand-ink">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="min-w-0">
               <h2 className="font-semibold">برای حساب خود رمز عبور تعیین کنید</h2>

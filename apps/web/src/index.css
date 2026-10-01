@@ -6,14 +6,20 @@
 
   --color-canvas: #f8fafc;
   --color-surface: #ffffff;
+  --color-surface-inset: #f8fafc;
   --color-surface-raised: #ffffff;
   /* Generic inverse surfaces belong to product/marketing chrome. Keep them
      separate from Stage even when the neutral values currently match. */
   --color-surface-inverse: #0f172a;
   --color-surface-inverse-soft: #1e293b;
   --color-border-subtle: #e2e8f0;
-  /* Separators may be subtle; control boundaries may not. This tone keeps
-     authored form controls identifiable at >=3:1 against both surface/canvas. */
+  /* Boundaries carry different jobs. Fields and text actions can stay quiet
+     when labels/content identify them; standalone controls still need a strong
+     silhouette when their boundary is the only affordance. */
+  --color-border-action: #cbd5e1;
+  --color-border-action-strong: #94a3b8;
+  --color-border-field: #cbd5e1;
+  --color-border-field-strong: #94a3b8;
   --color-border-control: #7b899d;
   --color-border-control-strong: #64748b;
   --color-content: #0f172a;

@@ -106,7 +106,7 @@ export function ActivityReportPanel({
 
   if (isLoading) {
     return (
-      <section className="rounded-panel border border-border-subtle bg-surface p-5 shadow-card">
+      <section className="rounded-panel border border-border-subtle bg-surface p-5">
         <Notice pending>در حال بارگذاری نتیجه فعالیت…</Notice>
       </section>
     );
@@ -114,14 +114,14 @@ export function ActivityReportPanel({
 
   if (isError || !first) {
     return (
-      <section className="rounded-panel border border-border-subtle bg-surface p-5 shadow-card">
+      <section className="rounded-panel border border-border-subtle bg-surface p-5">
         <Notice tone="error">بارگذاری نتیجه این فعالیت انجام نشد.</Notice>
       </section>
     );
   }
 
   return (
-    <section className="overflow-hidden rounded-panel border border-border-subtle bg-surface shadow-card">
+    <section className="overflow-hidden rounded-panel border border-border-subtle bg-surface">
       <div className="border-b border-border-subtle p-5">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-lg font-black" dir="auto">{activityTitle(activity)}</h2>
@@ -241,7 +241,7 @@ export function ActivityReportPanel({
                 {first.top_performers.map((performer) => (
                   <div
                     key={performer.participant_id}
-                    className="flex items-center justify-between gap-3 rounded-control bg-surface-raised px-3 py-2 text-sm"
+                    className="flex items-center justify-between gap-3 rounded-control bg-surface-inset px-3 py-2 text-sm"
                   >
                     <span className="min-w-0 truncate font-semibold">
                       {formatPersianNumber(performer.rank)}.{" "}

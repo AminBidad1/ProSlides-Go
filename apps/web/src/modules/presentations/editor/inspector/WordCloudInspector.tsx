@@ -451,7 +451,7 @@ export default function WordCloudInspector({
           </div>
         </div>
 
-        <footer className="sticky bottom-0 z-10 border-t border-border-control bg-surface/95 px-1 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur">
+        <footer className="sticky bottom-0 z-10 border-t border-border-subtle bg-surface/95 px-1 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur">
           <div className="mb-2 min-h-5 text-xs">
             {saving ? (
               <span className="inline-flex items-center gap-1.5 text-info">
