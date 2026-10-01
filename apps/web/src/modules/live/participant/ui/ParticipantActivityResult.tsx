@@ -162,7 +162,7 @@ export function ParticipantActivityResult({
           {isWordCloud ? (
             <WordCloudView
               terms={wordTerms}
-              className="mt-6 min-h-52 rounded-feature border border-[color:var(--live-border)] live-theme-overlay-subtle p-3"
+              className="live-cloud mt-6 min-h-52 rounded-feature border border-[color:var(--live-border)] p-3"
               emptyLabel="هنوز عبارتی برای نمایش وجود ندارد."
             />
           ) : (

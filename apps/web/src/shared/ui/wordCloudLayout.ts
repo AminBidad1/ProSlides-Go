@@ -25,7 +25,6 @@ type DisplayProfile = {
   candidateLimit: number;
   horizontalPadding: number;
   verticalPadding: number;
-  textColorMix: number;
 };
 
 const VIEWBOX_WIDTH = 1000;
@@ -44,7 +43,6 @@ const DISPLAY_PROFILES: Record<WordCloudDisplayMode, DisplayProfile> = {
     candidateLimit: 100,
     horizontalPadding: 16,
     verticalPadding: 16,
-    textColorMix: 82,
   },
   projection: {
     minFontSize: 32,
@@ -52,19 +50,18 @@ const DISPLAY_PROFILES: Record<WordCloudDisplayMode, DisplayProfile> = {
     candidateLimit: 72,
     horizontalPadding: 24,
     verticalPadding: 22,
-    textColorMix: 88,
   },
 };
 
 const ACCENTS = [
-  "var(--live-palette-1, #8b5cf6)",
-  "var(--live-palette-2, #06b6d4)",
-  "var(--live-palette-3, #10b981)",
-  "var(--live-palette-4, #f59e0b)",
-  "var(--live-palette-5, #ec4899)",
-  "var(--live-palette-6, #3b82f6)",
-  "var(--live-palette-7, #8b5cf6)",
-  "var(--live-palette-8, #06b6d4)",
+  "var(--live-palette-text-1, color-mix(in srgb, currentColor 60%, #8b5cf6))",
+  "var(--live-palette-text-2, color-mix(in srgb, currentColor 60%, #06b6d4))",
+  "var(--live-palette-text-3, color-mix(in srgb, currentColor 60%, #10b981))",
+  "var(--live-palette-text-4, color-mix(in srgb, currentColor 60%, #f59e0b))",
+  "var(--live-palette-text-5, color-mix(in srgb, currentColor 60%, #ec4899))",
+  "var(--live-palette-text-6, color-mix(in srgb, currentColor 60%, #3b82f6))",
+  "var(--live-palette-text-7, color-mix(in srgb, currentColor 60%, #8b5cf6))",
+  "var(--live-palette-text-8, color-mix(in srgb, currentColor 60%, #06b6d4))",
 ] as const;
 
 const hashText = (value: string): number => {
@@ -142,10 +139,8 @@ const insideViewBox = (rect: Rect, profile: DisplayProfile): boolean =>
   rect.top >= profile.verticalPadding &&
   rect.bottom <= VIEWBOX_HEIGHT - profile.verticalPadding;
 
-const termColor = (text: string, profile: DisplayProfile): string => {
-  const accent = ACCENTS[hashText(text) % ACCENTS.length];
-  return `color-mix(in srgb, currentColor ${profile.textColorMix}%, ${accent})`;
-};
+const termColor = (text: string): string =>
+  ACCENTS[hashText(text) % ACCENTS.length];
 
 export const layoutWordCloudTerms = (
   input: readonly WordCloudTerm[],
@@ -226,7 +221,7 @@ export const layoutWordCloudTerms = (
       x: resolved.x,
       y: resolved.y,
       fontSize,
-      color: termColor(term.text, profile),
+      color: termColor(term.text),
     });
   }
 

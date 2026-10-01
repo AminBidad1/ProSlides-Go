@@ -1280,6 +1280,25 @@ test("Stage recovery responds to browser network and lifecycle return signals", 
   assert.match(stageProjection, /void refresh\(\)\.catch/);
 });
 
+test("themed Word Cloud results use one opaque contrast-owned surface", () => {
+  const css = source("src/index.css");
+  const stage = source("src/modules/live/routes/StageRoute.tsx");
+  const manager = source(
+    "src/modules/live/manager/ui/ManagerPickAnswerQuestion.tsx",
+  );
+  const participant = source(
+    "src/modules/live/participant/ui/ParticipantActivityResult.tsx",
+  );
+  const editor = source(
+    "src/modules/presentations/editor/canvas/WordCloudCanvas.tsx",
+  );
+
+  assert.match(css, /\.live-cloud\s*\{[^}]*--live-word-cloud-bg/s);
+  for (const surface of [stage, manager, participant, editor]) {
+    assert.match(surface, /live-cloud/);
+  }
+});
+
 test("projected live surfaces own the viewport instead of growing the page", () => {
   const lobby = source("src/modules/live/manager/ui/ManagerJoinPage.tsx");
   const question = source("src/modules/live/manager/ui/ManagerPickAnswerQuestion.tsx");

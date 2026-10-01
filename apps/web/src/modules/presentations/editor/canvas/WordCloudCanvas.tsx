@@ -151,7 +151,7 @@ export default function WordCloudCanvas({
 
           <WordCloudView
             terms={previewTerms}
-            className="mt-6 min-h-48 w-full rounded-feature border border-[color:var(--live-border)] live-theme-contrast-soft p-3"
+            className="live-cloud mt-6 min-h-48 w-full rounded-feature border border-[color:var(--live-border)] p-3"
             emptyLabel="پیش‌نمایشی برای نمایش وجود ندارد."
             displayMode="projection"
           />

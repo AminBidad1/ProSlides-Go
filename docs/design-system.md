@@ -113,8 +113,15 @@ documented decorative artwork.
 
 Live presentation styling has a second semantic layer resolved at runtime by
 `presentationTheme.ts`: `--live-bg`, foreground/muted/border/focus roles,
-control/input roles, overlay/contrast roles, accent, and visualization-palette
-roles. Audience Stage, participant, and manager projection surfaces consume
+control/input roles, overlay/contrast roles, accent, visualization-fill palette
+roles, a dedicated opaque Word Cloud result surface, and derived contrast-safe
+visualization-text palette roles. Authored palette colors remain unchanged for fills.
+Word Cloud text is resolved against `--live-word-cloud-bg`, a solid theme-derived
+surface shared by Stage, manager, participant result, and editor preview. This avoids
+letting an arbitrary background-image pixel become the contrast reference. The resolver
+preserves an authored palette color when it already reaches 4.5:1 on that surface and
+otherwise moves it only as far toward the readable foreground as needed. Audience Stage,
+participant, and manager projection surfaces consume
 those authored roles instead of raw product-palette utilities. Private Backstage
 is intentionally different: it is operational product chrome, uses the product
 dark/Stage token vocabulary, and must not inherit authored presentation colors

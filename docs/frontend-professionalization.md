@@ -71,7 +71,10 @@ content:
 - expressive data-visualization colors belong to poll/quiz/word-cloud/result
   content, not to ordinary navigation, forms or generic cards. When a data
   accent becomes text on the neutral Stage, use its contrast-safe `on-stage`
-  role rather than assuming a chart-fill color is also readable text;
+  role rather than assuming a chart-fill color is also readable text. Authored
+  runtime themes use the equivalent derived `--live-palette-text-*` roles on
+  the opaque `--live-word-cloud-bg` result surface so a custom visualization
+  palette stays recognizable without letting background imagery bypass contrast;
 - muted copy on tinted surfaces uses an explicit contrast-safe text role rather
   than assuming the default muted color remains AA-compliant after blending;
 - shape roles are tokenized as control/card/feature/showcase instead of

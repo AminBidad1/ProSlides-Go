@@ -326,7 +326,7 @@ export function ManagerPickAnswerQuestion({
                     {responseCount.toLocaleString("fa-IR")} پاسخ ثبت‌شده
                   </p>
                 ) : null}
-                <div className="flex min-h-0 flex-1 flex-col overflow-hidden live-panel rounded-projection p-4 sm:p-5">
+                <div className="live-panel live-cloud flex min-h-0 flex-1 flex-col overflow-hidden rounded-projection p-4 sm:p-5">
                   {currentQuestion.image_url ? (
                     <LiveMediaImage
                       src={currentQuestion.image_url}

@@ -4,9 +4,17 @@ import test from "node:test";
 import {
   PRESENTATION_THEME_PRESETS,
   normalizeVisualizationPalette,
+  presentationContrastRatio,
   presentationTheme,
   presentationVisualizationColor,
 } from "../src/shared/styles/presentationTheme.ts";
+
+const wordCloudBackground = (theme) =>
+  String(theme.style["--live-word-cloud-bg"]);
+const wordCloudTextColors = (theme, count) =>
+  Array.from({ length: count }, (_, index) =>
+    String(theme.style[`--live-palette-text-${index + 1}`]),
+  );
 
 test("presentation theme corrects unreadable text colors", () => {
   const theme = presentationTheme({
@@ -15,6 +23,15 @@ test("presentation theme corrects unreadable text colors", () => {
   });
 
   assert.equal(theme.foreground, "#0f172a");
+  assert.ok(theme.contrastRatio >= 4.5);
+});
+
+test("presentation theme keeps the AA floor on mid-tone custom backgrounds", () => {
+  const theme = presentationTheme({
+    background: { color: "#7a7a7a" },
+    text_color: "#777777",
+  });
+
   assert.ok(theme.contrastRatio >= 4.5);
 });
 
@@ -78,6 +95,98 @@ test("visualization palettes are bounded and cycle through CSS theme slots", () 
   assert.equal(theme.style["--live-palette-4"], palette[0]);
   assert.equal(theme.style["--live-palette-8"], palette[1]);
   assert.match(presentationVisualizationColor("answer-1"), /^var\(--live-palette-[1-8], /);
+});
+
+test("visualization text palette preserves safe accents and minimally corrects low contrast", () => {
+  const theme = presentationTheme({
+    background: { color: "#f8fafc" },
+    text_color: "#0f172a",
+    visualization_palette: ["#4f46e5", "#0891b2", "#059669"],
+  });
+
+  const colors = wordCloudTextColors(theme, 3);
+  assert.equal(colors[0], "#4f46e5");
+  assert.notEqual(colors[1], "#0891b2");
+  assert.notEqual(colors[2], "#059669");
+  for (const color of colors) {
+    assert.ok(
+      presentationContrastRatio(wordCloudBackground(theme), color) >= 4.5,
+    );
+  }
+  assert.equal(theme.style["--live-palette-text-1"], colors[0]);
+  assert.equal(theme.style["--live-palette-text-8"], colors[1]);
+});
+
+test("word cloud text stays on an opaque theme surface when a background image is present", () => {
+  const theme = presentationTheme({
+    background: {
+      color: "#312e81",
+      image: "https://example.com/bright-stage.jpg",
+    },
+    text_color: "#ffffff",
+    visualization_palette: ["#a78bfa", "#22d3ee", "#34d399"],
+  });
+
+  const background = wordCloudBackground(theme);
+  assert.match(background, /^#[0-9a-f]{6}$/);
+  for (const color of wordCloudTextColors(theme, 3)) {
+    assert.ok(
+      presentationContrastRatio(background, color) >= 4.5,
+    );
+  }
+});
+
+test("all curated themes derive AA visualization text colors", () => {
+  for (const preset of PRESENTATION_THEME_PRESETS) {
+    const theme = presentationTheme({
+      background: { color: preset.background },
+      text_color: preset.foreground,
+      accent_color: preset.accent,
+      visualization_palette: preset.palette,
+    });
+
+    const background = wordCloudBackground(theme);
+    for (const color of wordCloudTextColors(theme, preset.palette.length)) {
+      assert.ok(
+        presentationContrastRatio(background, color) >= 4.5,
+        `${preset.id} produced low-contrast visualization text ${color}`,
+      );
+    }
+  }
+});
+
+test("custom themes keep every derived Word Cloud term color above the AA floor", () => {
+  const backgrounds = [
+    "#ffffff",
+    "#f8fafc",
+    "#7a7a7a",
+    "#312e81",
+    "#111827",
+    "#000000",
+  ];
+  const palettes = [
+    ["#000000", "#777777", "#ffffff"],
+    ["#ff0000", "#00ff00", "#0000ff"],
+    ["#8b5cf6", "#06b6d4", "#f59e0b"],
+  ];
+
+  for (const background of backgrounds) {
+    for (const palette of palettes) {
+      const theme = presentationTheme({
+        background: { color: background },
+        text_color: "#777777",
+        visualization_palette: palette,
+      });
+
+      const surface = wordCloudBackground(theme);
+      for (const color of wordCloudTextColors(theme, palette.length)) {
+        assert.ok(
+          presentationContrastRatio(surface, color) >= 4.5,
+          `${background} / ${color} fell below the Word Cloud contrast floor`,
+        );
+      }
+    }
+  }
 });
 
 test("invalid or undersized palettes fall back to the product palette", () => {

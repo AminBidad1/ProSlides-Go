@@ -292,7 +292,7 @@ function StageActivity({
         </div>
 
         {isWordCloud ? (
-          <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-projection border border-[color:var(--live-border)] live-theme-overlay-subtle p-4 shadow-projection sm:p-5">
+          <div className="live-cloud mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-projection border border-[color:var(--live-border)] p-4 shadow-projection sm:p-5">
             {question.image_url ? (
               <LiveMediaImage
                 src={question.image_url}

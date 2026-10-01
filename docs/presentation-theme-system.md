@@ -106,13 +106,22 @@ no-scroll Stage contract.
 
 ## Visualization colors
 
-Charts, answer bars and Word Cloud terms should use the presentation visualization
-palette when a live presentation context is available. Identity/avatar colors remain
-separate because they encode stable participant identity rather than presentation
-branding.
+Charts and answer bars use the authored presentation visualization palette directly.
+Word Cloud terms use the corresponding derived visualization-text palette. The resolver
+also creates one opaque `--live-word-cloud-bg` color from the presentation background
+and foreground polarity. Stage, manager projection, participant result, and editor
+preview render Word Cloud terms on that same surface, so an authored background image
+cannot silently invalidate term contrast. A palette color that already reaches 4.5:1
+there is preserved; otherwise it is minimally mixed toward the resolved readable
+foreground until that floor is reached. This keeps Word Clouds visibly multi-color
+without making low-contrast custom themes unreadable. Both the derived text palette and
+Word Cloud surface are runtime-only; saved theme values and chart fills remain exactly
+as authored.
 
-Palette assignment is deterministic. The same answer/term must not change color during
-a live Session because responses arrive or the viewport changes.
+Identity/avatar colors remain separate because they encode stable participant identity
+rather than presentation branding. Palette assignment is deterministic. The same
+answer/term must not change color during a live Session because responses arrive or the
+viewport changes.
 
 ## Live-session behavior
 

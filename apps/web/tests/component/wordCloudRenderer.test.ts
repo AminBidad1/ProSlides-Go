@@ -50,7 +50,10 @@ describe("WordCloudRenderer layout", () => {
     const colors = new Set([...layout.values()].map((term) => term.color));
 
     expect(colors.size).toBeGreaterThan(1);
-    expect(layout.get("خلاقیت")?.color).toContain("currentColor 88%");
+    expect(layout.get("خلاقیت")?.color).toMatch(
+      /^var\(--live-palette-text-[1-8], /,
+    );
+    expect(layout.get("خلاقیت")?.color).toContain("currentColor 60%");
   });
 
   test("reduces equal-frequency type size as the cloud gets dense", () => {

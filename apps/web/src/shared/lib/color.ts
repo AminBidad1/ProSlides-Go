@@ -16,7 +16,7 @@ export const relativeLuminance = (hex: string): number => {
   const channels = [1, 3, 5]
     .map((start) => Number.parseInt(safe.slice(start, start + 2), 16) / 255)
     .map((value) =>
-      value <= 0.03928
+      value <= 0.04045
         ? value / 12.92
         : ((value + 0.055) / 1.055) ** 2.4,
     );

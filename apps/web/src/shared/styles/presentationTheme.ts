@@ -142,7 +142,55 @@ const readableForeground = (
     return requestedForeground;
   }
 
-  return readableForegroundColor(background);
+  const semanticFallback = readableForegroundColor(background);
+  if (presentationContrastRatio(background, semanticFallback) >= 4.5) {
+    return semanticFallback;
+  }
+
+  return readableForegroundColor(background, "#ffffff", "#000000");
+};
+
+const mixThemeColors = (
+  from: string,
+  to: string,
+  amount: number,
+): string =>
+  "#" +
+  [1, 3, 5]
+    .map((start) =>
+      Math.round(
+        Number.parseInt(from.slice(start, start + 2), 16) * (1 - amount) +
+          Number.parseInt(to.slice(start, start + 2), 16) * amount,
+      )
+        .toString(16)
+        .padStart(2, "0"),
+    )
+    .join("");
+
+const readableVisualizationText = (
+  color: string,
+  background: string,
+  foreground: string,
+): string => {
+  if (contrastRatio(color, background) >= 4.5) return color;
+
+  const fallback =
+    contrastRatio(foreground, background) >= 4.5
+      ? foreground
+      : readableForegroundColor(background, "#ffffff", "#000000");
+  let low = 0;
+  let high = 1;
+
+  for (let iteration = 0; iteration < 10; iteration += 1) {
+    const middle = (low + high) / 2;
+    if (contrastRatio(mixThemeColors(color, fallback, middle), background) >= 4.5) {
+      high = middle;
+    } else {
+      low = middle;
+    }
+  }
+
+  return mixThemeColors(color, fallback, high);
 };
 
 const normalizeFocalPoint = (value: unknown): number =>
@@ -214,8 +262,21 @@ export const presentationTheme = (
     input?.accent_color,
     DEFAULT_PRESENTATION_ACCENT,
   );
+  const foregroundIsLight = relativeLuminance(foreground) > 0.45;
+  const contrastTarget = foregroundIsLight ? "#000000" : "#ffffff";
   const palette = normalizeVisualizationPalette(
     input?.visualization_palette,
+  );
+  // Word Cloud terms need a known opaque result layer. A transparent overlay
+  // cannot guarantee text contrast when an authored background image sits
+  // underneath it, so the live surfaces share this solid theme-derived color.
+  const wordCloudBackground = mixThemeColors(
+    background,
+    contrastTarget,
+    0.22,
+  );
+  const visualizationTextPalette = palette.map((color) =>
+    readableVisualizationText(color, wordCloudBackground, foreground),
   );
   const image = input?.background?.image?.trim() ?? "";
   const deliveredImage =
@@ -226,8 +287,6 @@ export const presentationTheme = (
   const focalY = normalizeFocalPoint(input?.background?.focal_y);
   const showsBackgroundImage =
     image.length > 0 && surface !== "participant";
-  const foregroundIsLight = relativeLuminance(foreground) > 0.45;
-  const contrastTarget = foregroundIsLight ? "#000000" : "#ffffff";
   const imageOverlay =
     surface === "manager"
       ? foregroundIsLight
@@ -282,6 +341,15 @@ export const presentationTheme = (
       "--live-palette-6": palette[5 % palette.length],
       "--live-palette-7": palette[6 % palette.length],
       "--live-palette-8": palette[7 % palette.length],
+      "--live-word-cloud-bg": wordCloudBackground,
+      "--live-palette-text-1": visualizationTextPalette[0 % visualizationTextPalette.length],
+      "--live-palette-text-2": visualizationTextPalette[1 % visualizationTextPalette.length],
+      "--live-palette-text-3": visualizationTextPalette[2 % visualizationTextPalette.length],
+      "--live-palette-text-4": visualizationTextPalette[3 % visualizationTextPalette.length],
+      "--live-palette-text-5": visualizationTextPalette[4 % visualizationTextPalette.length],
+      "--live-palette-text-6": visualizationTextPalette[5 % visualizationTextPalette.length],
+      "--live-palette-text-7": visualizationTextPalette[6 % visualizationTextPalette.length],
+      "--live-palette-text-8": visualizationTextPalette[7 % visualizationTextPalette.length],
       backgroundColor: background,
       backgroundImage: showsBackgroundImage
         ? `linear-gradient(${imageOverlay}, ${imageOverlay}), url(${JSON.stringify(deliveredImage)})`

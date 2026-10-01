@@ -245,6 +245,9 @@ textarea::placeholder {
   box-shadow: var(--shadow-projection);
   backdrop-filter: blur(16px);
 }
+.live-cloud {
+  background-color: var(--live-word-cloud-bg, var(--live-surface));
+}
 .live-secondary-action {
   border: 1px solid var(--live-control-border);
   background-color: var(--live-overlay-soft);
